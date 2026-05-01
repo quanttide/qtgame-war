@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>田花园的拂晓 - 豫东战役1948</title>
+    <style>
+        :root {
+            --bg: #1e1b16;
+            --paper: #f4efe2;
+            --ink: #2c2416;
+            --ink-light: #4a4030;
+            --ink-muted: #6b6050;
+            --accent-red: #a04030;
+            --accent-amber: #9e7a40;
+            --accent-green: #5a7a4a;
+            --border: #c8bfae;
+            --gold: #c9a96e;
+            --panel-bg: #faf6eb;
+            --font-body: "Noto Serif SC", "STSong", "Songti SC", "SimSun", serif;
+            --font-voice: "KaiTi", "STKaiti", "华文楷体", "楷体", "Noto Serif SC", serif;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+            --hex-bg: #1e1b16;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #2a2620;
+            font-family: var(--font-body);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background-image: radial-gradient(ellipse at 50% 30%, rgba(70, 60, 45, 0.35) 0%, transparent 65%);
+        }
+        .title-bar {
+            text-align: center;
+            margin-bottom: 6px;
+            width: 100%;
+            max-width: 1100px;
+        }
+        .title-bar h1 {
+            font-size: 1.5em;
+            color: var(--gold);
+            letter-spacing: 0.08em;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(201, 169, 110, 0.5);
+            margin: 0;
+            font-family: var(--font-voice);
+        }
+        .title-bar .subtitle {
+            font-size: 0.75em;
+            color: #a09080;
+            letter-spacing: 0.05em;
+        }
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1100px;
+            width: 100%;
+        }
+        .canvas-wrapper {
+            position: relative;
+            border: 2px solid #3a3028;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6), inset 0 0 60px rgba(0, 0, 0, 0.3);
+            background: var(--hex-bg);
+            flex-shrink: 0;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        .side-panel {
+            background: var(--panel-bg);
+            border: 1px solid #bfb6a5;
+            border-radius: 4px;
+            padding: 14px 16px;
+            min-width: 230px;
+            max-width: 290px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--ink);
+            letter-spacing: 0.3px;
+            background-image: linear-gradient(rgba(180, 160, 130, 0.05) 1px, transparent 1px);
+            background-size: 100% 20px;
+            background-position: 0 12px;
+        }
+        .side-panel h3 {
+            color: var(--ink);
+            font-size: 1em;
+            margin: 0 0 8px 0;
+            text-align: center;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 7px;
+            font-family: var(--font-voice);
+            font-weight: 700;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 0.8em;
+            border-bottom: 1px dotted rgba(0, 0, 0, 0.08);
+        }
+        .info-row .label {
+            color: var(--ink-muted);
+            font-size: 0.75em;
+        }
+        .info-row .value {
+            color: var(--ink);
+            font-weight: 600;
+            font-family: var(--font-voice);
+        }
+        .value.danger {
+            color: #a04030;
+        }
+        .value.success {
+            color: #5a7a4a;
+        }
+        .value.warn {
+            color: #9e7a40;
+        }
+        .global-status {
+            background: rgba(160, 64, 48, 0.05);
+            border: 1px solid rgba(160, 64, 48, 0.18);
+            padding: 8px 10px;
+            margin: 8px 0;
+            border-radius: 3px;
+            font-family: var(--font-voice);
+            font-size: 0.75em;
+            line-height: 1.5;
+        }
+        .global-status .critical {
+            font-weight: 700;
+            color: var(--accent-red);
+        }
+        .global-status .warn {
+            font-weight: 600;
+            color: var(--accent-amber);
+        }
+        .global-status .positive {
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+        .bar-wrap {
+            background: #e0d8c8;
+            border-radius: 3px;
+            height: 8px;
+            margin: 2px 0 4px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s;
+        }
+        .bar-fill.stamina {
+            background: #8a7050;
+        }
+        .bar-fill.cohesion {
+            background: #6a8a5a;
+        }
+        .bar-fill.fort {
+            background: #a05040;
+        }
+        .unit-card {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 7px 9px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.75em;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--font-voice);
+        }
+        .unit-card:hover {
+            border-color: #9e7a40;
+            background: rgba(158, 122, 64, 0.06);
+        }
+        .unit-card.selected {
+            border-color: #c9a96e;
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.35);
+            background: rgba(201, 169, 110, 0.08);
+        }
+        .unit-card.acted {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .unit-card .icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            font-family: var(--font-body);
+        }
+        .icon.pla {
+            background: #4a3020;
+            border: 2px solid #c44b3c;
+            color: #f0c0a0;
+        }
+        .icon.nationalist {
+            background: #1a2a3a;
+            border: 2px solid #4a80b4;
+            color: #a0c8f0;
+        }
+        .unit-card .info {
+            flex: 1;
+            min-width: 0;
+        }
+        .unit-card .name {
+            font-weight: 600;
+            color: var(--ink);
+            font-size: 0.85em;
+        }
+        .unit-card .stats {
+            color: var(--ink-muted);
+            font-size: 0.7em;
+        }
+        .unit-card .hp-dots {
+            display: flex;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .hp-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #c44b3c;
+            border: 1px solid #802020;
+        }
+        .hp-dot.lost {
+            background: #ccc;
+            border-color: #aaa;
+        }
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            min-width: 65px;
+            padding: 9px 10px;
+            font-size: 0.78em;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: var(--font-voice);
+            letter-spacing: 0.04em;
+            transition: all 0.2s;
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.55);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            font-weight: 600;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: #9a8e78;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:active {
+            background: #e0d8c8;
+            transform: scale(0.97);
+        }
+        button.primary {
+            background: rgba(160, 64, 48, 0.12);
+            border-color: #a04030;
+            color: #5a2020;
+            font-weight: 700;
+        }
+        button.primary:hover {
+            background: rgba(160, 64, 48, 0.22);
+            box-shadow: 0 0 12px rgba(160, 64, 48, 0.25);
+        }
+        button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+            filter: grayscale(0.3);
+        }
+        .log-area {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 6px 8px;
+            margin-top: 8px;
+            max-height: 130px;
+            overflow-y: auto;
+            font-size: 0.68em;
+            color: var(--ink-muted);
+            line-height: 1.5;
+            font-family: var(--font-voice);
+        }
+        .log-area .log-line {
+            padding: 1px 0;
+            border-bottom: 1px dotted rgba(0, 0, 0, 0.04);
+            animation: fadeIn 0.3s;
+        }
+        .log-line.hit {
+            color: #a04030;
+            font-weight: 500;
+        }
+        .log-line.miss {
+            color: #888;
+        }
+        .log-line.info {
+            color: #5a7a4a;
+        }
+        .log-line.urgent {
+            color: #6b3020;
+            font-weight: 600;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 6px;
+            font-size: 0.6em;
+            color: #999;
+        }
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .legend .swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            display: inline-block;
+            border: 1px solid #777;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-3px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+        .collapse-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(235, 225, 205, 0.93);
+            z-index: 20;
+            border-radius: 6px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 25px;
+            font-family: var(--font-voice);
+            border: 1px solid #b0a090;
+        }
+        .collapse-overlay.visible {
+            display: flex;
+        }
+        .collapse-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+        .collapse-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #5a2020;
+            margin-bottom: 4px;
+        }
+        .collapse-desc {
+            font-size: 12px;
+            color: #4a3030;
+            line-height: 1.6;
+            max-width: 260px;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .side-panel {
+                max-width: 100%;
+                width: 100%;
+                min-width: auto;
+            }
+            .title-bar h1 {
+                font-size: 1.2em;
+            }
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="title-bar">
+        <h1>⚔️ 田花园的拂晓</h1>
+        <div class="subtitle">豫东战役 · 帝丘店外围 · 华东野战军四纵十二师</div>
+    </div>
+
+    <div class="main-container">
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="gameCanvas"></canvas>
+            <div class="collapse-overlay" id="overlay">
+                <div class="collapse-icon" id="overlayIcon">🕯️</div>
+                <div class="collapse-title" id="overlayTitle">任务结束</div>
+                <div class="collapse-desc" id="overlayDesc"></div>
+            </div>
+        </div>
+        <div class="side-panel" id="sidePanel">
+            <h3>📋 师指挥部</h3>
+            <div class="info-row"><span class="label">当前回合 / 时限</span><span class="value" id="turnDisplay">第1回合 / 8</span></div>
+            <div class="info-row"><span class="label">时段</span><span class="value" id="phaseDisplay">🏴 拂晓 · 玩家行动</span></div>
+            <div class="info-row"><span class="label">可行动单位</span><span class="value success" id="readyUnits">3</span></div>
+
+            <div class="global-status" id="globalStatus">
+                <div>⚡ 部队体力 <span class="critical" id="staminaText">22/100</span></div>
+                <div class="bar-wrap"><div class="bar-fill stamina" id="staminaBar" style="width:22%"></div></div>
+                <div>🛡️ 编制完整度 <span class="warn" id="cohesionText">55%</span></div>
+                <div class="bar-wrap"><div class="bar-fill cohesion" id="cohesionBar" style="width:55%"></div></div>
+                <div>🏰 敌工事强度 <span class="critical" id="fortText">3/3</span></div>
+                <div class="bar-wrap"><div class="bar-fill fort" id="fortBar" style="width:100%"></div></div>
+                <div style="margin-top:4px;">⏳ 敌增援 <span class="warn" id="reinforceText">约8小时</span></div>
+                <div style="font-size:0.7em;color:var(--ink-muted);" id="riskText">崩溃风险：中等偏高</div>
+            </div>
+
+            <div id="unitCardsContainer"></div>
+            <div class="btn-row">
+                <button class="primary" id="btnEndTurn" title="结束当前回合">⏭ 结束回合</button>
+                <button id="btnReset" title="重新开始">🔄 重置</button>
+            </div>
+            <div class="log-area" id="logArea">
+                <div class="log-line info">📻 师部：拂晓前拿下田花园！</div>
+                <div class="log-line">⏰ 夜色掩护，突击排获夜战加成…</div>
+            </div>
+            <div class="legend">
+                <span><span class="swatch" style="background:#c8b078;"></span>开阔地</span>
+                <span><span class="swatch" style="background:#6b4e2e;"></span>鹿砦</span>
+                <span><span class="swatch" style="background:#5c4033;"></span>堑壕</span>
+                <span><span class="swatch" style="background:#4a4a4a;"></span>土围墙</span>
+                <span><span class="swatch" style="background:#2a1a1a;"></span>核心工事</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 常量与配置 ====================
+            const HEX_SIZE = 30;
+            const COLS = 9;
+            const ROWS = 6;
+            const MAX_TURNS = 8;
+            const SQRT3 = Math.sqrt(3);
+            const HEX_WIDTH = 2 * HEX_SIZE;
+            const HEX_HEIGHT = SQRT3 * HEX_SIZE;
+            const COL_SPACING = 1.5 * HEX_SIZE;
+            const ROW_SPACING = SQRT3 * HEX_SIZE;
+            const ODD_ROW_OFFSET = 0.75 * HEX_SIZE;
+
+            const PADDING_X = 60;
+            const PADDING_Y = 50;
+            const CANVAS_WIDTH = COLS * COL_SPACING + HEX_SIZE * 0.5 + PADDING_X * 2;
+            const CANVAS_HEIGHT = ROWS * ROW_SPACING + HEX_SIZE * 0.5 + PADDING_Y * 2;
+
+            const TERRAIN = {
+                OPEN: 'open',
+                ABATIS: 'abatis',
+                TRENCH: 'trench',
+                EARTH_WALL: 'earth_wall',
+                CORE_BUNKER: 'core_bunker'
+            };
+
+            const TERRAIN_PROPS = {
+                [TERRAIN.OPEN]: { name: '开阔地', moveCost: 1, defenseBonus: 0, color: '#c8b078',
+                fillColor: '#b8a068' },
+                [TERRAIN.ABATIS]: { name: '鹿砦', moveCost: 3, defenseBonus: 1, color: '#6b4e2e', fillColor: '#5a3e22',
+                    icon: '🌿' },
+                [TERRAIN.TRENCH]: { name: '堑壕', moveCost: 2, defenseBonus: 2, color: '#5c4033', fillColor: '#4a3028',
+                    icon: '▽' },
+                [TERRAIN.EARTH_WALL]: { name: '土围墙', moveCost: 2, defenseBonus: 2, color: '#4a4a4a', fillColor: '#3a3a3a',
+                    icon: '▬' },
+                [TERRAIN.CORE_BUNKER]: { name: '核心工事', moveCost: 3, defenseBonus: 4, color: '#2a1a1a',
+                    fillColor: '#1a0a0a', icon: '🏰', fullCover: true, isCore: true }
+            };
+
+            // ==================== 地图数据 ====================
+            const mapTerrain = [];
+            for (let r = 0; r < ROWS; r++) {
+                mapTerrain[r] = new Array(COLS).fill(TERRAIN.OPEN);
+            }
+
+            function setTerrain(col, row, terrain) {
+                if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+                    mapTerrain[row][col] = terrain;
+                }
+            }
+
+            // 核心工事 (田花园指挥部)
+            setTerrain(4, 3, TERRAIN.CORE_BUNKER);
+
+            // 土围墙 - 围绕核心工事
+            [
+                [3, 2],
+                [4, 2],
+                [5, 2],
+                [3, 3],
+                [5, 3],
+                [3, 4],
+                [4, 4],
+                [5, 4]
+            ].forEach(([c, r]) => setTerrain(c, r, TERRAIN.EARTH_WALL));
+
+            // 堑壕 - 环形防御带
+            [
+                [2, 1],
+                [3, 1],
+                [4, 1],
+                [5, 1],
+                [6, 1],
+                [2, 2],
+                [6, 2],
+                [2, 3],
+                [6, 3],
+                [2, 4],
+                [6, 4],
+                [3, 5],
+                [4, 5],
+                [5, 5]
+            ].forEach(([c, r]) => setTerrain(c, r, TERRAIN.TRENCH));
+
+            // 鹿砦 - 外围障碍
+            [
+                [1, 0],
+                [2, 0],
+                [3, 0],
+                [4, 0],
+                [5, 0],
+                [6, 0],
+                [0, 1],
+                [1, 1],
+                [7, 1],
+                [0, 2],
+                [7, 2],
+                [1, 5],
+                [2, 5],
+                [6, 5],
+                [7, 5],
+                [0, 3],
+                [8, 3],
+                [0, 4],
+                [8, 4]
+            ].forEach(([c, r]) => setTerrain(c, r, TERRAIN.ABATIS));
+
+            // ==================== 全局战役状态 ====================
+            const globalState = {
+                stamina: 22, // 部队体力 0-100
+                cohesion: 55, // 编制完整度 %
+                fortification: 3, // 敌工事强度（需打击次数）
+                enemyReinforce: 8, // 敌军增援剩余回合
+                isBroken: false,
+                missionAccomplished: false,
+                missionFailed: false,
+                gameOver: false,
+                nightOpsActive: true, // 夜战加成（前3回合）
+            };
+
+            function getCollapseRisk() {
+                if (globalState.isBroken) return { lv: '已崩溃', prob: 1, desc: '部队已失去战斗力' };
+                const s = globalState.stamina;
+                const c = globalState.cohesion;
+                let prob = 0;
+                let lv = '低';
+                if (s <= 3) { prob = 0.75;
+                    lv = '极高'; } else if (s <= 8) { prob = 0.5 + (c <= 30 ? 0.15 : 0);
+                    lv = '高'; } else if (s <= 12) { prob = 0.3;
+                    lv = '中等偏高'; } else if (s <= 18) { prob = 0.15;
+                    lv = '中等'; } else if (s <= 25) { prob = 0.06;
+                    lv = '中等'; } else { prob = 0.02;
+                    lv = '低'; }
+                return { lv, prob, desc: prob >= 0.5 ? '极可能崩溃' : prob >= 0.2 ? '显著风险' : prob >= 0.06 ?
+                    '一定风险' : '风险较低' };
+            }
+
+            function getStaminaPenalty() {
+                const s = globalState.stamina;
+                if (s <= 5) return { hitPenalty: -15, movePenalty: 2, name: '濒临极限' };
+                if (s <= 12) return { hitPenalty: -8, movePenalty: 1, name: '极度疲惫' };
+                if (s <= 20) return { hitPenalty: -3, movePenalty: 0, name: '相当疲惫' };
+                if (s <= 30) return { hitPenalty: 0, movePenalty: 0, name: '略感疲惫' };
+                return { hitPenalty: 3, movePenalty: 0, name: '状态良好' };
+            }
+
+            // ==================== 单位类 ====================
+            class Unit {
+                constructor(id, name, side, col, row, hp, attack, defense, moveRange, attackRange, special = null) {
+                    this.id = id;
+                    this.name = name;
+                    this.side = side;
+                    this.col = col;
+                    this.row = row;
+                    this.maxHp = hp;
+                    this.hp = hp;
+                    this.baseAttack = attack;
+                    this.baseDefense = defense;
+                    this.baseMoveRange = moveRange;
+                    this.attackRange = attackRange;
+                    this.special = special;
+                    this.hasActed = false;
+                    this.revealed = (side === 'pla');
+                    this.alive = true;
+                }
+                get effectiveMoveRange() {
+                    const penalty = getStaminaPenalty();
+                    return Math.max(1, this.baseMoveRange - penalty.movePenalty);
+                }
+                get effectiveAttack() {
+                    const penalty = getStaminaPenalty();
+                    return Math.max(0, this.baseAttack + Math.floor(penalty.hitPenalty / 8));
+                }
+                getTerrainDefense() {
+                    return TERRAIN_PROPS[mapTerrain[this.row][this.col]].defenseBonus;
+                }
+                isInFullCover() {
+                    return TERRAIN_PROPS[mapTerrain[this.row][this.col]].fullCover === true;
+                }
+                get currentHpFromCohesion() {
+                    // 编制影响实际血量
+                    const ratio = globalState.cohesion / 100;
+                    return Math.max(1, Math.round(this.maxHp * ratio));
+                }
+            }
+
+            // ==================== 游戏状态 ====================
+            let units = [];
+            let selectedUnitId = null;
+            let moveCandidates = new Set();
+            let attackCandidates = new Set();
+            let currentTurn = 1;
+            let phase = 'player';
+            let logMessages = [];
+
+            function getUnitKey(col, row) { return `${col},${row}`; }
+
+            function getUnitAt(col, row) {
+                return units.find(u => u.alive && u.col === col && u.row === row);
+            }
+
+            function getPlayerUnits() { return units.filter(u => u.alive && u.side === 'pla'); }
+
+            function getNationalistUnits() { return units.filter(u => u.alive && u.side === 'nationalist'); }
+
+            function getReadyPlayerUnits() { return units.filter(u => u.alive && u.side === 'pla' && !u.hasActed); }
+
+            // ==================== 六边形坐标工具 ====================
+            function hexCenter(col, row) {
+                let x = PADDING_X + col * COL_SPACING + HEX_SIZE;
+                if (row % 2 === 1) x += ODD_ROW_OFFSET;
+                let y = PADDING_Y + row * ROW_SPACING + HEX_HEIGHT / 2;
+                return { x, y };
+            }
+
+            function hexVertices(cx, cy, size) {
+                const verts = [];
+                for (let i = 0; i < 6; i++) {
+                    const angleRad = Math.PI / 180 * (60 * i);
+                    verts.push({ x: cx + size * Math.cos(angleRad), y: cy + size * Math.sin(angleRad) });
+                }
+                return verts;
+            }
+
+            function pixelToHex(mx, my) {
+                let best = null;
+                let bestDist = Infinity;
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const { x: cx, y: cy } = hexCenter(c, r);
+                        const dx = Math.abs(mx - cx);
+                        const dy = Math.abs(my - cy);
+                        if (dx > HEX_SIZE || dy > HEX_HEIGHT / 2) continue;
+                        if (dx > HEX_SIZE / 2) {
+                            if (dy > (HEX_SIZE - dx) * SQRT3) continue;
+                        }
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < bestDist) { bestDist = dist;
+                            best = { col: c, row: r }; }
+                    }
+                }
+                return best;
+            }
+
+            function getNeighbors(col, row) {
+                const neighbors = [];
+                const isOdd = row % 2 === 1;
+                const offsets = isOdd ?
+                    [
+                        [0, -1],
+                        [1, -1],
+                        [1, 0],
+                        [1, 1],
+                        [0, 1],
+                        [-1, 0]
+                    ] :
+                    [
+                        [-1, -1],
+                        [0, -1],
+                        [1, 0],
+                        [0, 1],
+                        [-1, 1],
+                        [-1, 0]
+                    ];
+                offsets.forEach(([dc, dr]) => {
+                    const nc = col + dc;
+                    const nr = row + dr;
+                    if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) neighbors.push({ col: nc, row: nr });
+                });
+                return neighbors;
+            }
+
+            function hexDistance(c1, r1, c2, r2) {
+                function toCube(col, row) {
+                    const q = col - (row - (row & 1)) / 2;
+                    const r = row;
+                    const s = -q - r;
+                    return { q, r, s };
+                }
+                const a = toCube(c1, r1);
+                const b = toCube(c2, r2);
+                return Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r), Math.abs(a.s - b.s));
+            }
+
+            // ==================== 移动与攻击范围 ====================
+            function getMoveRange(unit) {
+                const reachable = new Map();
+                const startKey = getUnitKey(unit.col, unit.row);
+                const queue = [{ col: unit.col, row: unit.row, remaining: unit.effectiveMoveRange }];
+                reachable.set(startKey, unit.effectiveMoveRange);
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    const neighbors = getNeighbors(current.col, current.row);
+                    for (const n of neighbors) {
+                        const nKey = getUnitKey(n.col, n.row);
+                        const occupant = getUnitAt(n.col, n.row);
+                        if (occupant && occupant.id !== unit.id) continue;
+                        const terrain = mapTerrain[n.row][n.col];
+                        if (terrain === TERRAIN.CORE_BUNKER && unit.special !== 'sapper') continue;
+                        const moveCost = TERRAIN_PROPS[terrain].moveCost;
+                        const newRemaining = current.remaining - moveCost;
+                        if (newRemaining < 0) continue;
+                        if (!reachable.has(nKey) || reachable.get(nKey) < newRemaining) {
+                            reachable.set(nKey, newRemaining);
+                            if (newRemaining > 0) queue.push({ col: n.col, row: n.row, remaining: newRemaining });
+                        }
+                    }
+                }
+                reachable.delete(startKey);
+                return reachable;
+            }
+
+            function getAttackTargets(unit) {
+                const targets = new Set();
+                const range = unit.attackRange;
+                for (const enemy of getNationalistUnits()) {
+                    if (!enemy.alive || !enemy.revealed) continue;
+                    const dist = hexDistance(unit.col, unit.row, enemy.col, enemy.row);
+                    if (dist <= range) {
+                        if (enemy.isInFullCover() && dist > 1) continue;
+                        targets.add(getUnitKey(enemy.col, enemy.row));
+                    }
+                }
+                return targets;
+            }
+
+            // ==================== 战斗结算 ====================
+            function resolveCombat(attacker, defender) {
+                let hitChance = 50;
+                hitChance += attacker.effectiveAttack * 8;
+                // 夜战加成
+                if (attacker.side === 'pla' && globalState.nightOpsActive && attacker.special === 'night_ops') {
+                    hitChance += 15;
+                }
+                // 全局体力惩罚
+                hitChance += getStaminaPenalty().hitPenalty;
+                // 防御方地形
+                const defBonus = defender.getTerrainDefense();
+                hitChance -= defBonus * 10;
+                // 距离惩罚
+                const dist = hexDistance(attacker.col, attacker.row, defender.col, defender.row);
+                if (dist > 1) hitChance -= (dist - 1) * 5;
+
+                hitChance = Math.max(5, Math.min(95, hitChance));
+                const roll = Math.floor(Math.random() * 100) + 1;
+                const hit = roll <= hitChance;
+
+                let damage = 0;
+                let resultText = '';
+                if (hit) {
+                    if (attacker.special === 'sapper' &&
+                        (defender.isInFullCover() || mapTerrain[defender.row][defender.col] === TERRAIN
+                            .EARTH_WALL)) {
+                        damage = defender.hp;
+                        resultText = '💥 爆破成功！工事被摧毁！';
+                    } else {
+                        damage = 1;
+                        if (roll <= hitChance * 0.3) damage = Math.min(2, defender.hp);
+                        resultText = damage >= 2 ? '🎯 重创目标！' : '✅ 命中！';
+                    }
+                } else {
+                    resultText = '❌ 未命中';
+                }
+
+                defender.hp -= damage;
+                if (defender.hp <= 0) {
+                    defender.alive = false;
+                    defender.hp = 0;
+                    resultText += ' 敌军被消灭！';
+                }
+
+                // 爆破组攻击工事自身受损
+                if (attacker.special === 'sapper' && hit &&
+                    (defender.isInFullCover() || mapTerrain[defender.row][defender.col] === TERRAIN.EARTH_WALL)) {
+                    attacker.hp -= 1;
+                    if (attacker.hp <= 0) {
+                        attacker.alive = false;
+                        attacker.hp = 0;
+                        resultText += ' (爆破组英勇牺牲)';
+                    }
+                }
+
+                // 如果目标是核心工事守军且被消灭，降低工事强度
+                if (!defender.alive && defender.isInFullCover()) {
+                    globalState.fortification = Math.max(0, globalState.fortification - 1);
+                    addLog(`🏰 核心工事守军被消灭！敌工事强度 -1（剩余${globalState.fortification}/3）`, 'urgent');
+                }
+
+                const logType = hit ? 'hit' : 'miss';
+                addLog(`${attacker.name} → ${defender.name}：${resultText} (命中率${hitChance}%, 掷出${roll})`,
+                logType);
+
+                return { hit, damage, resultText };
+            }
+
+            // ==================== 全局消耗与崩溃检查 ====================
+            function applyGlobalStaminaCost(amount) {
+                globalState.stamina = Math.max(0, globalState.stamina - amount);
+                checkCollapse();
+            }
+
+            function applyCohesionLoss(amount) {
+                globalState.cohesion = Math.max(10, globalState.cohesion - amount);
+                // 更新所有玩家单位的血量上限
+                for (const u of getPlayerUnits()) {
+                    const newMax = u.currentHpFromCohesion;
+                    if (u.hp > newMax) u.hp = newMax;
+                    u.maxHp = newMax;
+                }
+            }
+
+            function checkCollapse() {
+                if (globalState.isBroken || globalState.gameOver) return;
+                const risk = getCollapseRisk();
+                if (Math.random() < risk.prob && risk.prob >= 0.2) {
+                    globalState.isBroken = true;
+                    globalState.missionFailed = true;
+                    globalState.gameOver = true;
+                    phase = 'game_over';
+                    addLog('💔 部队在攻坚中崩溃！各团失联，攻势瓦解。', 'urgent');
+                    showOverlay('🕯️', '部队崩溃',
+                        '十二师在攻坚中耗尽最后的力量。<br>田花园未能攻克，攻势瓦解。<br>这就是豫东战役的真实代价。');
+                    updateAll();
+                    return true;
+                }
+                return false;
+            }
+
+            function showOverlay(icon, title, desc) {
+                document.getElementById('overlayIcon').textContent = icon;
+                document.getElementById('overlayTitle').textContent = title;
+                document.getElementById('overlayDesc').innerHTML = desc;
+                document.getElementById('overlay').classList.add('visible');
+            }
+
+            function hideOverlay() {
+                document.getElementById('overlay').classList.remove('visible');
+            }
+
+            // ==================== 日志系统 ====================
+            function addLog(msg, type = 'info') {
+                logMessages.push({ msg, type, turn: currentTurn });
+                if (logMessages.length > 50) logMessages.shift();
+                updateLogDisplay();
+            }
+
+            function updateLogDisplay() {
+                const logArea = document.getElementById('logArea');
+                const recentLogs = logMessages.slice(-10);
+                logArea.innerHTML = recentLogs.map(l =>
+                    `<div class="log-line ${l.type}">[T${l.turn}] ${l.msg}</div>`
+                ).join('');
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+
+            // ==================== 渲染 ====================
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+
+            function drawHexagon(cx, cy, size, fillColor, strokeColor, lineWidth = 2) {
+                const verts = hexVertices(cx, cy, size);
+                ctx.beginPath();
+                ctx.moveTo(verts[0].x, verts[0].y);
+                for (let i = 1; i < 6; i++) ctx.lineTo(verts[i].x, verts[i].y);
+                ctx.closePath();
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+
+            function drawTerrainIcon(cx, cy, terrain) {
+                const props = TERRAIN_PROPS[terrain];
+                if (props.icon) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                    ctx.font = `${HEX_SIZE*0.6}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(props.icon, cx, cy);
+                }
+                if (terrain === TERRAIN.ABATIS) {
+                    ctx.strokeStyle = 'rgba(180,140,100,0.5)';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < 3; i++) {
+                        const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.3;
+                        const sx = cx + Math.cos(angle) * HEX_SIZE * 0.25;
+                        const sy = cy + Math.sin(angle) * HEX_SIZE * 0.25;
+                        const ex = cx + Math.cos(angle) * HEX_SIZE * 0.65;
+                        const ey = cy + Math.sin(angle) * HEX_SIZE * 0.65;
+                        ctx.beginPath();
+                        ctx.moveTo(sx, sy);
+                        ctx.lineTo(ex, ey);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            function drawUnitOnHex(cx, cy, unit, size) {
+                if (!unit.alive) return;
+                const r = size * 0.5;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                if (unit.side === 'pla') {
+                    ctx.fillStyle = '#3a1a10';
+                    ctx.strokeStyle = '#c44b3c';
+                } else {
+                    ctx.fillStyle = '#0a1a2a';
+                    ctx.strokeStyle = '#4a80b4';
+                }
+                ctx.lineWidth = 2.5;
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = unit.side === 'pla' ? '#f0c0a0' : '#a0c8f0';
+                ctx.font = `bold ${r*1.1}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                let symbol = '●';
+                if (unit.special === 'sapper') symbol = '💣';
+                else if (unit.attackRange >= 2) symbol = '⊕';
+                else if (unit.special === 'night_ops') symbol = '▲';
+                ctx.fillText(symbol, cx, cy);
+
+                if (unit.maxHp > 1) {
+                    const barWidth = r * 1.4;
+                    const barHeight = 4;
+                    const barY = cy - r - 7;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(cx - barWidth / 2, barY, barWidth, barHeight);
+                    const hpRatio = unit.hp / unit.maxHp;
+                    ctx.fillStyle = hpRatio > 0.5 ? '#5a5' : '#e55';
+                    ctx.fillRect(cx - barWidth / 2, barY, barWidth * hpRatio, barHeight);
+                }
+
+                if (unit.hasActed && unit.side === 'pla') {
+                    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `bold ${r*0.7}px sans-serif`;
+                    ctx.fillText('✓', cx, cy);
+                }
+            }
+
+            function render() {
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const { x: cx, y: cy } = hexCenter(c, r);
+                        const terrain = mapTerrain[r][c];
+                        const props = TERRAIN_PROPS[terrain];
+                        const key = getUnitKey(c, r);
+                        let fillColor = props.fillColor;
+                        let strokeColor = 'rgba(60,50,40,0.6)';
+                        let strokeWidth = 1.5;
+
+                        if (moveCandidates.has(key)) {
+                            fillColor = 'rgba(70,130,200,0.35)';
+                            strokeColor = 'rgba(100,170,240,0.9)';
+                            strokeWidth = 3;
+                        }
+                        if (attackCandidates.has(key)) {
+                            fillColor = 'rgba(220,80,60,0.4)';
+                            strokeColor = 'rgba(250,100,70,0.9)';
+                            strokeWidth = 3;
+                        }
+                        if (selectedUnitId !== null) {
+                            const selUnit = units.find(u => u.id === selectedUnitId);
+                            if (selUnit && selUnit.col === c && selUnit.row === r) {
+                                strokeColor = '#f0c040';
+                                strokeWidth = 4;
+                            }
+                        }
+                        drawHexagon(cx, cy, HEX_SIZE, fillColor, strokeColor, strokeWidth);
+                        drawTerrainIcon(cx, cy, terrain);
+                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.font = '8px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(`${c},${r}`, cx, cy - HEX_SIZE * 0.72);
+                    }
+                }
+
+                for (const unit of units) {
+                    if (!unit.alive) continue;
+                    if (unit.side === 'nationalist' && !unit.revealed) continue;
+                    const { x: cx, y: cy } = hexCenter(unit.col, unit.row);
+                    drawUnitOnHex(cx, cy, unit, HEX_SIZE);
+                }
+
+                for (const unit of units) {
+                    if (!unit.alive || unit.side !== 'nationalist' || unit.revealed) continue;
+                    const { x: cx, y: cy } = hexCenter(unit.col, unit.row);
+                    ctx.fillStyle = 'rgba(200,80,50,0.7)';
+                    ctx.font = `bold ${HEX_SIZE*0.85}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('?', cx, cy);
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, HEX_SIZE * 0.4, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(200,80,60,0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                if (globalState.gameOver && !globalState.missionFailed && !globalState.isBroken) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                    ctx.fillStyle = '#f0c040';
+                    ctx.font = 'bold 32px "Noto Serif SC", serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🏆 胜利！田花园已攻克！', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 10);
+                    ctx.fillStyle = '#e0d5c1';
+                    ctx.font = '16px "Noto Serif SC", serif';
+                    ctx.fillText('帝丘店门户洞开，但代价惨重…', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
+                }
+            }
+
+            // ==================== UI更新 ====================
+            function updateUnitCards() {
+                const container = document.getElementById('unitCardsContainer');
+                const playerUnits = getPlayerUnits();
+                let html =
+                    '<div style="font-size:0.7em;color:var(--ink-muted);margin-bottom:3px;">🏴 华东野战军单位</div>';
+                playerUnits.forEach(u => {
+                    const selClass = u.id === selectedUnitId ? ' selected' : '';
+                    const actedClass = u.hasActed ? ' acted' : '';
+                    const actedLabel = u.hasActed ? ' (已行动)' : '';
+                    const hpDots = Array.from({ length: u.maxHp }, (_, i) =>
+                        `<span class="hp-dot${i >= u.hp ? ' lost' : ''}"></span>`
+                    ).join('');
+                    html += `
+                <div class="unit-card${selClass}${actedClass}" data-unit-id="${u.id}">
+                  <div class="icon pla">${u.special==='sapper'?'💣':u.attackRange>=2?'⊕':'▲'}</div>
+                  <div class="info">
+                    <div class="name">${u.name}${actedLabel}</div>
+                    <div class="stats">攻${u.effectiveAttack} 防${u.baseDefense} 移${u.effectiveMoveRange} 射${u.attackRange}</div>
+                  </div>
+                  <div class="hp-dots">${hpDots}</div>
+                </div>`;
+                });
+                container.innerHTML = html;
+                container.querySelectorAll('.unit-card:not(.acted)').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const uid = parseInt(card.dataset.unitId);
+                        selectUnit(uid);
+                    });
+                });
+            }
+
+            function updateGlobalPanel() {
+                const s = globalState;
+                document.getElementById('staminaText').textContent = `${Math.round(s.stamina)}/100`;
+                document.getElementById('staminaBar').style.width = `${Math.round(s.stamina)}%`;
+                document.getElementById('cohesionText').textContent = `${Math.round(s.cohesion)}%`;
+                document.getElementById('cohesionBar').style.width = `${Math.round(s.cohesion)}%`;
+                document.getElementById('fortText').textContent = `${s.fortification}/3`;
+                document.getElementById('fortBar').style.width = `${(s.fortification/3)*100}%`;
+                document.getElementById('reinforceText').textContent =
+                    `约${Math.max(0, s.enemyReinforce)}小时`;
+                const risk = getCollapseRisk();
+                document.getElementById('riskText').textContent = `崩溃风险：${risk.lv}`;
+                if (risk.lv === '极高' || risk.lv === '高') {
+                    document.getElementById('riskText').style.color = '#a04030';
+                } else if (risk.lv === '中等偏高' || risk.lv === '中等') {
+                    document.getElementById('riskText').style.color = '#9e7a40';
+                } else {
+                    document.getElementById('riskText').style.color = '#6b6050';
+                }
+            }
+
+            function updateAll() {
+                document.getElementById('turnDisplay').textContent = `第${currentTurn}回合 / ${MAX_TURNS}`;
+                const phaseEl = document.getElementById('phaseDisplay');
+                if (globalState.gameOver) {
+                    if (globalState.missionAccomplished) {
+                        phaseEl.textContent = '🏆 胜利';
+                        phaseEl.className = 'value success';
+                    } else {
+                        phaseEl.textContent = '💀 失败';
+                        phaseEl.className = 'value danger';
+                    }
+                } else if (phase === 'player') {
+                    const timeDesc = getTimeDesc();
+                    phaseEl.textContent = `🏴 ${timeDesc} · 玩家行动`;
+                    phaseEl.className = 'value';
+                } else {
+                    phaseEl.textContent = '🟦 敌军行动中…';
+                    phaseEl.className = 'value';
+                }
+                const readyCount = getReadyPlayerUnits().length;
+                document.getElementById('readyUnits').textContent = readyCount;
+                document.getElementById('readyUnits').className = 'value ' + (readyCount > 0 ? 'success' :
+                'danger');
+                document.getElementById('btnEndTurn').disabled = (phase !== 'player' || globalState.gameOver);
+                updateGlobalPanel();
+                updateUnitCards();
+                updateLogDisplay();
+            }
+
+            function getTimeDesc() {
+                const turnHour = 5 + currentTurn - 1; // 从拂晓5点开始
+                if (turnHour >= 4 && turnHour < 6) return '拂晓';
+                if (turnHour >= 6 && turnHour < 8) return '清晨';
+                if (turnHour >= 8 && turnHour < 11) return '上午';
+                if (turnHour >= 11 && turnHour < 13) return '正午';
+                return '午后';
+            }
+
+            // ==================== 选择与行动 ====================
+            function selectUnit(unitId) {
+                if (phase !== 'player' || globalState.gameOver) return;
+                const unit = units.find(u => u.id === unitId);
+                if (!unit || !unit.alive || unit.side !== 'pla') return;
+                if (unit.hasActed) {
+                    selectedUnitId = null;
+                    moveCandidates.clear();
+                    attackCandidates.clear();
+                    addLog(`${unit.name} 本回合已行动完毕`, 'info');
+                    render();
+                    updateAll();
+                    return;
+                }
+                if (selectedUnitId === unitId) {
+                    selectedUnitId = null;
+                    moveCandidates.clear();
+                    attackCandidates.clear();
+                } else {
+                    selectedUnitId = unitId;
+                    const reachable = getMoveRange(unit);
+                    moveCandidates.clear();
+                    attackCandidates.clear();
+                    reachable.forEach((_, key) => moveCandidates.add(key));
+                    const targets = getAttackTargets(unit);
+                    targets.forEach(key => attackCandidates.add(key));
+                }
+                render();
+                updateAll();
+            }
+
+            function moveUnit(unit, targetCol, targetRow) {
+                const key = getUnitKey(targetCol, targetRow);
+                if (!moveCandidates.has(key)) return false;
+                unit.col = targetCol;
+                unit.row = targetRow;
+                moveCandidates.clear();
+                attackCandidates.clear();
+                const targets = getAttackTargets(unit);
+                targets.forEach(k => attackCandidates.add(k));
+                // 移动消耗全局体力
+                applyGlobalStaminaCost(2);
+                addLog(`${unit.name} 移动到 (${targetCol},${targetRow})`, 'info');
+                render();
+                updateAll();
+                return true;
+            }
+
+            function attackUnit(attacker, targetCol, targetRow) {
+                const key = getUnitKey(targetCol, targetRow);
+                if (!attackCandidates.has(key)) return false;
+                const defender = getUnitAt(targetCol, targetRow);
+                if (!defender || !defender.alive) return false;
+                const result = resolveCombat(attacker, defender);
+                attacker.hasActed = true;
+                selectedUnitId = null;
+                moveCandidates.clear();
+                attackCandidates.clear();
+                defender.revealed = true;
+                // 攻击消耗全局体力和编制
+                applyGlobalStaminaCost(4);
+                applyCohesionLoss(3 + Math.floor(Math.random() * 6));
+                checkVictoryConditions();
+                render();
+                updateAll();
+                return true;
+            }
+
+            function endPlayerTurn() {
+                if (phase !== 'player' || globalState.gameOver) return;
+                getPlayerUnits().forEach(u => { u.hasActed = true; });
+                selectedUnitId = null;
+                moveCandidates.clear();
+                attackCandidates.clear();
+                render();
+                updateAll();
+                addLog('⏰ 玩家回合结束，敌军开始行动…', 'info');
+                phase = 'ai';
+                updateAll();
+                setTimeout(runAiTurn, 500);
+            }
+
+            // ==================== AI逻辑 ====================
+            function runAiTurn() {
+                if (globalState.gameOver) return;
+                const nationalistUnits = getNationalistUnits();
+                const playerUnits = getPlayerUnits();
+
+                // 揭示规则
+                for (const nu of nationalistUnits) {
+                    if (nu.revealed) continue;
+                    for (const pu of playerUnits) {
+                        if (hexDistance(pu.col, pu.row, nu.col, nu.row) <= 3) {
+                            nu.revealed = true;
+                            addLog(`👁 侦察发现：${nu.name} 在 (${nu.col},${nu.row})！`, 'info');
+                            break;
+                        }
+                    }
+                }
+
+                for (const nu of nationalistUnits) {
+                    if (!nu.alive || !nu.revealed) continue;
+                    const targetsInRange = playerUnits.filter(pu => {
+                        const dist = hexDistance(nu.col, nu.row, pu.col, pu.row);
+                        if (dist > nu.attackRange) return false;
+                        if (pu.isInFullCover() && dist > 1) return false;
+                        return true;
+                    });
+
+                    if (targetsInRange.length > 0) {
+                        targetsInRange.sort((a, b) => {
+                            const pa = (a.special === 'sapper' ? 10 : 0) + (a.hp <= 1 ? 5 : 0) + a
+                                .baseAttack;
+                            const pb = (b.special === 'sapper' ? 10 : 0) + (b.hp <= 1 ? 5 : 0) + b
+                                .baseAttack;
+                            return pb - pa;
+                        });
+                        const target = targetsInRange[0];
+                        resolveCombat(nu, target);
+                        if (getPlayerUnits().length === 0) {
+                            globalState.missionFailed = true;
+                            globalState.gameOver = true;
+                            phase = 'game_over';
+                            showOverlay('💀', '任务失败', '所有突击部队已损失，进攻失败。');
+                            render();
+                            updateAll();
+                            return;
+                        }
+                    } else if (nu.moveRange > 0) {
+                        let bestTarget = null;
+                        let bestDist = Infinity;
+                        for (const pu of playerUnits) {
+                            const dist = hexDistance(nu.col, nu.row, pu.col, pu.row);
+                            if (dist < bestDist) { bestDist = dist;
+                                bestTarget = pu; }
+                        }
+                        if (bestTarget && bestDist <= 8) {
+                            const neighbors = getNeighbors(nu.col, nu.row);
+                            let bestNeighbor = null;
+                            let bestNewDist = bestDist;
+                            for (const n of neighbors) {
+                                const occupant = getUnitAt(n.col, n.row);
+                                if (occupant) continue;
+                                if (mapTerrain[n.row][n.col] === TERRAIN.CORE_BUNKER) continue;
+                                const newDist = hexDistance(n.col, n.row, bestTarget.col, bestTarget.row);
+                                if (newDist < bestNewDist) { bestNewDist = newDist;
+                                    bestNeighbor = n; }
+                            }
+                            if (bestNeighbor) {
+                                nu.col = bestNeighbor.col;
+                                nu.row = bestNeighbor.row;
+                                addLog(`${nu.name} 向玩家单位移动`, 'info');
+                            }
+                        }
+                    }
+                }
+
+                addLog('🟦 敌军回合结束', 'info');
+                currentTurn++;
+                globalState.enemyReinforce = Math.max(0, globalState.enemyReinforce - 1);
+                // 夜战加成检查
+                globalState.nightOpsActive = (currentTurn <= 3);
+                if (currentTurn === 4) {
+                    addLog('☀️ 天色渐亮，夜战加成失效。', 'info');
+                }
+                getPlayerUnits().forEach(u => { u.hasActed = false; });
+                phase = 'player';
+                selectedUnitId = null;
+                moveCandidates.clear();
+                attackCandidates.clear();
+
+                // 被动体力衰减
+                globalState.stamina = Math.max(0, globalState.stamina - 1);
+
+                // 检查增援到达
+                if (globalState.enemyReinforce <= 0 && !globalState.missionAccomplished && !globalState.gameOver) {
+                    globalState.missionFailed = true;
+                    globalState.gameOver = true;
+                    phase = 'game_over';
+                    addLog('💥 敌军增援已抵达田花园！我部被反包围，任务失败。', 'urgent');
+                    showOverlay('💥', '任务失败', '敌军增援抵达，田花园仍在敌手。<br>黄百韬防线稳固，阻击任务未能完成。');
+                }
+
+                if (currentTurn > MAX_TURNS && !globalState.gameOver) {
+                    const coreCtrl = getPlayerUnits().some(u =>
+                        mapTerrain[u.row][u.col] === TERRAIN.CORE_BUNKER
+                    );
+                    if (coreCtrl) {
+                        globalState.missionAccomplished = true;
+                        globalState.gameOver = true;
+                        phase = 'game_over';
+                        addLog('🏆 成功占领田花园核心工事！帝丘店门户洞开！', 'urgent');
+                        showOverlay('🚩', '惨胜----田花园攻克',
+                            '四纵十二师以巨大伤亡撕开了黄百韬防线。<br>任务完成，但部队已基本打残。<br>这就是豫东战役的真实代价。');
+                    } else {
+                        globalState.missionFailed = true;
+                        globalState.gameOver = true;
+                        phase = 'game_over';
+                        addLog('💀 天色已亮，未能攻克田花园，敌军增援将至…', 'urgent');
+                        showOverlay('💀', '任务失败', '田花园仍在敌手。<br>天色已亮，进攻窗口已关闭。');
+                    }
+                }
+
+                checkCollapse();
+                checkVictoryConditions();
+                render();
+                updateAll();
+            }
+
+            function checkVictoryConditions() {
+                if (globalState.gameOver) return;
+                const nationalistAlive = getNationalistUnits();
+                const playerAlive = getPlayerUnits();
+
+                if (playerAlive.length === 0 && !globalState.gameOver) {
+                    globalState.missionFailed = true;
+                    globalState.gameOver = true;
+                    phase = 'game_over';
+                    addLog('💀 我军全部牺牲…', 'urgent');
+                    showOverlay('💀', '任务失败', '所有突击部队已损失，进攻失败。');
+                    return;
+                }
+
+                if (nationalistAlive.length === 0 && !globalState.gameOver) {
+                    globalState.missionAccomplished = true;
+                    globalState.gameOver = true;
+                    phase = 'game_over';
+                    addLog('🏆 田花园敌军已全部消灭！', 'urgent');
+                    showOverlay('🏆', '胜利！',
+                        '田花园敌军全部肃清！<br>帝丘店门户洞开，黄百韬防线崩溃！');
+                    return;
+                }
+
+                const coreOccupied = playerAlive.some(u =>
+                    u.alive && mapTerrain[u.row][u.col] === TERRAIN.CORE_BUNKER
+                );
+                if (coreOccupied && globalState.fortification <= 0 && !globalState.gameOver) {
+                    globalState.missionAccomplished = true;
+                    globalState.gameOver = true;
+                    phase = 'game_over';
+                    addLog('🏆 核心工事已在我军控制之下！', 'urgent');
+                    showOverlay('🚩', '惨胜----田花园攻克',
+                        '已占领田花园核心指挥部！<br>黄百韬防线崩溃，但十二师付出了惨重代价。');
+                    return;
+                }
+            }
+
+            // ==================== 事件处理 ====================
+            canvas.addEventListener('click', (e) => {
+                if (globalState.gameOver) return;
+                if (phase !== 'player') return;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = CANVAS_WIDTH / rect.width;
+                const scaleY = CANVAS_HEIGHT / rect.height;
+                const mx = (e.clientX - rect.left) * scaleX;
+                const my = (e.clientY - rect.top) * scaleY;
+                const hex = pixelToHex(mx, my);
+                if (!hex) return;
+                const { col, row } = hex;
+                const clickedUnit = getUnitAt(col, row);
+                const key = getUnitKey(col, row);
+
+                if (selectedUnitId !== null) {
+                    const selUnit = units.find(u => u.id === selectedUnitId);
+                    if (selUnit && selUnit.alive && !selUnit.hasActed) {
+                        if (attackCandidates.has(key) && clickedUnit && clickedUnit.side === 'nationalist' &&
+                            clickedUnit.revealed) {
+                            attackUnit(selUnit, col, row);
+                            return;
+                        }
+                        if (moveCandidates.has(key) && !clickedUnit) {
+                            moveUnit(selUnit, col, row);
+                            return;
+                        }
+                        if (clickedUnit && clickedUnit.side === 'pla' && clickedUnit.id !== selectedUnitId) {
+                            selectUnit(clickedUnit.id);
+                            return;
+                        }
+                        if (clickedUnit && clickedUnit.id === selectedUnitId) {
+                            selectUnit(selectedUnitId);
+                            return;
+                        }
+                    }
+                }
+                if (clickedUnit && clickedUnit.side === 'pla' && clickedUnit.alive && !clickedUnit.hasActed) {
+                    selectUnit(clickedUnit.id);
+                    return;
+                }
+                if (!clickedUnit && selectedUnitId !== null) {
+                    selectedUnitId = null;
+                    moveCandidates.clear();
+                    attackCandidates.clear();
+                    render();
+                    updateAll();
+                }
+            });
+
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (selectedUnitId !== null) {
+                    selectedUnitId = null;
+                    moveCandidates.clear();
+                    attackCandidates.clear();
+                    render();
+                    updateAll();
+                }
+            });
+
+            // 移动端触摸支持
+            canvas.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = CANVAS_WIDTH / rect.width;
+                    const scaleY = CANVAS_HEIGHT / rect.height;
+                    const mx = (touch.clientX - rect.left) * scaleX;
+                    const my = (touch.clientY - rect.top) * scaleY;
+                    const hex = pixelToHex(mx, my);
+                    if (hex) {
+                        canvas._touchHex = hex;
+                    }
+                }
+            });
+
+            canvas.addEventListener('touchend', function() {
+                if (canvas._touchHex && !globalState.gameOver && phase === 'player') {
+                    const { col, row } = canvas._touchHex;
+                    const clickedUnit = getUnitAt(col, row);
+                    const key = getUnitKey(col, row);
+                    if (selectedUnitId !== null) {
+                        const selUnit = units.find(u => u.id === selectedUnitId);
+                        if (selUnit && selUnit.alive && !selUnit.hasActed) {
+                            if (attackCandidates.has(key) && clickedUnit && clickedUnit.side ===
+                                'nationalist' && clickedUnit.revealed) {
+                                attackUnit(selUnit, col, row);
+                                canvas._touchHex = null;
+                                return;
+                            }
+                            if (moveCandidates.has(key) && !clickedUnit) {
+                                moveUnit(selUnit, col, row);
+                                canvas._touchHex = null;
+                                return;
+                            }
+                            if (clickedUnit && clickedUnit.side === 'pla' && clickedUnit.id !==
+                                selectedUnitId) {
+                                selectUnit(clickedUnit.id);
+                                canvas._touchHex = null;
+                                return;
+                            }
+                        }
+                    }
+                    if (clickedUnit && clickedUnit.side === 'pla' && clickedUnit.alive && !clickedUnit.hasActed) {
+                        selectUnit(clickedUnit.id);
+                    }
+                }
+                canvas._touchHex = null;
+            });
+
+            document.getElementById('btnEndTurn').addEventListener('click', endPlayerTurn);
+            document.getElementById('btnReset').addEventListener('click', resetGame);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                    endPlayerTurn();
+                } else if (e.key === 'Escape') {
+                    selectedUnitId = null;
+                    moveCandidates.clear();
+                    attackCandidates.clear();
+                    render();
+                    updateAll();
+                }
+            });
+
+            // ==================== 游戏初始化与重置 ====================
+            function initUnits() {
+                units = [
+                    new Unit(1, '突击排(三营七连)', 'pla', 0, 3, 2, 3, 1, 6, 1, 'night_ops'),
+                    new Unit(2, '机枪/迫击炮排', 'pla', 0, 2, 2, 2, 0, 4, 2, 'support'),
+                    new Unit(3, '爆破组(工兵)', 'pla', 1, 3, 1, 1, 0, 5, 1, 'sapper'),
+                    new Unit(10, '国军核心守军(指挥部)', 'nationalist', 4, 3, 2, 2, 2, 0, 1, null),
+                    new Unit(11, '国军外围守军A', 'nationalist', 3, 2, 1, 1, 1, 0, 1, null),
+                    new Unit(12, '国军外围守军B', 'nationalist', 5, 2, 1, 1, 1, 0, 1, null),
+                    new Unit(13, '国军外围守军C', 'nationalist', 4, 4, 1, 1, 1, 0, 1, null),
+                    new Unit(14, '国军轻型装甲车', 'nationalist', 7, 3, 2, 2, 1, 5, 2, null),
+                ];
+                units.forEach(u => {
+                    if (u.side === 'nationalist') u.revealed = false;
+                    u.hasActed = false;
+                    u.alive = true;
+                    u.hp = u.maxHp;
+                });
+                const initiallyVisible = [11, 13];
+                units.forEach(u => {
+                    if (initiallyVisible.includes(u.id)) u.revealed = true;
+                });
+            }
+
+            function resetGlobalState() {
+                globalState.stamina = 22;
+                globalState.cohesion = 55;
+                globalState.fortification = 3;
+                globalState.enemyReinforce = 8;
+                globalState.isBroken = false;
+                globalState.missionAccomplished = false;
+                globalState.missionFailed = false;
+                globalState.gameOver = false;
+                globalState.nightOpsActive = true;
+            }
+
+            function resetGame() {
+                resetGlobalState();
+                initUnits();
+                selectedUnitId = null;
+                moveCandidates = new Set();
+                attackCandidates = new Set();
+                currentTurn = 1;
+                phase = 'player';
+                logMessages = [];
+                hideOverlay();
+                addLog('📻 师部：拂晓前拿下田花园！', 'info');
+                addLog('⏰ 夜色掩护中，突击排获得夜战加成（前3回合）', 'info');
+                addLog('💡 点击己方单位选中 → 蓝色格移动 → 红色格攻击', 'info');
+                addLog('💡 右键/Esc取消选中 | 按E键结束回合', 'info');
+                updateLogDisplay();
+                render();
+                updateAll();
+            }
+
+            // ==================== 启动 ====================
+            function init() {
+                initUnits();
+                resetGlobalState();
+                addLog('📻 师部：拂晓前拿下田花园！', 'info');
+                addLog('⏰ 夜色掩护中，突击排获得夜战加成（前3回合）', 'info');
+                addLog('💡 点击己方单位选中 → 蓝色格移动 → 红色格攻击', 'info');
+                addLog('💡 右键/Esc取消选中 | 按E键结束回合', 'info');
+                updateLogDisplay();
+                render();
+                updateAll();
+            }
+
+            init();
+
+            console.log('⚔️ 田花园的拂晓 - 融合战棋已就绪');
+            console.log('  战棋层：六边形地图 + 单位移动/攻击');
+            console.log('  战役层：体力/编制/工事强度/增援倒计时/崩溃风险');
+            console.log('  操作：点击单位 → 蓝色格移动 → 红色格攻击');
+            console.log('  快捷键：E=结束回合 | Esc=取消选中');
+        })();
+    </script>
+</body>
+</html>
