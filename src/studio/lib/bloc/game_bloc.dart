@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../models/terrain.dart';
 import '../models/unit.dart';
 import '../models/campaign.dart';
 import '../models/game.dart';
+import '../models/battlefield.dart';
 import 'game_state.dart';
 import 'game_event.dart';
-import '../models/battlefield.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final GameEngine engine;

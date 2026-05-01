@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../models/terrain.dart';
 import '../models/unit.dart';
 import '../models/battlefield.dart';
 import '../bloc/game_state.dart';

@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'unit.dart';
-import 'terrain.dart';
 import 'campaign.dart';
 import 'battlefield.dart';
 
