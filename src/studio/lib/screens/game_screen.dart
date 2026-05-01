@@ -5,8 +5,8 @@ import '../bloc/game_event.dart';
 import '../models/battlefield.dart';
 import '../models/game_engine.dart';
 import '../bloc/game_bloc.dart';
-import 'hex_grid.dart';
-import 'side_panel.dart';
+import '../views/hex_grid.dart';
+import '../views/side_panel.dart';
 
 class CampaignScreen extends StatelessWidget {
   const CampaignScreen({super.key});

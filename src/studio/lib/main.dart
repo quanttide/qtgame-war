@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'ui/game_screen.dart';
+import 'screens/game_screen.dart';
 
 void main() {
   runApp(const MaterialApp(
