@@ -6,8 +6,8 @@ import '../bloc/game_state.dart';
 import '../bloc/game_event.dart';
 import '../bloc/game_bloc.dart';
 
-class HexGrid extends StatelessWidget {
-  const HexGrid({super.key});
+class BattlefieldView extends StatelessWidget {
+  const BattlefieldView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class HexGrid extends StatelessWidget {
           },
           child: CustomPaint(
             size: Size(Battlefield.canvasWidth, Battlefield.canvasHeight),
-            painter: _HexGridPainter(state: state, mapTerrain: context.read<GameBloc>().engine.mapTerrain),
+            painter: _BattlefieldPainter(state: state, mapTerrain: context.read<GameBloc>().engine.mapTerrain),
           ),
         );
       },
@@ -37,12 +37,12 @@ class HexGrid extends StatelessWidget {
   }
 }
 
-class _HexGridPainter extends CustomPainter {
+class _BattlefieldPainter extends CustomPainter {
   final GameState state;
   final List<List<TerrainType>> mapTerrain;
   final double hexSize;
 
-  _HexGridPainter({required this.state, required this.mapTerrain}) : hexSize = 27;
+  _BattlefieldPainter({required this.state, required this.mapTerrain}) : hexSize = 27;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -199,5 +199,5 @@ class _HexGridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _HexGridPainter old) => old.state != state;
+  bool shouldRepaint(covariant _BattlefieldPainter old) => old.state != state;
 }
