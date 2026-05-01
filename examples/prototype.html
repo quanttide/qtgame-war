@@ -24,11 +24,18 @@
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
         
-        .intel-box { background: #0d1117; border: 1px solid #30363d; border-left: 3px solid #f78166; padding: 12px; margin-bottom: 10px; border-radius: 3px; }
-        .intel-box h4 { color: #f78166; font-size: 13px; margin-bottom: 8px; }
-        .intel-box p { font-size: 13px; line-height: 1.6; color: #8b949e; }
-        .intel-box.low { border-left-color: #ffd700; }
-        .intel-box.false { border-left-color: #f85149; opacity: 0.7; }
+        .intel-group { background: #0d1117; border: 1px solid #30363d; border-radius: 3px; overflow: hidden; }
+        .intel-item { padding: 10px 12px; border-left: 3px solid #3fb950; font-size: 13px; line-height: 1.6; color: #8b949e; border-bottom: 1px solid #21262d; }
+        .intel-item:last-child { border-bottom: none; }
+        .intel-item.low { border-left-color: #ffd700; }
+        .intel-item.false { border-left-color: #f85149; opacity: 0.7; }
+        .intel-tag { font-size: 10px; padding: 1px 6px; border-radius: 2px; margin-right: 6px; }
+        .intel-tag.cred { color: #3fb950; border: 1px solid #3fb95033; background: #0d2818; }
+        .intel-tag.ques { color: #ffd700; border: 1px solid #ffd70033; background: #2d2410; }
+        .intel-tag.false { color: #f85149; border: 1px solid #f8514933; background: #2d1214; }
+        .intel-title { color: #e6edf3; font-weight: bold; }
+        .war-box { background: #0d1117; border: 1px solid #30363d; border-left: 3px solid #f78166; padding: 12px; margin-bottom: 10px; border-radius: 3px; }
+        .war-box h4 { color: #f78166; font-size: 13px; margin-bottom: 8px; }
         
         .command-section { margin-top: 20px; }
         .command-section h3 { color: #f78166; font-size: 14px; margin-bottom: 10px; }
@@ -40,12 +47,15 @@
         .cmd-desc { color: #8b949e; font-size: 12px; margin-top: 5px; line-height: 1.5; }
         .cmd-risk { color: #ffd700; font-size: 11px; margin-top: 5px; }
         
+        .cmd-custom-input { margin-top: 8px; padding-top: 8px; border-top: 1px solid #21262d; }
+        .cmd-custom-input textarea { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 3px; color: #c9d1d9; padding: 8px; font-size: 13px; resize: vertical; min-height: 60px; font-family: inherit; }
+        .cmd-custom-input textarea:focus { outline: none; border-color: #f78166; }
+        
         .map-area { flex: 1; padding: 20px; display: flex; flex-direction: column; }
         
-        .turn-info { display: flex; gap: 15px; margin-bottom: 20px; }
-        .turn-card { background: #161b22; border: 1px solid #30363d; padding: 10px 20px; border-radius: 3px; flex: 1; text-align: center; }
-        .turn-card label { font-size: 11px; color: #8b949e; display: block; }
-        .turn-card .val { font-size: 18px; color: #f78166; font-weight: bold; }
+        .turn-info { display: flex; gap: 6px; margin-bottom: 12px; padding: 6px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 3px; align-items: center; font-size: 12px; color: #8b949e; flex-wrap: wrap; }
+        .turn-info .sep { color: #30363d; margin: 0 4px; }
+        .turn-info strong { color: #f78166; font-weight: bold; margin-left: 2px; }
         
         .hex-map { flex: 1; display: flex; justify-content: center; align-items: center; overflow: auto; }
         .hex-grid { position: relative; }
@@ -55,9 +65,21 @@
         .hex-cell.revealed svg polygon { fill: #1c2030; }
         .hex-cell.fog svg polygon { fill: #0d1117; opacity: 0.5; }
         .hex-cell.has-unit svg polygon { stroke: #f78166; stroke-width: 2; }
+        .hex-cell.highlighted svg polygon { stroke: #3fb950; stroke-width: 3; stroke-dasharray: 4 2; }
+        .hex-cell.highlighted-enemy svg polygon { stroke: #f85149; stroke-width: 3; }
+        .hex-cell.enemy-unit svg polygon { stroke: #f85149; stroke-width: 2; }
         
         .unit-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; font-weight: bold; color: #f78166; pointer-events: none; }
         .enemy-marker { color: #f85149; }
+        
+        .map-legend { display: flex; gap: 12px; padding: 4px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 3px; font-size: 11px; color: #8b949e; align-items: center; margin-top: 4px; }
+        .map-legend span { display: flex; align-items: center; gap: 4px; }
+        .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
+        .legend-dot.green { border: 2px dashed #3fb950; background: transparent; }
+        .legend-dot.red { border: 2px solid #f85149; background: transparent; }
+        
+        .turn-log { padding: 4px 12px; background: #0d1117; border: 1px solid #30363d; border-top: none; border-radius: 0 0 3px 3px; font-size: 11px; color: #8b949e; display: none; }
+        .turn-log.show { display: block; }
         
         .execute-bar { background: #161b22; border: 1px solid #30363d; padding: 15px; margin-top: 15px; border-radius: 3px; display: none; }
         .execute-bar.show { display: block; }
@@ -74,6 +96,10 @@
         .outcome.success { background: #0d2818; border-left: 3px solid #3fb950; color: #3fb950; }
         .outcome.fail { background: #2d1214; border-left: 3px solid #f85149; color: #f85149; }
         .btn-next { background: #30363d; color: #c9d1d9; border: none; padding: 8px 20px; cursor: pointer; border-radius: 3px; margin-top: 10px; }
+        .btn-confirm { background: #f78166; color: white; border: none; padding: 10px 30px; cursor: pointer; border-radius: 3px; font-size: 14px; margin-right: 10px; }
+        .btn-confirm:hover { background: #ff6b5a; }
+        .btn-cancel { background: #30363d; color: #c9d1d9; border: none; padding: 10px 30px; cursor: pointer; border-radius: 3px; font-size: 14px; }
+        .btn-cancel:hover { background: #3d444d; }
     </style>
 </head>
 <body>
@@ -85,28 +111,34 @@
     <div class="container">
         <div class="left-panel">
             <div class="mode-tabs">
-                <button class="mode-tab active" onclick="switchTab('intel')">情报</button>
-                <button class="mode-tab" onclick="switchTab('command')">命令</button>
-                <button class="mode-tab" onclick="switchTab('wargame')">兵棋</button>
+                <button class="mode-tab active" onclick="switchTab('intel', this)">情报</button>
+                <button class="mode-tab" onclick="switchTab('command', this)">命令</button>
+                <button class="mode-tab" onclick="switchTab('wargame', this)">兵棋</button>
             </div>
             
             <div class="tab-content">
                 <div class="tab-pane active" id="intel-pane">
-                    <div class="intel-box">
-                        <h4>侦察报告 <span style="color:#3fb950;font-size:11px;">[可信]</span></h4>
-                        <p>敌军主力在东北方向，约2个装甲营规模。此前情报确认其向坐标区(3,2)移动。</p>
-                    </div>
-                    <div class="intel-box low">
-                        <h4>模糊情报 <span style="color:#ffd700;font-size:11px;">[存疑]</span></h4>
-                        <p>有迹象显示敌军可能在南侧有侧翼部队，但多次侦察未能确认。可能是佯动。</p>
-                    </div>
-                    <div class="intel-box false">
-                        <h4>干扰信息 <span style="color:#f85149;font-size:11px;">[已证伪]</span></h4>
-                        <p>报告称敌军已在(5,5)区域建立防线。最新侦察表明该区域为空。</p>
-                    </div>
-                    <div class="intel-box">
-                        <h4>后勤报告 <span style="color:#3fb950;font-size:11px;">[可信]</span></h4>
-                        <p>我方补给线畅通，弹药充足。但南下通道必经之(4,3)为山地，机动受限。</p>
+                    <div class="intel-group">
+                        <div class="intel-item">
+                            <span class="intel-tag cred">可信</span>
+                            <span class="intel-title">侦察报告</span><br>
+                            敌军主力在东北方向，约2个装甲营规模。此前情报确认其向坐标区(3,2)移动。
+                        </div>
+                        <div class="intel-item low">
+                            <span class="intel-tag ques">存疑</span>
+                            <span class="intel-title">模糊情报</span><br>
+                            有迹象显示敌军可能在南侧有侧翼部队，但多次侦察未能确认。可能是佯动。
+                        </div>
+                        <div class="intel-item false">
+                            <span class="intel-tag false">证伪</span>
+                            <span class="intel-title">干扰信息</span><br>
+                            报告称敌军已在(5,5)区域建立防线。最新侦察表明该区域为空。
+                        </div>
+                        <div class="intel-item">
+                            <span class="intel-tag cred">可信</span>
+                            <span class="intel-title">后勤报告</span><br>
+                            我方补给线畅通，弹药充足。但南下通道必经之(4,3)为山地，机动受限。
+                        </div>
                     </div>
                 </div>
                 
@@ -136,6 +168,9 @@
                             <div class="cmd-label">自定义命令 (AI参谋)</div>
                             <div class="cmd-desc">描述你的战术意图，由AI参谋生成详细作战方案。</div>
                             <div class="cmd-risk">风险：AI方案可能过于理想化，需人工审核</div>
+                            <div class="cmd-custom-input" id="customInput" style="display:none;">
+                                <textarea id="customCmdText" placeholder="输入你的战术意图，例如：集中炮兵轰击敌军指挥所后，步兵从北侧突入"></textarea>
+                            </div>
                         </div>
                     </div>
                     
@@ -151,11 +186,11 @@
                         <p style="color:#8b949e;font-size:13px;line-height:1.6;margin-bottom:15px;">
                             在此模式下，你可以像传统兵棋一样自由部署单位、规划行动。适合推演具体战术细节。
                         </p>
-                        <div class="intel-box">
+                        <div class="war-box">
                             <h4>可用单位</h4>
                             <p style="color:#8b949e;font-size:12px;">第1步兵师 | 装甲团A | 炮兵连 | 后勤纵队</p>
                         </div>
-                        <div class="intel-box">
+                        <div class="war-box">
                             <h4>地形说明</h4>
                             <p style="color:#8b949e;font-size:12px;">
                                 🏔️ 山地 - 防御+30% 移动-50%<br>
@@ -171,23 +206,19 @@
         
         <div class="map-area">
             <div class="turn-info">
-                <div class="turn-card">
-                    <label>回合</label>
-                    <div class="val" id="turnNum">12</div>
-                </div>
-                <div class="turn-card">
-                    <label>战场主动权</label>
-                    <div class="val" id="initiative">我方</div>
-                </div>
-                <div class="turn-card">
-                    <label>控制区域</label>
-                    <div class="val" id="control">68%</div>
-                </div>
-                <div class="turn-card">
-                    <label>情报模糊度</label>
-                    <div class="val" id="fogLevel">高</div>
-                </div>
+                <span>回合 <strong id="turnNum">12</strong></span>
+                <span class="sep">|</span>
+                <span>主动权 <strong id="initiative">我方</strong></span>
+                <span class="sep">|</span>
+                <span>控制 <strong id="control">68%</strong></span>
+                <span class="sep">|</span>
+                <span>情报 <strong id="fogLevel">高</strong></span>
             </div>
+            <div class="map-legend">
+                <span><span class="legend-dot green"></span> 我军进展</span>
+                <span><span class="legend-dot red"></span> 敌军进展</span>
+            </div>
+            <div class="turn-log" id="turnLog"></div>
             
             <div class="hex-map">
                 <div class="hex-grid" id="hexGrid"></div>
@@ -199,7 +230,6 @@
         <div class="result-content">
             <h3 id="resultTitle">命令执行结果</h3>
             <div id="resultBody"></div>
-            <button class="btn-next" onclick="closeResult()">继续</button>
         </div>
     </div>
     
@@ -264,7 +294,12 @@
                     cell.style.width = HEX_W + 'px';
                     cell.style.height = HEX_H + 'px';
                     
-                    if (hexData[r][c].unit) cell.classList.add('has-unit');
+                    if (hexData[r][c].unit) {
+                        cell.classList.add('has-unit');
+                        if (hexData[r][c].unit.type === 'enemy') cell.classList.add('enemy-unit');
+                    }
+                    if (hexData[r][c].highlighted) cell.classList.add('highlighted');
+                    if (hexData[r][c].highlightedEnemy) cell.classList.add('highlighted-enemy');
                     if (hexData[r][c].terrain === 'mountain') cell.classList.add('mountain');
                     if (hexData[r][c].terrain === 'forest') cell.classList.add('forest');
                     
@@ -296,17 +331,39 @@
             return { plain: '#1c2030', mountain: '#2d2d4a', forest: '#1a3a1a', water: '#1a2a3a' }[terrain] || '#1c2030';
         }
         
-        function switchTab(tab) {
+        function switchTab(tab, el) {
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            el.classList.add('active');
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             document.getElementById(tab + '-pane').classList.add('active');
+            
+            if (tab === 'command' && selectedCommand) {
+                const cmdEl = document.getElementById('cmd' + (selectedCommand === 'custom' ? 'Custom' : selectedCommand));
+                if (cmdEl) cmdEl.classList.add('selected');
+                document.getElementById('executeBar').classList.add('show');
+                if (selectedCommand === 'custom') {
+                    document.getElementById('customInput').style.display = 'block';
+                }
+            } else if (tab !== 'command') {
+                document.getElementById('executeBar').classList.remove('show');
+                document.getElementById('customInput').style.display = 'none';
+            }
         }
         
         function selectCmd(cmd) {
             selectedCommand = cmd;
-            document.querySelectorAll('.cmd-option').forEach(c => c.classList.remove('selected'));
-            document.getElementById('cmd' + (cmd === 'custom' ? 'Custom' : cmd)).classList.add('selected');
+            document.querySelectorAll('.cmd-option').forEach(c => {
+                c.classList.remove('selected');
+                const input = c.querySelector('.cmd-custom-input');
+                if (input) input.style.display = 'none';
+            });
+            const el = document.getElementById('cmd' + (cmd === 'custom' ? 'Custom' : cmd));
+            el.classList.add('selected');
+            
+            if (cmd === 'custom') {
+                document.getElementById('customInput').style.display = 'block';
+                document.getElementById('customCmdText').focus();
+            }
             
             const cmdTexts = {
                 'A': 'A: 正面推进',
@@ -320,6 +377,39 @@
         
         function executeCommand() {
             if (!selectedCommand) return;
+            
+            let customText = '';
+            if (selectedCommand === 'custom') {
+                customText = document.getElementById('customCmdText').value.trim();
+                if (!customText) { alert('请描述你的战术意图'); return; }
+            }
+            
+            const confirmInfo = {
+                'A': { label: '正面推进', risk: '敌军装甲部队可能反击，伤亡预计15-20%' },
+                'B': { label: '侧翼包抄', risk: '补给线拉长，若被敌军发现可能遭反包围' },
+                'C': { label: '防守反击', risk: '可能丧失战场主动权，被敌军占领更多区域' },
+                'custom': { label: 'AI参谋方案', risk: 'AI方案可能过于理想化，需人工审核' }
+            };
+            const info = confirmInfo[selectedCommand];
+            
+            document.getElementById('resultTitle').textContent = '确认命令';
+            document.getElementById('resultBody').innerHTML = `
+                <p style="margin-bottom:12px;">你确定要执行以下命令？</p>
+                <div style="background:#0d1117;border:1px solid #30363d;padding:12px;border-radius:3px;margin-bottom:12px;">
+                    <div style="color:#f78166;font-weight:bold;font-size:14px;margin-bottom:4px;">${info.label}</div>
+                    <div style="color:#ffd700;font-size:12px;">⚠ ${info.risk}</div>
+                    ${selectedCommand === 'custom' ? `<div style="color:#8b949e;font-size:12px;margin-top:6px;border-top:1px solid #21262d;padding-top:6px;">你的方案：${customText}</div>` : ''}
+                </div>
+                <button class="btn-confirm" onclick="confirmExecution()">确认执行</button>
+                <button class="btn-cancel" onclick="closeResult()">取消</button>
+            `;
+            document.getElementById('resultModal').classList.add('show');
+            window._pendingCustomText = customText;
+        }
+        
+        function confirmExecution() {
+            if (!selectedCommand) return;
+            const customText = window._pendingCustomText || '';
             
             const results = {
                 'A': {
@@ -346,7 +436,7 @@
                 'custom': {
                     title: 'AI参谋方案 - 执行结果',
                     outcome: 'success',
-                    msg: 'AI参谋建议：集中火力打击敌军侦察单位，使其丧失战场感知能力。已执行。',
+                    msg: 'AI参谋方案已执行：' + customText,
                     detail: '敌军侦察连遭重创，情报获取能力下降。未来两回合敌军移动力-30%。',
                     control: '70%'
                 }
@@ -358,17 +448,53 @@
                 <div class="outcome ${r.outcome}">${r.msg}</div>
                 <p>${r.detail}</p>
                 <p style="margin-top:15px;color:#8b949e;">战场控制: ${r.control} (+${parseInt(r.control)-68}%)</p>
+                <button class="btn-next" onclick="closeResult()">继续</button>
             `;
-            document.getElementById('resultModal').classList.add('show');
             
             document.getElementById('control').textContent = r.control;
             currentTurn++;
             document.getElementById('turnNum').textContent = currentTurn;
+            
+            const logEl = document.getElementById('turnLog');
+            logEl.textContent = '回合 ' + (currentTurn - 1) + '：' + r.title + ' — ' + r.msg;
+            logEl.classList.add('show');
+            
+            updateMapAfterCommand(selectedCommand);
+        }
+        
+        function updateMapAfterCommand(cmd) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    hexData[r][c].highlighted = false;
+                    hexData[r][c].highlightedEnemy = false;
+                }
+            }
+            
+            if (cmd === 'A') {
+                hexData[3][3].revealed = true; hexData[3][3].highlighted = true;
+                hexData[3][4].revealed = true; hexData[3][4].highlighted = true;
+                hexData[2][3].unit = null;
+            } else if (cmd === 'B') {
+                hexData[1][4].revealed = true; hexData[1][4].highlighted = true;
+                hexData[2][5].revealed = true; hexData[2][5].highlighted = true;
+                hexData[2][3].unit = null;
+            } else if (cmd === 'C') {
+                hexData[5][6].revealed = true; hexData[5][6].highlightedEnemy = true;
+                hexData[5][6].unit = { name: '敌占', type: 'enemy' };
+                hexData[5][7].revealed = true; hexData[5][7].highlightedEnemy = true;
+                hexData[5][7].unit = { name: '敌占', type: 'enemy' };
+            } else if (cmd === 'custom') {
+                hexData[1][3].revealed = true; hexData[1][3].highlighted = true;
+                hexData[2][2].revealed = true; hexData[2][2].highlighted = true;
+            }
+            
+            createHexGrid();
         }
         
         function closeResult() {
             document.getElementById('resultModal').classList.remove('show');
             document.getElementById('executeBar').classList.remove('show');
+            document.getElementById('customInput').style.display = 'none';
             selectedCommand = null;
             document.querySelectorAll('.cmd-option').forEach(c => c.classList.remove('selected'));
         }
