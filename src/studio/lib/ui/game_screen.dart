@@ -5,8 +5,8 @@ import '../bloc/game_event.dart';
 import '../models/battlefield.dart';
 import '../models/game_engine.dart';
 import '../bloc/game_bloc.dart';
-import 'game_board.dart';
-import 'command_panel.dart';
+import 'hex_grid.dart';
+import 'side_panel.dart';
 
 class CampaignScreen extends StatelessWidget {
   const CampaignScreen({super.key});
@@ -62,7 +62,7 @@ class CampaignScreen extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const GameBoard(),
+                        const HexGrid(),
                         const SizedBox(width: 12),
                         const SizedBox(width: 225, child: CommandPanel()),
                       ],

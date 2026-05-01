@@ -1,15 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/terrain.dart';
 import '../models/unit.dart';
-import '../bloc/game_state.dart';
 import '../models/battlefield.dart';
+import '../bloc/game_state.dart';
+import '../bloc/game_event.dart';
+import '../bloc/game_bloc.dart';
 
-class HexMapPainter extends CustomPainter {
+class HexGrid extends StatelessWidget {
+  const HexGrid({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<GameBloc, GameState>(
+      builder: (context, state) {
+        return GestureDetector(
+          onTapUp: (details) {
+            if (state.isGameOver || state.phase != GamePhase.player) return;
+            final renderBox = context.findRenderObject() as RenderBox;
+            final localPos = renderBox.globalToLocal(details.globalPosition);
+            final hex = Battlefield.pixelToHex(localPos.dx, localPos.dy);
+            if (hex != null) {
+              final (col, row) = hex;
+              context.read<GameBloc>().add(ClickHex(col, row));
+            }
+          },
+          onLongPress: () {
+            context.read<GameBloc>().add(const ClearSelection());
+          },
+          child: CustomPaint(
+            size: Size(Battlefield.canvasWidth, Battlefield.canvasHeight),
+            painter: _HexGridPainter(state: state, mapTerrain: context.read<GameBloc>().engine.mapTerrain),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HexGridPainter extends CustomPainter {
   final GameState state;
   final List<List<TerrainType>> mapTerrain;
   final double hexSize;
 
-  HexMapPainter({required this.state, required this.mapTerrain, this.hexSize = 27});
+  _HexGridPainter({required this.state, required this.mapTerrain}) : hexSize = 27;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -67,7 +101,6 @@ class HexMapPainter extends CustomPainter {
     path.moveTo(verts[0].x, verts[0].y);
     for (int i = 1; i < 6; i++) { path.lineTo(verts[i].x, verts[i].y); }
     path.close();
-
     canvas.drawPath(path, Paint()..color = fill..style = PaintingStyle.fill);
     canvas.drawPath(path, Paint()..color = stroke..style = PaintingStyle.stroke..strokeWidth = lw);
   }
@@ -76,7 +109,10 @@ class HexMapPainter extends CustomPainter {
     final props = terrainProps[terrain]!;
     if (props.icon.isEmpty) return;
     final tp = TextPainter(
-      text: TextSpan(text: props.icon, style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: hexSize * 0.55)),
+      text: TextSpan(
+        text: props.icon,
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: hexSize * 0.55),
+      ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     );
@@ -164,5 +200,5 @@ class HexMapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant HexMapPainter old) => old.state != state;
+  bool shouldRepaint(covariant _HexGridPainter old) => old.state != state;
 }
