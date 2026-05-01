@@ -77,10 +77,18 @@
 - [ ] 模式防错：不同模式下的操作是否不会互相干扰
 - [ ] 叙事增强机制：每个玩法机制是否配有叙事解释
 
-## 命名约定
+## 提交规范
+
+提交信息格式：
 
 ```
-docs/qa/interaction.md       # 交互设计评估报告
-docs/qa/prototype.md         # 原型展开分析
-tests/audit.py               # 视觉量化审计工具
+<type>: <简短描述>
+
+type: feat / fix / docs / chore / refactor
+描述用中文，50 字以内，不包含句号
 ```
+
+示例：
+- `docs: add interaction design report for prototype`
+- `fix: map now updates after command execution`
+- `chore: shorten filenames - interaction-report→interaction`
