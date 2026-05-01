@@ -258,290 +258,301 @@
     </div>
     
     <script>
-        const HEX_SIZE = 32;
-        const HEX_W = HEX_SIZE * 2;
-        const HEX_H = Math.sqrt(3) * HEX_SIZE;
-        const COL_W = HEX_W * 0.75;
-        const ROW_H = HEX_H;
+        const Game = {};
         
-        const ROWS = 9;
-        const COLS = 11;
-        
-        let selectedCommand = null;
-        let currentTurn = 12;
-        
-        const hexData = [];
-        for (let r = 0; r < ROWS; r++) {
-            hexData[r] = [];
-            for (let c = 0; c < COLS; c++) {
-                const rand = Math.random();
-                let terrain = 'plain';
-                if (rand < 0.12) terrain = 'mountain';
-                else if (rand < 0.28) terrain = 'forest';
-                else if (rand < 0.33) terrain = 'water';
-                hexData[r][c] = { terrain, revealed: Math.random() > 0.4, unit: null };
-            }
-        }
-        
-        hexData[2][3].unit = { name: '敌装甲', type: 'enemy' };
-        hexData[2][3].revealed = true;
-        hexData[3][2].unit = { name: '敌步兵', type: 'enemy' };
-        hexData[3][2].revealed = true;
-        hexData[7][4].unit = { name: '我步兵', type: 'player' };
-        hexData[7][4].revealed = true;
-        hexData[8][3].unit = { name: '我装甲', type: 'player' };
-        hexData[8][3].revealed = true;
-        hexData[8][5].unit = { name: '我炮兵', type: 'player' };
-        hexData[8][5].revealed = true;
-        
-        function hexToPixel(row, col) {
-            const x = col * COL_W + (row % 2 === 1 ? COL_W / 2 : 0);
-            const y = row * ROW_H * 0.75;
-            return { x, y };
-        }
-        
-        function createHexGrid() {
-            const grid = document.getElementById('hexGrid');
-            grid.innerHTML = '';
-            const totalW = (COLS - 1) * COL_W + HEX_W + COL_W / 2;
-            const totalH = (ROWS - 1) * ROW_H * 0.75 + HEX_H;
-            grid.style.width = totalW + 'px';
-            grid.style.height = totalH + 'px';
+        /* ====== Game.HexGrid — 六角格引擎 ====== */
+        Game.HexGrid = {
+            ROWS: 9, COLS: 11,
+            HEX_SIZE: 32,
             
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    const pos = hexToPixel(r, c);
-                    const cell = document.createElement('div');
-                    cell.className = 'hex-cell ' + (hexData[r][c].revealed ? 'revealed' : 'fog');
-                    cell.style.left = pos.x + 'px';
-                    cell.style.top = pos.y + 'px';
-                    cell.style.width = HEX_W + 'px';
-                    cell.style.height = HEX_H + 'px';
-                    
-                    if (hexData[r][c].unit) {
-                        cell.classList.add('has-unit');
-                        if (hexData[r][c].unit.type === 'enemy') cell.classList.add('enemy-unit');
+            get HEX_W() { return this.HEX_SIZE * 2; },
+            get HEX_H() { return Math.sqrt(3) * this.HEX_SIZE; },
+            get COL_W() { return this.HEX_W * 0.75; },
+            get ROW_H() { return this.HEX_H; },
+            
+            hexToPixel(row, col) {
+                return {
+                    x: col * this.COL_W + (row % 2 === 1 ? this.COL_W / 2 : 0),
+                    y: row * this.ROW_H * 0.75,
+                };
+            },
+            
+            getTerrainColor(type) {
+                return { plain: '#1a2a1a', mountain: '#2a2a1a', forest: '#142814', water: '#142038' }[type] || '#1c2030';
+            },
+            
+            getTerrainPattern(type) {
+                return { plain: 'p-plain', mountain: 'p-mountain', forest: 'p-forest', water: 'p-water' }[type] || 'p-plain';
+            },
+            
+            getUnitIcon(name) {
+                if (name.includes('装甲')) return '▲';
+                if (name.includes('炮兵')) return '◆';
+                return '●';
+            },
+        };
+        
+        /* ====== Game.State — 游戏状态管理 ====== */
+        Game.State = {
+            turn: 12,
+            control: 68,
+            selectedCommand: null,
+            hexData: [],
+            
+            init() {
+                const H = this.hexData;
+                for (let r = 0; r < Game.HexGrid.ROWS; r++) {
+                    H[r] = [];
+                    for (let c = 0; c < Game.HexGrid.COLS; c++) {
+                        const rand = Math.random();
+                        let terrain = 'plain';
+                        if (rand < 0.12) terrain = 'mountain';
+                        else if (rand < 0.28) terrain = 'forest';
+                        else if (rand < 0.33) terrain = 'water';
+                        H[r][c] = { terrain, revealed: Math.random() > 0.4, unit: null };
                     }
-                    if (hexData[r][c].highlighted) cell.classList.add('highlighted');
-                    if (hexData[r][c].highlightedEnemy) cell.classList.add('highlighted-enemy');
-                    if (hexData[r][c].terrain === 'mountain') cell.classList.add('mountain');
-                    if (hexData[r][c].terrain === 'forest') cell.classList.add('forest');
-                    
-                    const points = [];
-                    for (let i = 0; i < 6; i++) {
-                        const angle = Math.PI / 180 * (60 * i - 30);
-                        const x = 50 + 50 * Math.cos(angle);
-                        const y = 57.5 + 57.5 * Math.sin(angle);
-                        points.push(`${x},${y}`);
-                    }
-                    
-                    const tc = getTerrainColor(hexData[r][c].terrain);
-                    const pat = getTerrainPattern(hexData[r][c].terrain);
-                    cell.innerHTML = `<svg viewBox="0 0 100 115" style="width:100%;height:100%;">
-                        <polygon points="${points.join(' ')}" fill="${tc}" stroke="#30363d" stroke-width="1.5"/>
-                        <polygon points="${points.join(' ')}" fill="url(#${pat})" stroke="none"/>
-                    </svg>`;
-                    
-                    if (hexData[r][c].unit) {
-                        const icon = document.createElement('div');
-                        icon.className = 'unit-icon ' + (hexData[r][c].unit.type === 'enemy' ? 'enemy' : 'player');
-                        icon.innerHTML = getUnitIcon(hexData[r][c].unit.name) + '<span class="label">' + hexData[r][c].unit.name.replace(/[▲●◆]/g,'') + '</span>';
-                        cell.appendChild(icon);
-                    }
-                    
-                    grid.appendChild(cell);
                 }
-            }
-        }
-        
-        function getTerrainColor(terrain) {
-            return { plain: '#1a2a1a', mountain: '#2a2a1a', forest: '#142814', water: '#142038' }[terrain] || '#1c2030';
-        }
-        function getTerrainPattern(terrain) {
-            return { plain: 'p-plain', mountain: 'p-mountain', forest: 'p-forest', water: 'p-water' }[terrain] || 'p-plain';
-        }
-        function getUnitIcon(name) {
-            if (name.includes('装甲')) return '▲';
-            if (name.includes('炮兵')) return '◆';
-            if (name.includes('步兵') || name.includes('敌占')) return '●';
-            return '●';
-        }
-        
-        function switchTab(tab, el) {
-            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            document.getElementById(tab + '-pane').classList.add('active');
+                H[2][3].unit = { name: '敌装甲', type: 'enemy' }; H[2][3].revealed = true;
+                H[3][2].unit = { name: '敌步兵', type: 'enemy' }; H[3][2].revealed = true;
+                H[7][4].unit = { name: '我步兵', type: 'player' }; H[7][4].revealed = true;
+                H[8][3].unit = { name: '我装甲', type: 'player' }; H[8][3].revealed = true;
+                H[8][5].unit = { name: '我炮兵', type: 'player' }; H[8][5].revealed = true;
+            },
             
-            if (tab === 'command' && selectedCommand) {
-                const cmdEl = document.getElementById('cmd' + (selectedCommand === 'custom' ? 'Custom' : selectedCommand));
-                if (cmdEl) cmdEl.classList.add('selected');
-                document.getElementById('executeBar').classList.add('show');
-                if (selectedCommand === 'custom') {
+            applyCommandEffects(cmd) {
+                const H = this.hexData;
+                for (let r = 0; r < Game.HexGrid.ROWS; r++)
+                    for (let c = 0; c < Game.HexGrid.COLS; c++) {
+                        H[r][c].highlighted = false;
+                        H[r][c].highlightedEnemy = false;
+                    }
+                if (cmd === 'A') {
+                    H[3][3].revealed = true; H[3][3].highlighted = true;
+                    H[3][4].revealed = true; H[3][4].highlighted = true;
+                    H[2][3].unit = null;
+                } else if (cmd === 'B') {
+                    H[1][4].revealed = true; H[1][4].highlighted = true;
+                    H[2][5].revealed = true; H[2][5].highlighted = true;
+                    H[2][3].unit = null;
+                } else if (cmd === 'C') {
+                    H[5][6].revealed = true; H[5][6].highlightedEnemy = true;
+                    H[5][6].unit = { name: '敌占', type: 'enemy' };
+                    H[5][7].revealed = true; H[5][7].highlightedEnemy = true;
+                    H[5][7].unit = { name: '敌占', type: 'enemy' };
+                } else if (cmd === 'custom') {
+                    H[1][3].revealed = true; H[1][3].highlighted = true;
+                    H[2][2].revealed = true; H[2][2].highlighted = true;
+                }
+            },
+        };
+        
+        /* ====== Game.Intel — 情报数据 ====== */
+        Game.Intel = {
+            reports: [
+                { title: '侦察报告', credibility: 'cred', tag: '可信', text: '敌军主力在东北方向，约2个装甲营规模。此前情报确认其向坐标区(3,2)移动。' },
+                { title: '模糊情报', credibility: 'ques', tag: '存疑', text: '有迹象显示敌军可能在南侧有侧翼部队，但多次侦察未能确认。可能是佯动。' },
+                { title: '干扰信息', credibility: 'false', tag: '证伪', text: '报告称敌军已在(5,5)区域建立防线。最新侦察表明该区域为空。' },
+                { title: '后勤报告', credibility: 'cred', tag: '可信', text: '我方补给线畅通，弹药充足。但南下通道必经之(4,3)为山地，机动受限。' },
+            ],
+        };
+        
+        /* ====== Game.Command — 命令系统 ====== */
+        Game.Command = {
+            cmdTexts: {
+                A: 'A: 正面推进', B: 'B: 侧翼包抄', C: 'C: 防守反击', custom: '自定义命令 (AI参谋)'
+            },
+            
+            confirmInfo: {
+                A: { label: '正面推进', risk: '敌军装甲部队可能反击，伤亡预计15-20%' },
+                B: { label: '侧翼包抄', risk: '补给线拉长，若被敌军发现可能遭反包围' },
+                C: { label: '防守反击', risk: '可能丧失战场主动权，被敌军占领更多区域' },
+                custom: { label: 'AI参谋方案', risk: 'AI方案可能过于理想化，需人工审核' },
+            },
+            
+            results: {
+                A: { title: '正面推进 - 执行结果', outcome: 'success', msg: '第1、2步兵师已向敌军阵地推进。敌军装甲部队遭遇我方火力压制，后撤2公里。', detail: '我方占领(3,3)(3,4)区域。敌军伤亡约12%，我方伤亡8%。情报验证：敌军主力确实在东北方向。', control: '72%' },
+                B: { title: '侧翼包抄 - 执行结果', outcome: 'success', msg: '装甲团成功迂回至敌军侧翼。但补给线遭小股敌军骚扰，需增派护卫。', detail: '切断敌军退路，敌军陷入包围态势。但侧翼部队弹药消耗较大，需紧急补给。', control: '75%' },
+                C: { title: '防守反击 - 执行结果', outcome: 'fail', msg: '敌军未如预期进攻，反而在南侧发动佯攻。我方防线未被突破，但主动权削弱。', detail: '敌军占领(5,6)(5,7)区域。我方炮兵未能发挥预期效果。需重新评估敌军意图。', control: '63%' },
+                custom: { title: 'AI参谋方案 - 执行结果', outcome: 'success', msg: '', detail: '敌军侦察连遭重创，情报获取能力下降。未来两回合敌军移动力-30%。', control: '70%' },
+            },
+            
+            select(cmd) {
+                Game.State.selectedCommand = cmd;
+                document.querySelectorAll('.cmd-option').forEach(c => {
+                    c.classList.remove('selected');
+                    const input = c.querySelector('.cmd-custom-input');
+                    if (input) input.style.display = 'none';
+                });
+                const el = document.getElementById('cmd' + (cmd === 'custom' ? 'Custom' : cmd));
+                el.classList.add('selected');
+                if (cmd === 'custom') {
                     document.getElementById('customInput').style.display = 'block';
+                    document.getElementById('customCmdText').focus();
                 }
-            } else if (tab !== 'command') {
+                document.getElementById('selectedCmdText').textContent = this.cmdTexts[cmd];
+                document.getElementById('executeBar').classList.add('show');
+            },
+            
+            showConfirm() {
+                const cmd = Game.State.selectedCommand;
+                if (!cmd) return;
+                let customText = '';
+                if (cmd === 'custom') {
+                    customText = document.getElementById('customCmdText').value.trim();
+                    if (!customText) { alert('请描述你的战术意图'); return; }
+                }
+                const info = this.confirmInfo[cmd];
+                Game.UI.showConfirm(info, cmd, customText);
+                window._pendingCustomText = customText;
+            },
+            
+            execute() {
+                const cmd = Game.State.selectedCommand;
+                if (!cmd) return;
+                const customText = window._pendingCustomText || '';
+                const r = JSON.parse(JSON.stringify(this.results[cmd]));
+                if (cmd === 'custom') r.msg = 'AI参谋方案已执行：' + customText;
+                
+                Game.State.control = parseInt(r.control);
+                Game.State.turn++;
+                Game.State.applyCommandEffects(cmd);
+                Game.UI.showResult(r, Game.State.turn);
+                Game.UI.updateHUD(Game.State.control, Game.State.turn);
+                Game.UI.updateLog('回合 ' + (Game.State.turn - 1) + '：' + r.title + ' — ' + r.msg);
+            },
+        };
+        
+        /* ====== Game.UI — 界面渲染 ====== */
+        Game.UI = {
+            renderHexGrid() {
+                const H = Game.State.hexData;
+                const grid = document.getElementById('hexGrid');
+                grid.innerHTML = '';
+                const totalW = (Game.HexGrid.COLS - 1) * Game.HexGrid.COL_W + Game.HexGrid.HEX_W + Game.HexGrid.COL_W / 2;
+                const totalH = (Game.HexGrid.ROWS - 1) * Game.HexGrid.ROW_H * 0.75 + Game.HexGrid.HEX_H;
+                grid.style.width = totalW + 'px';
+                grid.style.height = totalH + 'px';
+                
+                for (let r = 0; r < Game.HexGrid.ROWS; r++) {
+                    for (let c = 0; c < Game.HexGrid.COLS; c++) {
+                        const pos = Game.HexGrid.hexToPixel(r, c);
+                        const data = H[r][c];
+                        const cell = document.createElement('div');
+                        cell.className = 'hex-cell ' + (data.revealed ? 'revealed' : 'fog');
+                        cell.style.left = pos.x + 'px';
+                        cell.style.top = pos.y + 'px';
+                        cell.style.width = Game.HexGrid.HEX_W + 'px';
+                        cell.style.height = Game.HexGrid.HEX_H + 'px';
+                        
+                        if (data.unit) {
+                            cell.classList.add('has-unit');
+                            if (data.unit.type === 'enemy') cell.classList.add('enemy-unit');
+                        }
+                        if (data.highlighted) cell.classList.add('highlighted');
+                        if (data.highlightedEnemy) cell.classList.add('highlighted-enemy');
+                        if (data.terrain === 'mountain') cell.classList.add('mountain');
+                        if (data.terrain === 'forest') cell.classList.add('forest');
+                        
+                        const points = [];
+                        for (let i = 0; i < 6; i++) {
+                            const angle = Math.PI / 180 * (60 * i - 30);
+                            points.push(`${50 + 50 * Math.cos(angle)},${57.5 + 57.5 * Math.sin(angle)}`);
+                        }
+                        const tc = Game.HexGrid.getTerrainColor(data.terrain);
+                        const pat = Game.HexGrid.getTerrainPattern(data.terrain);
+                        cell.innerHTML = `<svg viewBox="0 0 100 115" style="width:100%;height:100%;">
+                            <polygon points="${points.join(' ')}" fill="${tc}" stroke="#30363d" stroke-width="1.5"/>
+                            <polygon points="${points.join(' ')}" fill="url(#${pat})" stroke="none"/>
+                        </svg>`;
+                        
+                        if (data.unit) {
+                            const icon = document.createElement('div');
+                            icon.className = 'unit-icon ' + (data.unit.type === 'enemy' ? 'enemy' : 'player');
+                            const sym = Game.HexGrid.getUnitIcon(data.unit.name);
+                            icon.innerHTML = sym + '<span class="label">' + data.unit.name.replace(/[▲●◆]/g, '') + '</span>';
+                            cell.appendChild(icon);
+                        }
+                        grid.appendChild(cell);
+                    }
+                }
+            },
+            
+            switchTab(tab, el) {
+                document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+                el.classList.add('active');
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                document.getElementById(tab + '-pane').classList.add('active');
+                
+                const cmd = Game.State.selectedCommand;
+                if (tab === 'command' && cmd) {
+                    const cmdEl = document.getElementById('cmd' + (cmd === 'custom' ? 'Custom' : cmd));
+                    if (cmdEl) cmdEl.classList.add('selected');
+                    document.getElementById('executeBar').classList.add('show');
+                    if (cmd === 'custom') document.getElementById('customInput').style.display = 'block';
+                } else if (tab !== 'command') {
+                    document.getElementById('executeBar').classList.remove('show');
+                    document.getElementById('customInput').style.display = 'none';
+                }
+            },
+            
+            showConfirm(info, cmd, customText) {
+                document.getElementById('resultTitle').textContent = '确认命令';
+                document.getElementById('resultBody').innerHTML = `
+                    <p style="margin-bottom:12px;">你确定要执行以下命令？</p>
+                    <div style="background:#0d1117;border:1px solid #30363d;padding:12px;border-radius:3px;margin-bottom:12px;">
+                        <div style="color:#f78166;font-weight:bold;font-size:14px;margin-bottom:4px;">${info.label}</div>
+                        <div style="color:#ffd700;font-size:12px;">⚠ ${info.risk}</div>
+                        ${cmd === 'custom' ? `<div style="color:#8b949e;font-size:12px;margin-top:6px;border-top:1px solid #21262d;padding-top:6px;">你的方案：${customText}</div>` : ''}
+                    </div>
+                    <button class="btn-confirm" onclick="confirmExecution()">确认执行</button>
+                    <button class="btn-cancel" onclick="closeResult()">取消</button>`;
+                document.getElementById('resultModal').classList.add('show');
+            },
+            
+            showResult(r, turn) {
+                document.getElementById('resultTitle').textContent = r.title;
+                document.getElementById('resultBody').innerHTML = `
+                    <div class="outcome ${r.outcome}">${r.msg}</div>
+                    <p>${r.detail}</p>
+                    <p style="margin-top:15px;color:#8b949e;">战场控制: ${r.control}%</p>
+                    <button class="btn-next" onclick="closeResult()">继续</button>`;
+            },
+            
+            updateHUD(control, turn) {
+                document.getElementById('control').textContent = control + '%';
+                document.getElementById('turnNum').textContent = turn;
+            },
+            
+            updateLog(text) {
+                const el = document.getElementById('turnLog');
+                el.textContent = text;
+                el.classList.add('show');
+            },
+            
+            closeResult() {
+                document.getElementById('resultModal').classList.remove('show');
                 document.getElementById('executeBar').classList.remove('show');
                 document.getElementById('customInput').style.display = 'none';
-            }
-        }
+                Game.State.selectedCommand = null;
+                document.querySelectorAll('.cmd-option').forEach(c => c.classList.remove('selected'));
+            },
+        };
         
-        function selectCmd(cmd) {
-            selectedCommand = cmd;
-            document.querySelectorAll('.cmd-option').forEach(c => {
-                c.classList.remove('selected');
-                const input = c.querySelector('.cmd-custom-input');
-                if (input) input.style.display = 'none';
-            });
-            const el = document.getElementById('cmd' + (cmd === 'custom' ? 'Custom' : cmd));
-            el.classList.add('selected');
-            
-            if (cmd === 'custom') {
-                document.getElementById('customInput').style.display = 'block';
-                document.getElementById('customCmdText').focus();
-            }
-            
-            const cmdTexts = {
-                'A': 'A: 正面推进',
-                'B': 'B: 侧翼包抄',
-                'C': 'C: 防守反击',
-                'custom': '自定义命令 (AI参谋)'
-            };
-            document.getElementById('selectedCmdText').textContent = cmdTexts[cmd];
-            document.getElementById('executeBar').classList.add('show');
-        }
+        /* ====== 全局包装函数（供 onclick 调用） ====== */
+        function switchTab(t, e) { Game.UI.switchTab(t, e); }
+        function selectCmd(c) { Game.Command.select(c); }
+        function executeCommand() { Game.Command.showConfirm(); }
+        function confirmExecution() { Game.Command.execute(); }
+        function closeResult() { Game.UI.closeResult(); }
         
-        function executeCommand() {
-            if (!selectedCommand) return;
-            
-            let customText = '';
-            if (selectedCommand === 'custom') {
-                customText = document.getElementById('customCmdText').value.trim();
-                if (!customText) { alert('请描述你的战术意图'); return; }
-            }
-            
-            const confirmInfo = {
-                'A': { label: '正面推进', risk: '敌军装甲部队可能反击，伤亡预计15-20%' },
-                'B': { label: '侧翼包抄', risk: '补给线拉长，若被敌军发现可能遭反包围' },
-                'C': { label: '防守反击', risk: '可能丧失战场主动权，被敌军占领更多区域' },
-                'custom': { label: 'AI参谋方案', risk: 'AI方案可能过于理想化，需人工审核' }
-            };
-            const info = confirmInfo[selectedCommand];
-            
-            document.getElementById('resultTitle').textContent = '确认命令';
-            document.getElementById('resultBody').innerHTML = `
-                <p style="margin-bottom:12px;">你确定要执行以下命令？</p>
-                <div style="background:#0d1117;border:1px solid #30363d;padding:12px;border-radius:3px;margin-bottom:12px;">
-                    <div style="color:#f78166;font-weight:bold;font-size:14px;margin-bottom:4px;">${info.label}</div>
-                    <div style="color:#ffd700;font-size:12px;">⚠ ${info.risk}</div>
-                    ${selectedCommand === 'custom' ? `<div style="color:#8b949e;font-size:12px;margin-top:6px;border-top:1px solid #21262d;padding-top:6px;">你的方案：${customText}</div>` : ''}
-                </div>
-                <button class="btn-confirm" onclick="confirmExecution()">确认执行</button>
-                <button class="btn-cancel" onclick="closeResult()">取消</button>
-            `;
-            document.getElementById('resultModal').classList.add('show');
-            window._pendingCustomText = customText;
-        }
-        
-        function confirmExecution() {
-            if (!selectedCommand) return;
-            const customText = window._pendingCustomText || '';
-            
-            const results = {
-                'A': {
-                    title: '正面推进 - 执行结果',
-                    outcome: 'success',
-                    msg: '第1、2步兵师已向敌军阵地推进。敌军装甲部队遭遇我方火力压制，后撤2公里。',
-                    detail: '我方占领(3,3)(3,4)区域。敌军伤亡约12%，我方伤亡8%。情报验证：敌军主力确实在东北方向。',
-                    control: '72%'
-                },
-                'B': {
-                    title: '侧翼包抄 - 执行结果',
-                    outcome: 'success',
-                    msg: '装甲团成功迂回至敌军侧翼。但补给线遭小股敌军骚扰，需增派护卫。',
-                    detail: '切断敌军退路，敌军陷入包围态势。但侧翼部队弹药消耗较大，需紧急补给。',
-                    control: '75%'
-                },
-                'C': {
-                    title: '防守反击 - 执行结果',
-                    outcome: 'fail',
-                    msg: '敌军未如预期进攻，反而在南侧发动佯攻。我方防线未被突破，但主动权削弱。',
-                    detail: '敌军占领(5,6)(5,7)区域。我方炮兵未能发挥预期效果。需重新评估敌军意图。',
-                    control: '63%'
-                },
-                'custom': {
-                    title: 'AI参谋方案 - 执行结果',
-                    outcome: 'success',
-                    msg: 'AI参谋方案已执行：' + customText,
-                    detail: '敌军侦察连遭重创，情报获取能力下降。未来两回合敌军移动力-30%。',
-                    control: '70%'
-                }
-            };
-            
-            const r = results[selectedCommand];
-            document.getElementById('resultTitle').textContent = r.title;
-            document.getElementById('resultBody').innerHTML = `
-                <div class="outcome ${r.outcome}">${r.msg}</div>
-                <p>${r.detail}</p>
-                <p style="margin-top:15px;color:#8b949e;">战场控制: ${r.control} (+${parseInt(r.control)-68}%)</p>
-                <button class="btn-next" onclick="closeResult()">继续</button>
-            `;
-            
-            document.getElementById('control').textContent = r.control;
-            currentTurn++;
-            document.getElementById('turnNum').textContent = currentTurn;
-            
-            const logEl = document.getElementById('turnLog');
-            logEl.textContent = '回合 ' + (currentTurn - 1) + '：' + r.title + ' — ' + r.msg;
-            logEl.classList.add('show');
-            
-            updateMapAfterCommand(selectedCommand);
-        }
-        
-        function updateMapAfterCommand(cmd) {
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    hexData[r][c].highlighted = false;
-                    hexData[r][c].highlightedEnemy = false;
-                }
-            }
-            
-            if (cmd === 'A') {
-                hexData[3][3].revealed = true; hexData[3][3].highlighted = true;
-                hexData[3][4].revealed = true; hexData[3][4].highlighted = true;
-                hexData[2][3].unit = null;
-            } else if (cmd === 'B') {
-                hexData[1][4].revealed = true; hexData[1][4].highlighted = true;
-                hexData[2][5].revealed = true; hexData[2][5].highlighted = true;
-                hexData[2][3].unit = null;
-            } else if (cmd === 'C') {
-                hexData[5][6].revealed = true; hexData[5][6].highlightedEnemy = true;
-                hexData[5][6].unit = { name: '敌占', type: 'enemy' };
-                hexData[5][7].revealed = true; hexData[5][7].highlightedEnemy = true;
-                hexData[5][7].unit = { name: '敌占', type: 'enemy' };
-            } else if (cmd === 'custom') {
-                hexData[1][3].revealed = true; hexData[1][3].highlighted = true;
-                hexData[2][2].revealed = true; hexData[2][2].highlighted = true;
-            }
-            
-            createHexGrid();
-        }
-        
-        function closeResult() {
-            document.getElementById('resultModal').classList.remove('show');
-            document.getElementById('executeBar').classList.remove('show');
-            document.getElementById('customInput').style.display = 'none';
-            selectedCommand = null;
-            document.querySelectorAll('.cmd-option').forEach(c => c.classList.remove('selected'));
-        }
-        
-        createHexGrid();
+        /* ====== Init ====== */
+        Game.State.init();
+        Game.UI.renderHexGrid();
         
         let zoomLevel = 1;
         document.querySelector('.hex-map').addEventListener('wheel', function(e) {
             e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.08 : 0.08;
-            zoomLevel = Math.max(0.4, Math.min(2.0, zoomLevel + delta));
+            zoomLevel = Math.max(0.4, Math.min(2.0, zoomLevel + (e.deltaY > 0 ? -0.08 : 0.08)));
             document.querySelector('.hex-grid').style.transform = 'scale(' + zoomLevel + ')';
         }, { passive: false });
     </script>
