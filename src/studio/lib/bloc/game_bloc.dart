@@ -3,10 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/terrain.dart';
 import '../models/unit.dart';
 import '../models/campaign.dart';
-import '../models/log_message.dart';
+import '../models/game.dart';
 import 'game_state.dart';
 import 'game_event.dart';
-import '../models/game_engine.dart';
 import '../models/battlefield.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
@@ -17,9 +16,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           units: engine.createInitialUnits(),
           campaign: Campaign(),
           logMessages: const [
-            LogMessage('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
-            LogMessage('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
-            LogMessage('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
+            Dispatch('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
+            Dispatch('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
+            Dispatch('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
           ],
         )) {
     on<SelectUnit>(_onSelectUnit);
@@ -98,7 +97,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     final newCampaign = state.campaign.copy();
     newCampaign.huayePower = (newCampaign.huayePower - 1).clamp(5, 100);
 
-    final newLogs = [...state.logMessages, LogMessage('${unit.name} 向 ($tc,$tr) 推进', 'info', state.currentTurn)];
+    final newLogs = [...state.logMessages, Dispatch('${unit.name} 向 ($tc,$tr) 推进', 'info', state.currentTurn)];
 
     final attackRange = engine.getAttackTargets(unit, state.units);
 
@@ -115,14 +114,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     final newCampaign = state.campaign.copy();
     newCampaign.huayePower = (newCampaign.huayePower - 3).clamp(5, 100);
 
-    final newLogs = <LogMessage>[...state.logMessages];
-    newLogs.add(LogMessage('${attacker.name} \u2192 ${defender.name}：${result.text}', 'hit', state.currentTurn));
+    final newLogs = <Dispatch>[...state.logMessages];
+    newLogs.add(Dispatch('${attacker.name} \u2192 ${defender.name}：${result.text}', 'hit', state.currentTurn));
 
     if (result.killed) {
       final defTerrain = engine.mapTerrain[defender.row][defender.col];
       if (terrainProps[defTerrain]!.isCore) {
         newCampaign.fortStrength = (newCampaign.fortStrength - 1).clamp(0, 5);
-        newLogs.add(LogMessage('\u{1F3F0}帝丘店核心防御被削弱！（剩余强度${newCampaign.fortStrength}）', 'urgent', state.currentTurn));
+        newLogs.add(Dispatch('\u{1F3F0}帝丘店核心防御被削弱！（剩余强度${newCampaign.fortStrength}）', 'urgent', state.currentTurn));
       }
     }
 
@@ -148,7 +147,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       if (u.side == 'pla') u.hasActed = true;
     }
 
-    final newLogs = [...state.logMessages, LogMessage('\u23F0华野回合结束，国军开始行动\u2026', 'info', state.currentTurn)];
+    final newLogs = [...state.logMessages, Dispatch('\u23F0华野回合结束，国军开始行动\u2026', 'info', state.currentTurn)];
 
     emit(state.copyWith(
       selectedUnitId: null,
@@ -166,7 +165,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     if (state.phase != GamePhase.ai || state.isGameOver) return;
 
     var currentCampaign = state.campaign;
-    var currentLogs = List<LogMessage>.from(state.logMessages);
+    var currentLogs = List<Dispatch>.from(state.logMessages);
 
     final (reinforcements, spawnLogs) = engine.spawnReinforcements(state.units, currentCampaign, state.currentTurn);
     if (reinforcements.isNotEmpty) {
@@ -186,7 +185,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         targets.sort((a, b) => (b.baseAttack + (b.special == 'assault' ? 5 : 0))
             .compareTo(a.baseAttack + (a.special == 'assault' ? 5 : 0)));
         final result = engine.resolveCombat(nu, targets.first, currentCampaign);
-        currentLogs.add(LogMessage('${nu.name} \u2192 ${targets.first.name}：${result.text}', 'urgent', state.currentTurn));
+        currentLogs.add(Dispatch('${nu.name} \u2192 ${targets.first.name}：${result.text}', 'urgent', state.currentTurn));
 
         if (state.playerUnits.isEmpty) {
           currentCampaign.gameOver = true;
@@ -211,7 +210,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       currentCampaign.gameOver = true;
       currentCampaign.victory = false;
       currentCampaign.victoryDetail = '时间耗尽，援军逼近，华野被迫撤出战斗。';
-      currentLogs.add(LogMessage('\u{1F480}时间耗尽，未能攻克帝丘店。', 'urgent', newTurn));
+      currentLogs.add(Dispatch('\u{1F480}时间耗尽，未能攻克帝丘店。', 'urgent', newTurn));
     }
 
     if (currentCampaign.gameOver) {
@@ -244,9 +243,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       units: engine.createInitialUnits(),
       campaign: Campaign(),
       logMessages: const [
-        LogMessage('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
-        LogMessage('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
-        LogMessage('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
+        Dispatch('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
+        Dispatch('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
+        Dispatch('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
       ],
     ));
   }

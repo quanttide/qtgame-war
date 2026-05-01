@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../models/unit.dart';
 import '../models/campaign.dart';
-import '../models/log_message.dart';
+import '../models/game.dart';
 
 enum GamePhase { player, ai, gameOver }
 
@@ -13,7 +13,7 @@ class GameState extends Equatable {
   final int currentTurn;
   final GamePhase phase;
   final Campaign campaign;
-  final List<LogMessage> logMessages;
+  final List<Dispatch> logMessages;
 
   const GameState({
     required this.units,
@@ -40,7 +40,7 @@ class GameState extends Equatable {
     int? currentTurn,
     GamePhase? phase,
     Campaign? campaign,
-    List<LogMessage>? logMessages,
+    List<Dispatch>? logMessages,
     bool clearSelection = false,
   }) {
     return GameState(

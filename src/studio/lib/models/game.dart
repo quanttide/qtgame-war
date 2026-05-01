@@ -2,7 +2,6 @@ import 'dart:math';
 import 'unit.dart';
 import 'terrain.dart';
 import 'campaign.dart';
-import 'log_message.dart';
 import 'battlefield.dart';
 
 class GameEngine {
@@ -93,10 +92,10 @@ class GameEngine {
     return CombatResult(hit: hit, damage: damage, text: text, killed: killed);
   }
 
-  (List<Unit>, List<LogMessage>) spawnReinforcements(
+  (List<Unit>, List<Dispatch>) spawnReinforcements(
       List<Unit> units, Campaign campaign, int currentTurn) {
     final newUnits = <Unit>[];
-    final logs = <LogMessage>[];
+    final logs = <Dispatch>[];
     if (currentTurn >= campaign.qiuReinforceTurn && !campaign.qiuArrived) {
       campaign.qiuArrived = true;
       newUnits.addAll([
@@ -107,7 +106,7 @@ class GameEngine {
         u.revealed = true;
         u.isReinforcement = true;
       }
-      logs.add(LogMessage('\u{1F4A5}邱清泉兵团援军从西面抵达战场！', 'urgent', currentTurn));
+      logs.add(Dispatch('\u{1F4A5}邱清泉兵团援军从西面抵达战场！', 'urgent', currentTurn));
     }
     if (currentTurn >= campaign.huReinforceTurn && !campaign.huArrived) {
       campaign.huArrived = true;
@@ -119,7 +118,7 @@ class GameEngine {
         u.revealed = true;
         u.isReinforcement = true;
       }
-      logs.add(LogMessage('\u{1F4A5}胡琏兵团援军从南面抵达战场！', 'urgent', currentTurn));
+      logs.add(Dispatch('\u{1F4A5}胡琏兵团援军从南面抵达战场！', 'urgent', currentTurn));
     }
     return (newUnits, logs);
   }
@@ -180,4 +179,11 @@ class CombatResult {
     required this.text,
     required this.killed,
   });
+}
+
+class Dispatch {
+  final String msg;
+  final String type;
+  final int turn;
+  const Dispatch(this.msg, this.type, this.turn);
 }

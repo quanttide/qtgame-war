@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/game_state.dart';
 import '../bloc/game_event.dart';
 import '../models/battlefield.dart';
-import '../models/game_engine.dart';
+import '../models/game.dart';
 import '../bloc/game_bloc.dart';
 import '../views/hex_grid.dart';
 import '../views/side_panel.dart';
