@@ -14,7 +14,7 @@ class CampaignScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => GameBloc(GameEngine(Battlefield.createMapTerrain())),
+      create: (_) => GameBloc(Game(Battlefield.createMapTerrain())),
       child: BlocListener<GameBloc, GameState>(
         listener: (context, state) {
           if (state.isGameOver) {

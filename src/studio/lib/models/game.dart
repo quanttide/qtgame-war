@@ -3,10 +3,19 @@ import 'unit.dart';
 import 'campaign.dart';
 import 'battlefield.dart';
 
-class GameEngine {
+class Game {
   final List<List<TerrainType>> mapTerrain;
 
-  GameEngine(this.mapTerrain);
+  Game(this.mapTerrain);
+
+  static int terrainDefense(Unit unit, List<List<TerrainType>> map) =>
+      terrainProps[map[unit.row][unit.col]]!.defenseBonus;
+
+  static bool inFullCover(Unit unit, List<List<TerrainType>> map) =>
+      terrainProps[map[unit.row][unit.col]]!.fullCover;
+
+  static bool inCore(Unit unit, List<List<TerrainType>> map) =>
+      terrainProps[map[unit.row][unit.col]]!.isCore;
 
   Map<String, int> getMoveRange(Unit unit, List<Unit> allUnits) {
     final reachable = <String, int>{};
@@ -41,7 +50,7 @@ class GameEngine {
       if (!enemy.alive || enemy.side != 'nationalist' || !enemy.revealed) continue;
       final dist = Battlefield.hexDistance(unit.col, unit.row, enemy.col, enemy.row);
       if (dist <= unit.attackRange) {
-        if (enemy.isInFullCover(mapTerrain) && dist > 1) continue;
+        if (inFullCover(enemy, mapTerrain) && dist > 1) continue;
         targets.add('${enemy.col},${enemy.row}');
       }
     }
@@ -52,7 +61,7 @@ class GameEngine {
     int hitChance = 55;
     hitChance += attacker.baseAttack * 6;
     hitChance += campaign.hitMod;
-    hitChance -= defender.getTerrainDefense(mapTerrain) * 8;
+    hitChance -= terrainDefense(defender, mapTerrain) * 8;
     final dist = Battlefield.hexDistance(attacker.col, attacker.row, defender.col, defender.row);
     if (dist > 1) hitChance -= (dist - 1) * 4;
     hitChance = hitChance.clamp(5, 92);
@@ -63,7 +72,7 @@ class GameEngine {
     String text;
 
     if (hit) {
-      if (attacker.special == 'assault' && defender.isInFullCover(mapTerrain)) {
+      if (attacker.special == 'assault' && inFullCover(defender, mapTerrain)) {
         damage = min(2, defender.hp);
         text = '\u{1F4A5}突击成功！重创核心守军！';
       } else {
@@ -130,7 +139,7 @@ class GameEngine {
       campaign.victoryDetail = '帝丘店地区国军全部肃清！';
       return;
     }
-    final coreOccupied = units.any((u) => u.alive && u.isInCore(mapTerrain) && u.side == 'pla');
+    final coreOccupied = units.any((u) => u.alive && inCore(u, mapTerrain) && u.side == 'pla');
     if (coreOccupied && campaign.fortStrength <= 0) {
       campaign.gameOver = true;
       campaign.victory = true;

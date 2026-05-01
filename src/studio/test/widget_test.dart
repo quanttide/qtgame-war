@@ -4,8 +4,8 @@ import 'package:studio/models/battlefield.dart';
 import 'package:studio/models/campaign.dart';
 
 void main() {
-  test('GameEngine resolves combat', () {
-    final engine = GameEngine(Battlefield.createMapTerrain());
+  test('Game resolves combat', () {
+    final engine = Game(Battlefield.createMapTerrain());
     final units = engine.createInitialUnits();
     final attacker = units.first;
     final defender = units[8]; // nationalist unit

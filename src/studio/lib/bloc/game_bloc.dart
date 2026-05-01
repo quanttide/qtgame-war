@@ -8,7 +8,7 @@ import 'game_state.dart';
 import 'game_event.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
-  final GameEngine engine;
+  final Game engine;
 
   GameBloc(this.engine)
       : super(GameState(
@@ -176,7 +176,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       final targets = state.playerUnits.where((pu) {
         final d = Battlefield.hexDistance(nu.col, nu.row, pu.col, pu.row);
         if (d > nu.attackRange) return false;
-        if (pu.isInFullCover(engine.mapTerrain) && d > 1) return false;
+        if (Game.inFullCover(pu, engine.mapTerrain) && d > 1) return false;
         return true;
       }).toList();
 

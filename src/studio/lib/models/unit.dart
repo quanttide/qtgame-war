@@ -1,5 +1,3 @@
-import 'battlefield.dart';
-
 class Unit {
   final int id;
   final String name;
@@ -36,21 +34,7 @@ class Unit {
     this.isReinforcement = false,
   }) : hp = maxHp;
 
-  int get effectiveMoveRange {
-    return baseMoveRange;
-  }
-
-  int getTerrainDefense(List<List<TerrainType>> mapTerrain) {
-    return terrainProps[mapTerrain[row][col]]!.defenseBonus;
-  }
-
-  bool isInFullCover(List<List<TerrainType>> mapTerrain) {
-    return terrainProps[mapTerrain[row][col]]!.fullCover;
-  }
-
-  bool isInCore(List<List<TerrainType>> mapTerrain) {
-    return terrainProps[mapTerrain[row][col]]!.isCore;
-  }
+  int get effectiveMoveRange => baseMoveRange;
 
   Unit copy() {
     final u = Unit(
