@@ -1,7 +1,7 @@
 import 'dart:math';
 import '../models/unit.dart';
 import '../models/terrain.dart';
-import '../models/campaign_state.dart';
+import '../models/campaign.dart';
 import '../models/log_message.dart';
 import 'hex_utils.dart';
 
@@ -50,7 +50,7 @@ class GameEngine {
     return targets;
   }
 
-  CombatResult resolveCombat(Unit attacker, Unit defender, CampaignState campaign) {
+  CombatResult resolveCombat(Unit attacker, Unit defender, Campaign campaign) {
     int hitChance = 55;
     hitChance += attacker.baseAttack * 6;
     hitChance += campaign.hitMod;
@@ -94,7 +94,7 @@ class GameEngine {
   }
 
   (List<Unit>, List<LogMessage>) spawnReinforcements(
-      List<Unit> units, CampaignState campaign, int currentTurn) {
+      List<Unit> units, Campaign campaign, int currentTurn) {
     final newUnits = <Unit>[];
     final logs = <LogMessage>[];
     if (currentTurn >= campaign.qiuReinforceTurn && !campaign.qiuArrived) {
@@ -124,7 +124,7 @@ class GameEngine {
     return (newUnits, logs);
   }
 
-  void checkVictory(List<Unit> units, CampaignState campaign, int currentTurn) {
+  void checkVictory(List<Unit> units, Campaign campaign, int currentTurn) {
     final natUnits = units.where((u) => u.alive && u.side == 'nationalist');
     if (natUnits.isEmpty) {
       campaign.gameOver = true;

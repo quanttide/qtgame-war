@@ -1,4 +1,4 @@
-class CampaignState {
+class Campaign {
   int huayePower;
   int fortStrength;
   int qiuReinforceTurn;
@@ -9,7 +9,7 @@ class CampaignState {
   bool? victory;
   String victoryDetail;
 
-  CampaignState({
+  Campaign({
     this.huayePower = 85,
     this.fortStrength = 3,
     this.qiuReinforceTurn = 8,
@@ -42,8 +42,8 @@ class CampaignState {
     return 2;
   }
 
-  CampaignState copy() {
-    return CampaignState(
+  Campaign copy() {
+    return Campaign(
       huayePower: huayePower,
       fortStrength: fortStrength,
       qiuReinforceTurn: qiuReinforceTurn,

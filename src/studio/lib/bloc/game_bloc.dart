@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/terrain.dart';
 import '../models/unit.dart';
-import '../models/campaign_state.dart';
+import '../models/campaign.dart';
 import '../models/log_message.dart';
 import 'game_state.dart';
 import 'game_event.dart';
@@ -15,7 +15,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   GameBloc(this.engine)
       : super(GameState(
           units: engine.createInitialUnits(),
-          campaign: CampaignState(),
+          campaign: Campaign(),
           logMessages: const [
             LogMessage('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
             LogMessage('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
@@ -242,7 +242,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   void _onReset(ResetGame event, Emitter<GameState> emit) {
     emit(GameState(
       units: engine.createInitialUnits(),
-      campaign: CampaignState(),
+      campaign: Campaign(),
       logMessages: const [
         LogMessage('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
         LogMessage('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
