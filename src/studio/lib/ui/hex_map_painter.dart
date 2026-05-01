@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/terrain.dart';
 import '../models/unit.dart';
-import '../models/game_state.dart';
+import '../bloc/game_state.dart';
 import '../engine/hex_utils.dart';
 
 class HexMapPainter extends CustomPainter {

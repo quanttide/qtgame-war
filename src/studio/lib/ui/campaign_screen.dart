@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../models/game_state.dart';
-import '../models/game_event.dart';
+import '../bloc/game_state.dart';
+import '../bloc/game_event.dart';
 import '../engine/map_data.dart';
 import '../engine/game_engine.dart';
 import '../bloc/game_bloc.dart';

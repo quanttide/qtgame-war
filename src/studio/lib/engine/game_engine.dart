@@ -2,7 +2,7 @@ import 'dart:math';
 import '../models/unit.dart';
 import '../models/terrain.dart';
 import '../models/campaign_state.dart';
-import '../models/game_state.dart';
+import '../models/log_message.dart';
 import 'hex_utils.dart';
 
 class GameEngine {

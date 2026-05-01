@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'unit.dart';
-import 'campaign_state.dart';
+import '../models/unit.dart';
+import '../models/campaign_state.dart';
+import '../models/log_message.dart';
 
 enum GamePhase { player, ai, gameOver }
 
@@ -72,9 +73,4 @@ class GameState extends Equatable {
       ];
 }
 
-class LogMessage {
-  final String msg;
-  final String type;
-  final int turn;
-  const LogMessage(this.msg, this.type, this.turn);
-}
+
