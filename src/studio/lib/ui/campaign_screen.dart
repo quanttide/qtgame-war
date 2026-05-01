@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/game_state.dart';
 import '../bloc/game_event.dart';
-import '../engine/map_data.dart';
-import '../engine/game_engine.dart';
+import '../models/battlefield.dart';
+import '../models/game_engine.dart';
 import '../bloc/game_bloc.dart';
 import 'game_board.dart';
 import 'command_panel.dart';
@@ -14,7 +14,7 @@ class CampaignScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => GameBloc(GameEngine(createMapTerrain())),
+      create: (_) => GameBloc(GameEngine(Battlefield.createMapTerrain())),
       child: BlocListener<GameBloc, GameState>(
         listener: (context, state) {
           if (state.isGameOver) {

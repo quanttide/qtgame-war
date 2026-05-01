@@ -6,8 +6,8 @@ import '../models/campaign.dart';
 import '../models/log_message.dart';
 import 'game_state.dart';
 import 'game_event.dart';
-import '../engine/game_engine.dart';
-import '../engine/hex_utils.dart';
+import '../models/game_engine.dart';
+import '../models/battlefield.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final GameEngine engine;
@@ -176,7 +176,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     for (final nu in state.nationalistUnits.where((u) => u.revealed)) {
       final targets = state.playerUnits.where((pu) {
-        final d = HexUtils.hexDistance(nu.col, nu.row, pu.col, pu.row);
+        final d = Battlefield.hexDistance(nu.col, nu.row, pu.col, pu.row);
         if (d > nu.attackRange) return false;
         if (pu.isInFullCover(engine.mapTerrain) && d > 1) return false;
         return true;

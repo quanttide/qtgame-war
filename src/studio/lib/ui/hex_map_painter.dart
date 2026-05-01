@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/terrain.dart';
 import '../models/unit.dart';
 import '../bloc/game_state.dart';
-import '../engine/hex_utils.dart';
+import '../models/battlefield.dart';
 
 class HexMapPainter extends CustomPainter {
   final GameState state;
@@ -13,9 +13,9 @@ class HexMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (int r = 0; r < HexUtils.rows; r++) {
-      for (int c = 0; c < HexUtils.cols; c++) {
-        final center = HexUtils.hexCenter(c, r);
+    for (int r = 0; r < Battlefield.rows; r++) {
+      for (int c = 0; c < Battlefield.cols; c++) {
+        final center = Battlefield.hexCenter(c, r);
         final terrain = mapTerrain[r][c];
         final props = terrainProps[terrain]!;
         final key = '$c,$r';
@@ -50,20 +50,20 @@ class HexMapPainter extends CustomPainter {
     for (final unit in state.units) {
       if (!unit.alive) continue;
       if (unit.side == 'nationalist' && !unit.revealed) continue;
-      final center = HexUtils.hexCenter(unit.col, unit.row);
+      final center = Battlefield.hexCenter(unit.col, unit.row);
       _drawUnit(canvas, center.x, center.y, unit, hexSize);
     }
 
     for (final unit in state.units) {
       if (!unit.alive || unit.side != 'nationalist' || unit.revealed) continue;
-      final center = HexUtils.hexCenter(unit.col, unit.row);
+      final center = Battlefield.hexCenter(unit.col, unit.row);
       _drawHiddenEnemy(canvas, center.x, center.y, hexSize);
     }
   }
 
   void _drawHex(Canvas canvas, double cx, double cy, double size, Color fill, Color stroke, double lw) {
     final path = Path();
-    final verts = HexUtils.hexVertices(cx, cy, size);
+    final verts = Battlefield.hexVertices(cx, cy, size);
     path.moveTo(verts[0].x, verts[0].y);
     for (int i = 1; i < 6; i++) { path.lineTo(verts[i].x, verts[i].y); }
     path.close();

@@ -1,9 +1,9 @@
 import 'dart:math';
-import '../models/unit.dart';
-import '../models/terrain.dart';
-import '../models/campaign.dart';
-import '../models/log_message.dart';
-import 'hex_utils.dart';
+import 'unit.dart';
+import 'terrain.dart';
+import 'campaign.dart';
+import 'log_message.dart';
+import 'battlefield.dart';
 
 class GameEngine {
   final List<List<TerrainType>> mapTerrain;
@@ -18,7 +18,7 @@ class GameEngine {
 
     while (queue.isNotEmpty) {
       final (c, r, remaining) = queue.removeAt(0);
-      for (final (nc, nr) in HexUtils.getNeighbors(c, r)) {
+      for (final (nc, nr) in Battlefield.getNeighbors(c, r)) {
         final nk = '$nc,$nr';
         final occ = getUnitAt(nc, nr, allUnits);
         if (occ != null && occ.id != unit.id) continue;
@@ -41,7 +41,7 @@ class GameEngine {
     final targets = <String>{};
     for (final enemy in allUnits) {
       if (!enemy.alive || enemy.side != 'nationalist' || !enemy.revealed) continue;
-      final dist = HexUtils.hexDistance(unit.col, unit.row, enemy.col, enemy.row);
+      final dist = Battlefield.hexDistance(unit.col, unit.row, enemy.col, enemy.row);
       if (dist <= unit.attackRange) {
         if (enemy.isInFullCover(mapTerrain) && dist > 1) continue;
         targets.add('${enemy.col},${enemy.row}');
@@ -55,7 +55,7 @@ class GameEngine {
     hitChance += attacker.baseAttack * 6;
     hitChance += campaign.hitMod;
     hitChance -= defender.getTerrainDefense(mapTerrain) * 8;
-    final dist = HexUtils.hexDistance(attacker.col, attacker.row, defender.col, defender.row);
+    final dist = Battlefield.hexDistance(attacker.col, attacker.row, defender.col, defender.row);
     if (dist > 1) hitChance -= (dist - 1) * 4;
     hitChance = hitChance.clamp(5, 92);
 

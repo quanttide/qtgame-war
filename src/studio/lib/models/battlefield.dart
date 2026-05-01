@@ -1,21 +1,22 @@
 import 'dart:math';
+import 'terrain.dart';
 
 class HexPoint {
   final double x, y;
   const HexPoint(this.x, this.y);
 }
 
-class HexUtils {
-  static double hexSize = 27;
-  static int cols = 10;
-  static int rows = 7;
-  static double sqr3 = sqrt(3);
-  static double colSpacing = 1.5 * hexSize;
-  static double rowSpacing = sqr3 * hexSize;
-  static double oddRowOffset = 0.75 * hexSize;
-  static double paddingX = 50;
-  static double paddingY = 40;
+class Battlefield {
+  static const double hexSize = 27;
+  static const int cols = 10;
+  static const int rows = 7;
+  static const double paddingX = 50;
+  static const double paddingY = 40;
 
+  static double get sqr3 => sqrt(3);
+  static double get colSpacing => 1.5 * hexSize;
+  static double get rowSpacing => sqr3 * hexSize;
+  static double get oddRowOffset => 0.75 * hexSize;
   static double get canvasWidth => cols * colSpacing + hexSize * 0.5 + paddingX * 2;
   static double get canvasHeight => rows * rowSpacing + hexSize * 0.5 + paddingY * 2;
 
@@ -54,7 +55,7 @@ class HexUtils {
   }
 
   static List<(int, int)> getNeighbors(int col, int row) {
-    final List<(int, int)> offsets = row % 2 == 1
+    final offsets = row % 2 == 1
         ? [(0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 0)]
         : [(-1, -1), (0, -1), (1, 0), (0, 1), (-1, 1), (-1, 0)];
     final result = <(int, int)>[];
@@ -72,5 +73,41 @@ class HexUtils {
     int q1 = c1 - (r1 - (r1 & 1)) ~/ 2;
     int q2 = c2 - (r2 - (r2 & 1)) ~/ 2;
     return max(max((q1 - q2).abs(), (r1 - r2).abs()), (-q1 - r1 - (-q2 - r2)).abs());
+  }
+
+  static List<List<TerrainType>> createMapTerrain() {
+    final grid = List.generate(rows, (_) => List.filled(cols, TerrainType.plain));
+
+    void st(int c, int r, TerrainType t) {
+      if (r >= 0 && r < rows && c >= 0 && c < cols) grid[r][c] = t;
+    }
+
+    const riverCells = [
+      (0, 5), (1, 5), (2, 4), (3, 4), (4, 3),
+      (5, 3), (6, 3), (7, 2), (8, 2), (9, 2),
+      (0, 6), (1, 6),
+    ];
+    for (final (c, r) in riverCells) { st(c, r, TerrainType.river); }
+
+    st(5, 4, TerrainType.coreFort);
+    st(6, 4, TerrainType.town);
+    st(4, 4, TerrainType.town);
+    st(5, 5, TerrainType.town);
+
+    st(3, 2, TerrainType.town);
+    st(4, 2, TerrainType.village);
+
+    st(2, 5, TerrainType.village);
+    st(1, 4, TerrainType.village);
+    st(7, 1, TerrainType.village);
+    st(6, 1, TerrainType.village);
+    st(4, 1, TerrainType.village);
+
+    st(1, 2, TerrainType.village);
+    st(8, 5, TerrainType.village);
+    st(0, 3, TerrainType.village);
+    st(9, 4, TerrainType.village);
+
+    return grid;
   }
 }
