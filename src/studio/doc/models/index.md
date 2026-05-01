@@ -73,3 +73,108 @@ final result = game.resolveCombat(attacker, defender, campaign);
 一句话总结
 
 当前四个模块是战棋游戏的静态物理模型，但它们没有构成一个能自行运转的 回合制游戏核心。要成为真正的“核心理论模型”，必须引入 不可变状态 和 回合调度控制器，把散落的方法变成严格的状态转换管线。否则再多的地形、再细致的战斗公式，也只是没有发条的玩具兵。
+
+
+这就说得通了。从HTML原型直接翻译成Dart，却没有经过重新设计，所有症状都找到了根源。
+
+—
+
+HTML原型转Dart的典型“翻译后遗症”
+
+1. 状态管理直接映射：全局可变 → 到处修改
+
+HTML原型的典型写法：
+
+```javascript
+// 全局单位数组
+var units = [...];
+// 战斗时直接改
+function resolveCombat(attacker, defender) {
+    defender.hp -= 1;
+    if (defender.hp <= 0) defender.alive = false;
+}
+```
+
+翻译成Dart后：
+
+```dart
+class Game {
+  CombatResult resolveCombat(Unit attacker, Unit defender, Campaign campaign) {
+    defender.hp -= damage;        // 直接改
+    defender.alive = false;       // 直接改
+    campaign.gameOver = true;     // 跨对象改
+  }
+}
+```
+
+HTML里全局可变是“正常”的，因为原型只求跑通。翻译成Dart后，这种模式变成了无约束的副作用网络——任何方法都可能修改任何对象。这就是为什么 Game 类的方法看起来都在做“暗箱操作”。
+
+2. 事件驱动缺失：用函数调用模拟流程
+
+HTML原型通常用按钮点击驱动：
+
+```javascript
+button.onclick = function() {
+    moveUnit();
+    attackUnit();
+    endTurn();
+};
+```
+
+流程顺序靠用户按按钮的顺序来保证，代码本身没有状态机。
+
+翻译成Dart后，这些函数都进了 Game 类，变成了可以被任意顺序调用的方法集合。但Dart端没有按钮点击来约束顺序，导致流程控制完全真空——谁先调谁后调、什么时候能调、什么时候不能调，都没有任何保障。
+
+这就是为什么你会觉得：“方法都能看懂，但不知道游戏怎么玩起来”——因为HTML版靠的是用户在界面上的点击序列来驱动流程，翻译后界面和逻辑分离了，但流程控制没有被建模进去。
+
+3. 字符串枚举的根源
+
+HTML原型里阵营、特技直接写字符串是常态：
+
+```javascript
+if (unit.side == ’nationalist‘) { ... }
+if (unit.special == ’assault‘) { ... }
+```
+
+这在JS里没有编译期检查，写错了就运行时炸。翻译成Dart后，字符串依然在，但Dart有能力做枚举——只是翻译过程没有重构这一步。
+
+4. 硬编码数据的来源
+
+HTML原型的地图数据、初始单位、援军信息很可能直接写在HTML的 <script> 标签里：
+
+```javascript
+const mapTerrain = [...];
+const initialUnits = [...];
+```
+
+翻译到Dart时，这些数据直接被搬进了 Battlefield.createMapTerrain() 和 Game.createInitialUnits()。原型阶段这样做没问题，但作为正式项目的模型层，这就成了“数据耦合进逻辑”的技术债。
+
+5. 拼音命名的起源
+
+HTML原型很可能是中文团队快速搭建的，变量名直接用拼音（huayePower, qiuReinforceTurn）在原型阶段效率高，翻译到Dart时没有重命名，被原封不动保留了下来。
+
+—
+
+从原型到正式产品的关键跨越
+
+你现在的代码本质上是一个原型体，要做成正式产品，需要补的不是功能，而是架构：
+
+当前状态（原型翻译） 应该是（正式设计）
+方法随意修改传入对象 状态不可变，修改返回新状态
+流程靠外部调用顺序 内部状态机严格管理允许的操作
+数据硬编码在类里 配置文件/数据类加载
+字符串代替枚举 强类型枚举
+四个类各自为政 明确的分层：状态/服务/配置/控制器
+
+—
+
+这一轮分析的总结论
+
+当前的四个模块确实构成了“核心理论模型”，但它是一个原型的理论模型，不是正式产品的理论模型。
+
+· Battlefield 是四个里唯一已经“成品化”的模块，可以直接复用。
+· Unit 和 Campaign 需要不可变化 + 强类型化。
+· Game 需要彻底拆解重组为：状态机 + 规则服务 + 控制器。
+· 最关键的是引入一个不存在于原型里的东西——回合调度与状态管理。因为HTML原型里这部分是由用户点击驱动的，翻译成Dart后驱动者消失了，必须重新建模。
+
+好在你已经识别出了“怪”在哪里，剩下的就是决定：是在这个基础上继续补丁，还是拿 Battlefield 当基础，重新设计另外三个模块和缺失的控制器。后者短期成本高，但长期来看反而是捷径。
