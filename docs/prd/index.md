@@ -127,3 +127,13 @@ Game.State.commander = {
 - 不做指挥官性格定制（对话选项、背景故事选择）
 - 不做心理健康"游戏结束"机制（压力爆表不会 game over，只影响决策）
 - 不做多指挥官系统
+
+## 相关文档
+
+| 文档 | 与本 PRD 的关系 |
+|------|----------------|
+| [`src/index.html`](../src/index.html) | 实现目标。心态面板将作为新模块接入 `Game.State.commander` |
+| [`docs/ixd/index.md`](../ixd/index.md) | 交互设计决策。HUD 覆盖层思路延续此文档的"减少注意力竞争"方向 |
+| [`docs/add/index.md`](../add/index.md) | 模块化方案。心态面板对应新增 `Game.Commander` 模块 |
+| [`docs/qa/index.md`](../qa/index.md) | 原型展开分析。当前评估中"意图传达度 A-"的扣分项（缺代入感）由此 PRD 解决 |
+| [`docs/qa/interaction.md`](../qa/interaction.md) | 交互设计评审。反馈回路已完整，本 PRD 在反馈中追加"心理影响"维度 |
