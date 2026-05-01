@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>豫东 · 第三纵队 — 阻击任务（修正版）</title>
+        <style>
+            :root {
+                --bg: #1e1b16;
+                --paper: #f4efe2;
+                --ink: #2c2416;
+                --ink-light: #4a4030;
+                --ink-muted: #6b6050;
+                --accent-red: #a04030;
+                --accent-amber: #9e7a40;
+                --accent-green: #5a7a4a;
+                --border: #c8bfae;
+                --shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+                --font-body:
+                    "Noto Serif SC", "STSong", "Songti SC", "SimSun", serif;
+                --font-voice:
+                    "KaiTi", "STKaiti", "华文楷体", "楷体", "Noto Serif SC",
+                    serif;
+            }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                background: #2a2620;
+                font-family: var(--font-body);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                background-image: radial-gradient(
+                    ellipse at 50% 30%,
+                    rgba(70, 60, 45, 0.3) 0%,
+                    transparent 65%
+                );
+            }
+            .command-desk {
+                background: var(--paper);
+                color: var(--ink);
+                width: 100%;
+                max-width: 660px;
+                border-radius: 2px;
+                box-shadow:
+                    0 2px 12px rgba(0, 0, 0, 0.2),
+                    0 0 0 1px rgba(0, 0, 0, 0.08);
+                padding: 22px 20px 16px;
+                font-size: 14px;
+                line-height: 1.65;
+                letter-spacing: 0.3px;
+                border: 1px solid #bfb6a5;
+                position: relative;
+                background-image: linear-gradient(
+                    rgba(180, 160, 130, 0.07) 1px,
+                    transparent 1px
+                );
+                background-size: 100% 22px;
+                background-position: 0 18px;
+            }
+            .desk-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin-bottom: 10px;
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 8px;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .desk-title {
+                font-size: 16px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }
+            .desk-time {
+                font-family: var(--font-voice);
+                font-size: 13px;
+                color: var(--ink-light);
+                background: rgba(0, 0, 0, 0.02);
+                padding: 3px 10px;
+                border-radius: 2px;
+                border: 1px solid var(--border);
+                white-space: nowrap;
+            }
+            .mission-statement {
+                background: rgba(160, 64, 48, 0.06);
+                border: 1px solid rgba(160, 64, 48, 0.2);
+                padding: 8px 14px;
+                margin-bottom: 12px;
+                border-radius: 2px;
+                font-family: var(--font-voice);
+                font-size: 13px;
+            }
+            .mission-statement .critical {
+                font-weight: 700;
+                color: var(--accent-red);
+            }
+            .assessment-panel {
+                background: rgba(0, 0, 0, 0.02);
+                border: 1px solid var(--border);
+                padding: 12px 14px;
+                margin-bottom: 10px;
+                border-radius: 2px;
+            }
+            .assessment-label {
+                font-size: 10px;
+                letter-spacing: 0.7px;
+                color: var(--ink-muted);
+                border-bottom: 1px dotted var(--border);
+                padding-bottom: 5px;
+                margin-bottom: 8px;
+            }
+            .assessment-main {
+                font-family: var(--font-voice);
+                font-size: 13.5px;
+                line-height: 1.7;
+                margin-bottom: 8px;
+            }
+            .assessment-main .critical {
+                font-weight: 700;
+                color: var(--accent-red);
+            }
+            .assessment-main .warn {
+                font-weight: 600;
+                color: var(--accent-amber);
+            }
+            .assessment-main .positive {
+                font-weight: 600;
+                color: var(--accent-green);
+            }
+            .assessment-detail {
+                font-size: 10px;
+                color: var(--ink-muted);
+                display: flex;
+                gap: 8px 14px;
+                flex-wrap: wrap;
+            }
+            .assessment-detail .val {
+                font-weight: 600;
+                color: var(--ink-light);
+            }
+            .situation-row {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 10px;
+                flex-wrap: wrap;
+            }
+            .situation-card {
+                flex: 1;
+                min-width: 170px;
+                background: rgba(0, 0, 0, 0.01);
+                border: 1px solid var(--border);
+                padding: 8px 10px;
+                border-radius: 2px;
+                font-family: var(--font-voice);
+                font-size: 12px;
+                color: var(--ink-light);
+                line-height: 1.55;
+            }
+            .situation-card .voice {
+                color: var(--accent-red);
+                font-weight: 500;
+            }
+            .situation-card .name {
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .card-label {
+                font-size: 10px;
+                letter-spacing: 0.5px;
+                color: var(--ink-muted);
+                display: block;
+                margin-bottom: 3px;
+            }
+            .command-section {
+                margin-bottom: 10px;
+            }
+            .command-label {
+                font-size: 10px;
+                letter-spacing: 0.6px;
+                color: var(--ink-muted);
+                margin-bottom: 5px;
+            }
+            .button-row {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .btn {
+                flex: 1;
+                min-width: 75px;
+                padding: 10px 6px;
+                font-family: var(--font-voice);
+                font-size: 12.5px;
+                font-weight: 600;
+                border-radius: 3px;
+                cursor: pointer;
+                border: 1px solid var(--border);
+                background: rgba(255, 255, 255, 0.6);
+                color: var(--ink);
+                letter-spacing: 0.4px;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                transition: all 0.2s;
+            }
+            .btn:hover {
+                background: rgba(255, 255, 255, 0.85);
+                border-color: #9a8e78;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            }
+            .btn:active {
+                background: #e0d8c8;
+                transform: scale(0.97);
+            }
+            .btn .sub {
+                font-size: 9px;
+                font-weight: 400;
+                color: var(--ink-muted);
+                letter-spacing: 0.2px;
+                line-height: 1.3;
+            }
+            .btn-attack {
+                border-color: #b89880;
+                color: #4a2820;
+            }
+            .btn-attack.warn-visible {
+                border-color: #a04030;
+                box-shadow: 0 0 0 1px rgba(160, 64, 48, 0.25);
+            }
+            .btn-attack.warn-visible .warn-icon {
+                display: inline-block;
+                color: #a04030;
+                margin-left: 4px;
+                animation: blink 1.2s infinite;
+            }
+            @keyframes blink {
+                0%,
+                100% {
+                    opacity: 0.4;
+                }
+                50% {
+                    opacity: 1;
+                }
+            }
+            .btn.disabled-btn {
+                opacity: 0.35;
+                pointer-events: none;
+                filter: grayscale(0.3);
+            }
+            .log-panel {
+                border-top: 1px solid var(--border);
+                padding-top: 6px;
+                max-height: 120px;
+                overflow-y: auto;
+                font-family: var(--font-voice);
+                font-size: 11.5px;
+                color: var(--ink-light);
+            }
+            .log-entry {
+                padding: 3px 0;
+                border-bottom: 1px dotted rgba(0, 0, 0, 0.05);
+                animation: fadeIn 0.35s;
+            }
+            .log-entry.urgent {
+                color: #6b3020;
+                font-weight: 500;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-4px);
+                }
+                to {
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+            .collapse-overlay {
+                display: none;
+                position: absolute;
+                inset: 0;
+                background: rgba(235, 225, 205, 0.92);
+                z-index: 20;
+                border-radius: 2px;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 30px;
+                font-family: var(--font-voice);
+                border: 1px solid #b0a090;
+            }
+            .collapse-overlay.visible {
+                display: flex;
+            }
+            .collapse-icon {
+                font-size: 36px;
+                margin-bottom: 6px;
+            }
+            .collapse-title {
+                font-size: 19px;
+                font-weight: 700;
+                color: #5a2020;
+                margin-bottom: 6px;
+            }
+            .collapse-desc {
+                font-size: 13px;
+                color: #4a3030;
+                line-height: 1.7;
+                max-width: 300px;
+            }
+            .collapse-btn {
+                margin-top: 12px;
+                padding: 8px 16px;
+                background: rgba(160, 64, 48, 0.1);
+                border: 1px solid #a04030;
+                border-radius: 3px;
+                font-family: var(--font-voice);
+                font-size: 13px;
+                cursor: pointer;
+                color: #5a2020;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="command-desk" id="desk">
+            <div class="desk-header">
+                <span class="desk-title">豫东战役 · 第三纵队</span>
+                <span class="desk-time"
+                    >战役<span
+                        id="timeDay"
+                        style="color: #a04030; font-weight: 600"
+                        >23</span
+                    >天 · <span id="timeDesc">拂晓</span></span
+                >
+            </div>
+
+            <div class="mission-statement">
+                🎯 战役任务：<span class="critical">坚守龙王店以南阵地</span
+                >，挡住黄百韬兵团，为主力围歼区寿年兵团争取时间。需至少坚持至<span
+                    class="critical"
+                    >战役第24天</span
+                >。
+            </div>
+
+            <div class="assessment-panel">
+                <div class="assessment-label">📊 综合态势与选项判断</div>
+                <div class="assessment-main" id="assessMain"></div>
+                <div class="assessment-detail" id="assessDetail"></div>
+            </div>
+
+            <div class="situation-row">
+                <div class="situation-card">
+                    <span class="card-label">📋 三团长报告</span
+                    ><span id="friendlyReport"></span>
+                </div>
+                <div class="situation-card">
+                    <span class="card-label">🐎 侦察回报</span
+                    ><span id="enemyReport"></span>
+                </div>
+            </div>
+
+            <div class="command-section">
+                <div class="command-label">📜 下达命令</div>
+                <div class="button-row">
+                    <button
+                        class="btn btn-attack"
+                        id="btnAttack"
+                        onclick="cmd.attack()"
+                    >
+                        ⚔️ 下令进攻<span class="sub" id="subAttack"></span
+                        ><span class="warn-icon" style="display: none">⚠️</span>
+                    </button>
+                    <button class="btn" id="btnRest" onclick="cmd.rest()">
+                        🛌 下令休整<span class="sub" id="subRest"></span>
+                    </button>
+                    <button class="btn" id="btnRetreat" onclick="cmd.retreat()">
+                        ↙️ 下令撤退<span class="sub" id="subRetreat"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="log-panel" id="logPanel">
+                <div
+                    class="card-label"
+                    style="position: sticky; top: 0; background: var(--paper)"
+                >
+                    🖋️ 作战记录
+                </div>
+            </div>
+
+            <div class="collapse-overlay" id="overlay">
+                <div class="collapse-icon">🕯️</div>
+                <div class="collapse-title" id="overlayTitle">第三纵队崩溃</div>
+                <div class="collapse-desc" id="overlayDesc">
+                    各团失联，防线不复存在。<br />阻击任务失败。
+                </div>
+                <button
+                    class="collapse-btn"
+                    id="overlayBtn"
+                    onclick="cmd.continueAfterEnd()"
+                >
+                    ▶ 推进至当天结束
+                </button>
+            </div>
+        </div>
+
+        <script>
+            class Commander {
+                constructor() {
+                    this.stamina = 18; // 体力 0-100
+                    this.cohesion = 52; // 编制完整度 %
+                    this.isBroken = false;
+                    this.enemyDistance = 7.5; // 敌军距离（小时）
+                    this.day = 23;
+                    this.hour = 5; // 拂晓 5点
+                    this.positionHeld = true;
+                    this.retreatRoute = true;
+                    this.missionTarget = 24;
+                    this.missionFailed = false;
+                    this.missionDone = false; // 任务达成（坚守至24天）
+                    this.ended = false; // 终局标记（崩溃/失败后不再允许操作）
+                    this.onUpdate = null;
+                }
+
+                // 基础时间推进（只改时间，不改状态）
+                advance(hrs) {
+                    let total = (this.day - 23) * 24 + this.hour + hrs;
+                    this.day = 23 + Math.floor(total / 24);
+                    this.hour = total % 24;
+                    // 检查任务完成（仅在阵地未丢时）
+                    if (
+                        !this.missionDone &&
+                        this.day >= this.missionTarget &&
+                        this.positionHeld
+                    ) {
+                        this.missionDone = true;
+                    }
+                }
+
+                // 体力自然消耗 + 敌军自然推进
+                applyPassive(hrs) {
+                    if (!this.isBroken)
+                        this.stamina = Math.max(0, this.stamina - hrs * 0.5);
+                    this.enemyDistance = Math.max(
+                        0,
+                        this.enemyDistance - hrs * 0.7,
+                    );
+                    // 退路随机收窄
+                    if (
+                        this.enemyDistance <= 5 &&
+                        this.retreatRoute &&
+                        Math.random() < 0.2
+                    )
+                        this.retreatRoute = false;
+                }
+
+                getRisk() {
+                    if (this.isBroken) return { lv: "已崩溃", desc: "" };
+                    let p = 0;
+                    if (this.stamina <= 3) p = 0.75;
+                    else if (this.stamina <= 8)
+                        p = 0.5 + (this.cohesion <= 30 ? 0.15 : 0);
+                    else if (this.stamina <= 12) p = 0.35;
+                    else if (this.stamina <= 15) p = 0.25;
+                    else if (this.stamina <= 20) p = 0.1;
+                    else p = 0.02;
+                    if (p >= 0.7) return { lv: "极高", desc: "约七成概率崩溃" };
+                    if (p >= 0.45) return { lv: "高", desc: "较大概率崩溃" };
+                    if (p >= 0.2)
+                        return { lv: "中等偏高", desc: "显著崩溃风险" };
+                    if (p >= 0.08) return { lv: "中等", desc: "一定风险" };
+                    return { lv: "低", desc: "风险较低" };
+                }
+
+                checkCrash() {
+                    if (this.isBroken) return true;
+                    const risk = this.getRisk();
+                    let prob = 0;
+                    if (risk.lv === "极高") prob = 0.75;
+                    else if (risk.lv === "高") prob = 0.5;
+                    else if (risk.lv === "中等偏高") prob = 0.25;
+                    else if (risk.lv === "中等") prob = 0.1;
+                    else prob = 0.02;
+                    if (Math.random() < prob) {
+                        this.isBroken = true;
+                        this.missionFailed = true;
+                        this.stamina = Math.max(0, this.stamina - 5);
+                        return true;
+                    }
+                    return false;
+                }
+
+                attack() {
+                    if (this.ended || this.isBroken || this.missionFailed)
+                        return;
+                    if (this.enemyDistance <= 0)
+                        return this.log("敌军已至，无法组织进攻。");
+                    const beforeStamina = this.stamina;
+                    this.stamina = Math.max(0, this.stamina - 10);
+                    if (Math.random() < 0.4)
+                        this.cohesion = Math.max(
+                            20,
+                            this.cohesion - (3 + Math.floor(Math.random() * 8)),
+                        );
+                    this.advance(1.5);
+                    this.applyPassive(1.5);
+                    this.enemyDistance = Math.max(0, this.enemyDistance - 0.8); // 进攻额外推进
+                    const didBreak = this.checkCrash();
+                    this.log(
+                        `⚔️ 发起进攻。体力 ${beforeStamina}→${Math.round(this.stamina)}，敌军距离约${this.enemyDistance.toFixed(1)}小时。${didBreak ? "部队崩溃！" : ""}`,
+                    );
+                    if (didBreak) this.endGame();
+                    this.notify();
+                }
+
+                rest() {
+                    if (this.ended || this.isBroken || this.missionFailed)
+                        return;
+                    if (this.enemyDistance <= 0)
+                        return this.log("敌军已在眼前，无法休整。");
+                    const beforeStamina = this.stamina;
+                    const recover = Math.min(6, 100 - this.stamina);
+                    this.stamina = Math.min(100, this.stamina + recover);
+                    this.advance(3);
+                    this.applyPassive(3);
+                    this.enemyDistance = Math.max(0, this.enemyDistance - 2.5); // 休整额外迫近
+                    this.log(
+                        `🛌 部队休整3小时。体力 +${recover}，敌军距离约${this.enemyDistance.toFixed(1)}小时。`,
+                    );
+                    if (this.enemyDistance <= 0 && !this.missionDone) {
+                        this.missionFailed = true;
+                        this.log("敌军在此期间抵达阵地，任务失败。");
+                        this.endGame();
+                    }
+                    this.notify();
+                }
+
+                retreat() {
+                    if (this.isBroken) {
+                        this.stamina = Math.max(0, this.stamina - 3);
+                        this.enemyDistance += 1.5;
+                        this.positionHeld = false;
+                        this.advance(2);
+                        this.log("溃退…");
+                        this.missionFailed = true;
+                        this.endGame();
+                        return;
+                    }
+                    if (this.ended || this.missionFailed) return;
+                    const risky = !this.retreatRoute;
+                    this.stamina = Math.max(
+                        0,
+                        this.stamina - 3 - (risky ? 2 : 0),
+                    );
+                    this.enemyDistance += risky ? 1.7 : 3.5;
+                    this.positionHeld = false;
+                    this.advance(2);
+                    this.applyPassive(2);
+                    if (!this.missionDone) {
+                        this.missionFailed = true;
+                        this.log("↙️ 放弃阵地，阻击任务失败。");
+                    } else {
+                        this.log("↙️ 任务已完成，部队撤离阵地。");
+                    }
+                    this.endGame();
+                    this.notify();
+                }
+
+                endGame() {
+                    this.ended = true;
+                }
+                continueAfterEnd() {
+                    if (!this.ended) return;
+                    // 允许时间推进到当天24点，查看最后记录
+                    const remaining = 24 - this.hour;
+                    if (remaining > 0) {
+                        this.advance(remaining);
+                        this.applyPassive(remaining);
+                        this.log(`时间流逝至第${this.day}天深夜。`);
+                        this.notify();
+                    }
+                    document.getElementById("overlayBtn").disabled = true;
+                }
+
+                log(msg, cls = "") {
+                    const timeStr = `第${this.day}天·${this.timeDesc()}`;
+                    const el = document.createElement("div");
+                    el.className = "log-entry" + (cls ? " " + cls : "");
+                    el.textContent = `${timeStr} ${msg}`;
+                    const panel = document.getElementById("logPanel");
+                    panel.appendChild(el);
+                    panel.scrollTop = panel.scrollHeight;
+                    if (panel.children.length > 8)
+                        panel.removeChild(panel.children[1]);
+                }
+
+                timeDesc() {
+                    const h = this.hour;
+                    if (h >= 4 && h < 6) return "拂晓";
+                    if (h >= 6 && h < 8) return "清晨";
+                    if (h >= 8 && h < 11) return "上午";
+                    if (h >= 11 && h < 13) return "正午";
+                    if (h >= 13 && h < 16) return "午后";
+                    if (h >= 16 && h < 18) return "黄昏";
+                    if (h >= 18 && h < 20) return "入夜";
+                    return "深夜";
+                }
+
+                notify() {
+                    if (this.onUpdate) this.onUpdate(this);
+                }
+            }
+
+            const cmd = new Commander();
+            const ui = {
+                day: document.getElementById("timeDay"),
+                desc: document.getElementById("timeDesc"),
+                main: document.getElementById("assessMain"),
+                detail: document.getElementById("assessDetail"),
+                friend: document.getElementById("friendlyReport"),
+                enemy: document.getElementById("enemyReport"),
+                subA: document.getElementById("subAttack"),
+                subR: document.getElementById("subRest"),
+                subT: document.getElementById("subRetreat"),
+                btnA: document.getElementById("btnAttack"),
+                btnR: document.getElementById("btnRest"),
+                btnT: document.getElementById("btnRetreat"),
+                warn: document.querySelector(".warn-icon"),
+                overlay: document.getElementById("overlay"),
+                oTitle: document.getElementById("overlayTitle"),
+                oDesc: document.getElementById("overlayDesc"),
+            };
+
+            function refresh(self) {
+                ui.day.textContent = self.day;
+                ui.desc.textContent = self.timeDesc();
+                const risk = self.getRisk();
+                let main = "";
+                if (self.isBroken) {
+                    main =
+                        '<span class="critical">第三纵队已崩溃。阻击任务失败。</span>';
+                } else if (self.missionFailed) {
+                    main =
+                        '<span class="critical">阻击任务已失败。</span>阵地丢失，敌军长驱直入。';
+                } else if (self.missionDone && self.positionHeld) {
+                    main = `<span class="positive">任务已完成！</span>成功坚守至第${self.missionTarget}天。可继续坚守或撤出。`;
+                } else if (self.missionDone && !self.positionHeld) {
+                    main = "任务已完成，部队已撤离。";
+                } else {
+                    const left = self.missionTarget - self.day;
+                    let status = "";
+                    if (self.stamina <= 8)
+                        status =
+                            '部队<span class="critical">濒临极限</span>，可用兵力约三成。';
+                    else if (self.stamina <= 15)
+                        status =
+                            '部队<span class="warn">极度疲惫</span>，可用兵力约四成。';
+                    else if (self.stamina <= 20)
+                        status =
+                            '部队<span class="warn">相当疲惫</span>，可用兵力约五成。';
+                    else status = "部队状态有所好转。";
+                    main = `${status} 敌军距此约${self.enemyDistance.toFixed(1)}小时。还需坚守至少${left}天。<br><br>`;
+                    main += "<b>【选项推演】</b><br>";
+                    const afterAttackStam = Math.max(
+                        0,
+                        Math.round(self.stamina) - 10,
+                    );
+                    main += `⚔️ 进攻 → 体力约${afterAttackStam}，${risk.lv === "极高" || risk.lv === "高" ? '<span class="critical">极可能崩溃</span>' : "可尝试巩固阵地"}<br>`;
+                    const afterRestDist = Math.max(
+                        0,
+                        self.enemyDistance - 3 * 0.7 - 2.5,
+                    );
+                    main += `🛌 休整 → 体力+6，敌军距约${afterRestDist.toFixed(1)}小时，${afterRestDist < 1.5 ? '<span class="critical">逼近眼前</span>' : "尚可"}<br>`;
+                    main += `↙️ 撤退 → <span class="critical">放弃阵地，任务失败</span>`;
+                }
+                ui.main.innerHTML = main;
+                ui.detail.innerHTML = `体力 <span class="val">${Math.round(self.stamina)}</span>/100 · 编制 <span class="val">${self.cohesion}</span>% · 敌军 <span class="val">${self.enemyDistance.toFixed(1)}</span>h · 风险 <span class="val">${risk.lv}</span> · 退路 <span class="val">${self.retreatRoute ? "通" : "断"}</span>`;
+
+                const f =
+                    self.stamina <= 5
+                        ? "三团长声音发抖：“还能站着的…不到一个连。”"
+                        : self.stamina <= 12
+                          ? "士兵们极度疲惫，靠着掩体就能睡着。"
+                          : self.stamina <= 20
+                            ? "三团长：连续作战二十多天，兵员不足六成。"
+                            : "三团长：状况好转，还能再顶一阵。";
+                ui.friend.innerHTML = self.isBroken
+                    ? '<span class="name">各团失联。</span>'
+                    : f;
+
+                const d = self.enemyDistance;
+                const e =
+                    d <= 0
+                        ? "敌军已至阵地前沿！"
+                        : d <= 1.5
+                          ? "侦察兵：“不足一个时辰，听见号声了！”"
+                          : d <= 3
+                            ? "马蹄声越来越近，约两个时辰。"
+                            : "侦察骑兵：黄百韬前锋已过马头镇。";
+                ui.enemy.innerHTML = e;
+
+                const blocked =
+                    self.ended || self.isBroken || self.missionFailed;
+                ui.btnA.classList.toggle(
+                    "disabled-btn",
+                    blocked || self.enemyDistance <= 0,
+                );
+                ui.btnR.classList.toggle("disabled-btn", blocked);
+                ui.btnT.classList.toggle("disabled-btn", blocked);
+                const showWarn =
+                    !blocked &&
+                    (risk.lv === "极高" ||
+                        risk.lv === "高" ||
+                        risk.lv === "中等偏高");
+                ui.btnA.classList.toggle("warn-visible", showWarn);
+                ui.warn.style.display = showWarn ? "inline-block" : "none";
+                ui.subA.textContent =
+                    risk.lv === "极高"
+                        ? "极可能崩溃"
+                        : risk.lv === "高"
+                          ? "较大概率崩溃"
+                          : "可能巩固阵地";
+                ui.subR.textContent = `敌军迫近至${Math.max(0, self.enemyDistance - 3 * 0.7 - 2.5).toFixed(1)}h`;
+                ui.subT.textContent = self.missionDone
+                    ? "任务已完成，可撤离"
+                    : "放弃阵地，任务失败";
+
+                // 覆盖层
+                if (self.isBroken || self.missionFailed) {
+                    ui.overlay.classList.add("visible");
+                    ui.oTitle.textContent = self.isBroken
+                        ? "第三纵队崩溃"
+                        : "阻击任务失败";
+                    ui.oDesc.innerHTML = self.isBroken
+                        ? "各团失联，防线不复存在。<br>任务失败。"
+                        : "阵地丢失，敌军长驱直入。<br>任务失败。";
+                } else {
+                    ui.overlay.classList.remove("visible");
+                }
+            }
+
+            cmd.onUpdate = refresh;
+            refresh(cmd);
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "a" || e.key === "A") {
+                    e.preventDefault();
+                    cmd.attack();
+                } else if (e.key === "r" || e.key === "R") {
+                    e.preventDefault();
+                    cmd.rest();
+                } else if (e.key === "t" || e.key === "T") {
+                    e.preventDefault();
+                    cmd.retreat();
+                }
+            });
+        </script>
+    </body>
+</html>
