@@ -5,8 +5,8 @@ import '../bloc/game_state.dart';
 import '../bloc/game_event.dart';
 import '../bloc/game_bloc.dart';
 
-class CommandPanel extends StatelessWidget {
-  const CommandPanel({super.key});
+class SidePanel extends StatelessWidget {
+  const SidePanel({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,6 @@ class CommandPanel extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
             children: [
               _buildTitle(),
               const SizedBox(height: 6),

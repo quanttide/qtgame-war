@@ -59,13 +59,15 @@ class CampaignScreen extends StatelessWidget {
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const HexGrid(),
-                        const SizedBox(width: 12),
-                        const SizedBox(width: 225, child: CommandPanel()),
-                      ],
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const HexGrid(),
+                          const SizedBox(width: 12),
+                          const SizedBox(width: 225, child: SidePanel()),
+                        ],
+                      ),
                     ),
                   ),
                 ),
