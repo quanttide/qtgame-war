@@ -1,9 +1,9 @@
 """
-视觉审计工具：对 prototype.html 截图进行量化分析
+视觉审计工具：对 src/index.html 截图进行量化分析
 
 用法:
   1. 先用 Chrome headless 截图:
-     google-chrome --headless --disable-gpu --screenshot --window-size=1440,900 prototype.html
+     google-chrome --headless --disable-gpu --screenshot --window-size=1440,900 ../src/index.html
   2. 运行本脚本分析 screenshot.png
 
 依赖: pip3 install pillow

@@ -1,4 +1,4 @@
-# 交互设计评估报告 v2 — prototype.html
+# 交互设计评估报告 v2 — src/index.html
 
 ## 一、当前交互模型
 
