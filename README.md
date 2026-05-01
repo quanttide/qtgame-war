@@ -32,7 +32,7 @@ qtgame-war/
 | 文件 | 用途 | 行数 |
 |------|------|------|
 | `docs/index.md` | 设计概念起点 | 29 |
-| `examples/prototype.html` | 可交互原型 | 505 |
+| `examples/prototype.html` | 可交互原型 | 549 |
 | `docs/qa/prototype.md` | 展开分析 + 五项评分 | ~220 |
 | `docs/qa/interaction.md` | 交互设计评审 v2 | ~140 |
 | `tests/audit.py` | 量化视觉测量 | ~80 |
