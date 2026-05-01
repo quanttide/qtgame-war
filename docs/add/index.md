@@ -1,232 +1,145 @@
-# 模块化方案
+# 架构设计文档
 
-## 当前结构问题
+指挥官决策系统：架构设计思路
 
-`src/index.html` 是一个 548 行的单文件，所有逻辑平铺在 `<script>` 内：
+—
 
-```
-全局变量(6) → 数据初始化 → 纯函数(6) → UI函数(5) → 事件处理(3)
-```
+## 一、核心认知：这不是游戏，是叙事型决策支持系统
 
-问题：
-- 没有命名空间，所有函数和变量在全局作用域
-- CSS 选择器与 HTML 结构耦合
-- 数据变更逻辑与渲染逻辑混在一起
-- 场景初始化（unit 位置、intel 文本）硬编码在 JS 中
+传统游戏以帧循环驱动，核心是视觉表现与实时交互。
+我们的系统以事件驱动，核心是复杂状态管理、信息不对称下的决策、以及决策后果的多线程推演。
 
-## 约束条件
+它更接近一个军事指挥信息系统的叙事化变体——用互动小说的方式包裹，但底层是规则引擎、事件溯源和响应式状态管理。因此，架构设计遵循业务系统的分层原则，而非游戏引擎的场景-实体模型。
 
-- 保持"单文件、零依赖、可直接浏览器打开"
-- ES Modules 不可用（file:// 协议不支持 CORS）
-- 不引入构建工具
+—
 
-## 模块划分
-
-在单文件内用对象命名空间实现模块化：
+## 二、架构分层（自上而下）
 
 ```
-Game           游戏状态管理
-├── State      核心状态（turn, control, hexData）
-├── HexGrid    六角格引擎（坐标、地形、渲染）
-├── Intel      情报系统（报告、可信度）
-├── Commander  指挥官心态（压力、疲劳、信心、私人事务）
-├── Command    命令系统（选项、执行、结果）
-└── UI         界面管理（面板、弹窗、HUD）
+┌─────────────────────────────────┐
+│         Presentation Layer      │  Flutter UI (Widgets, Pages)
+├─────────────────────────────────┤
+│         Application Layer       │  Blocs (Commander, Force, Battlefield, Time, Intel)
+├─────────────────────────────────┤
+│         Domain Layer            │  Entities, Value Objects, Rules Engine, Intent System
+├─────────────────────────────────┤
+│         Infrastructure Layer    │  Event Store, Logging, Persistence, AI Adapter
+└─────────────────────────────────┘
 ```
 
-## 详细设计
+各层职责：
 
-### Game.State — 核心状态
+· Presentation Layer：纯UI渲染，通过 BlocBuilder 订阅状态变化，没有任何业务逻辑。包括态势面板、决策面板、部队卡片、日志时间线、意图选择器。
+· Application Layer：所有 Bloc 驻留于此。负责接收用户事件（或系统内部事件），协调领域对象，产出新状态。Bloc 之间通过事件流协作，不直接调用。
+· Domain Layer：纯 Dart 代码，不依赖 Flutter 和 Bloc。包含：
+  · 实体：Commander（风格、意图）、ForceUnit（体力、士气、编制、韧性）、BattlefieldSituation（部队位置、敌军据报）
+  · 值对象：IntelligenceReport（可信度、时间戳）、CommandOrder（目标、时限、方式）、Consequence
+  · 规则引擎：红线校验器、意图-选项过滤器、后果计算器
+· Infrastructure Layer：事件存储（支持复盘和分支推演）、日志持久化、敌军 AI 适配器、随机数种子管理。
 
-```js
-const Game = {};
-Game.State = {
-    turn: 12,
-    control: 68,
-    initiative: '我方',
-    fogLevel: '高',
-    selectedCommand: null,
-    hexData: [],
-    logs: [],
-    
-    init() { /* 初始化棋盘和单位 */ },
-    nextTurn() { this.turn++; },
-    updateControl(val) { this.control = val; },
-};
-```
+—
 
-职责：纯数据，不操作 DOM。所有状态变更通过方法调用，方便追踪。
+## 三、核心模块划分
 
-### Game.HexGrid — 六角格引擎
+| 模块 | 对应 Bloc | 核心职责 |
+|------|-----------|---------|
+| 指挥官模块 | CommanderBloc | 接收玩家决策事件，锁定意图，发布命令事件 |
+| 部队模块 | ForceBloc (可多实例) | 维护每支部队状态，校验能力红线，响应命令事件，产生损耗事件 |
+| 战场模块 | BattlefieldBloc | 维护战场真实态势，处理敌军 AI 决策，计算交战结果，广播态势变化事件 |
+| 时间模块 | TimeBloc | 发射 TimeElapsed 事件，驱动体力衰减、情报时效性降低、敌军行动周期 |
+| 情报模块 | IntelBloc | 从战场获取真实数据，施加延迟和可信度过滤，产出 IntelligenceReport 供指挥官消费 |
+| 日志/审计模块 | AuditBloc | 监听所有 Bloc 的事件，序列化存储，提供回放和分支推演的数据源 |
 
-```js
-Game.HexGrid = {
-    HEX_SIZE: 32,
-    ROWS: 9,
-    COLS: 11,
-    
-    hexToPixel(row, col) { /* 坐标转换 */ },
-    getTerrainColor(type) { /* 颜色映射 */ },
-    getTerrainPattern(type) { /* 纹理映射 */ },
-    getUnitIcon(name) { /* 图标映射 */ },
-};
-```
+关键设计原则：每个 Bloc 只知道自己领域的状态，通过事件与其他 Bloc 通信，形成松耦合的事件网络。
 
-职责：纯计算 + 映射表，不涉及 DOM。可独立测试。
+—
 
-### Game.Intel — 情报系统
+## 四、核心数据流（示例：一次进攻决策的生命周期）
 
-```js
-Game.Intel = {
-    reports: [
-        { title: '侦察报告', credibility: 'cred', text: '...' },
-        { title: '模糊情报', credibility: 'ques', text: '...' },
-        { title: '干扰信息', credibility: 'false', text: '...' },
-        { title: '后勤报告', credibility: 'cred', text: '...' },
-    ],
-    
-    render(containerId) { /* 渲染情报列表 */ },
-};
-```
+1. 玩家在UI上锁定意图并选择"发动进攻" → 产生 AttackIntent 事件
+2. CommanderBloc 收到事件，构造 CommandOrder，发布 CommandIssued 事件
+3. ForceBloc 监听到 CommandIssued，执行红线校验：
+   · 若校验失败，发布 CommandBlocked 事件，指挥官收到失败反馈
+   · 若校验通过，发布 CommandAccepted 事件，并开始计算行军/战斗耗时
+4. BattlefieldBloc 监听到 CommandAccepted，同时接收 TimeElapsed 事件推进，计算交战结果（结合敌军 AI 决策）
+5. 交战结束后，BattlefieldBloc 发布 EngagementResult 事件（包含双方损耗、位置变化）
+6. ForceBloc 监听到 EngagementResult，应用损耗，更新部队状态，可能触发 UnitExhausted 事件
+7. IntelBloc 从 EngagementResult 生成延迟的 IntelligenceReport，发送给 CommanderBloc
+8. CommanderBloc 收到情报后，更新态势状态，UI 自动刷新，玩家看到战报，进入下一决策循环
 
-职责：情报数据 + 渲染逻辑。数据从硬编码逐步迁移为外部输入。
+时间如何参与？
+TimeBloc 按战役设置的速度（例如"每现实5秒 = 游戏内1小时"）发射 TimeElapsed，所有监听此事件的 Bloc 自行更新时效性数据（体力衰减、情报过期等）。时间不是单独的计时器，而是统一的事件脉冲。
 
-### Game.Command — 命令系统
+—
 
-```js
-Game.Command = {
-    options: {
-        A: { label: '正面推进', risk: '...', desc: '...' },
-        B: { label: '侧翼包抄', risk: '...', desc: '...' },
-        C: { label: '防守反击', risk: '...', desc: '...' },
-        custom: { label: '自定义命令 (AI参谋)', risk: '...' },
-    },
-    results: { /* 执行结果映射 */ },
-    
-    select(cmd) { /* 选中命令 */ },
-    confirm() { /* 确认弹窗 */ },
-    execute() { /* 执行并更新状态 */ },
-    updateMap(cmd) { /* 更新 hexData 后触发重绘 */ },
-};
-```
+## 五、支撑复杂性的关键设计决策
 
-职责：命令选项定义、选择逻辑、执行逻辑。命令与地图的联动通过回调实现。
+### 1. 事件溯源（Event Sourcing）
 
-### Game.UI — 界面管理
+所有状态变化都由事件引发，事件被 AuditBloc 持久化为有序日志。
+这带来：
 
-```js
-Game.UI = {
-    renderHexGrid() { /* 遍历 hexData 生成 SVG */ },
-    switchTab(tab) { /* Tab 切换 */ },
-    showResult(data) { /* 结果弹窗 */ },
-    closeResult() { /* 关闭弹窗 */ },
-    updateHUD() { /* 更新回合/控制率等 */ },
-    updateLog(text) { /* 追加日志 */ },
-};
-```
+· 复盘模式：按时间轴回放任意战役
+· 分支推演：从任意历史节点克隆状态，注入不同事件序列，探索"如果当时"
+· 测试能力：可重放事件流，验证规则引擎修改后行为是否一致
 
-职责：所有 DOM 操作集中在此。数据变更通过调用 Game.State 的方法完成，然后触发 UI 重绘。
+### 2. 信息不对称建模
 
-## 数据流
+战场真实状态由 BattlefieldBloc 掌握，但 CommanderBloc 只消费 IntelBloc 过滤后的报告。
+报告携带：
 
-```
-用户操作 → Game.Command.select()
-                  ↓
-         Game.Command.confirm()
-                  ↓
-         Game.Command.execute()
-                  ↓
-         Game.State.nextTurn()
-         Game.State.updateControl()
-                  ↓
-         Game.UI.updateHUD()
-         Game.UI.updateLog()
-         Game.UI.renderHexGrid()
-```
+· observedAt：情报代表哪个时间点的真实情况
+· confidence：可信度（0~1），影响UI上标记的模糊程度
+· source：情报来源（侦察、友邻通报、截获电讯）
 
-所有数据变更走 Game.State，所有 DOM 操作走 Game.UI。模块之间不直接操作对方的内部状态。
+指挥官永远在"据报"的基础上决策，UI 上对过期或低可信度情报用视觉差异（褪色、闪烁、问号标记）提示。
 
-## 文件内物理组织
+### 3. 领域规则引擎独立
 
-单文件内按以下顺序组织：
+红线校验、意图-选项匹配、后果计算等规则全部实现在 Domain Layer 的纯函数或规则对象中，不依赖 Flutter 或 Bloc。
+好处：
 
-```
-1. /* ====== Game.State ====== */
-2. /* ====== Game.HexGrid ====== */  
-3. /* ====== Game.Intel ====== */
-4. /* ====== Game.Command ====== */
-5. /* ====== Game.UI ====== */
-6. /* ====== Init ====== */     ← 调用 Game.State.init() + Game.UI.renderHexGrid()
-```
+· 可单独单元测试
+· 未来可用 JSON/YAML 配置新战役的规则
+· 容易接入 AI 辅助生成规则变体（例如让 AI 生成不同的意图-选项映射）
 
-每个模块内部：数据定义 → 方法定义。不跨模块引用，只通过 Game 命名空间访问。
+### 4. 敌军 AI 作为独立 Bloc，且共享相同的决策框架
 
-## 不分拆的理由
+EnemyCommanderBloc 可以复用 CommanderBloc 的逻辑，只是它的事件来源不是UI，而是一个战术策略引擎（基于规则或行为树）。
+这为未来 PvP 留下空间：两个玩家分别通过各自的客户端发送事件，服务端进行事件合并。
 
-当前阶段选择单文件内模块化而非分拆为独立文件，基于以下考量：
+—
 
-### 1. ES Modules 在 file:// 协议下不可用
+## 六、与叙事层的接口：将状态翻译成故事
 
-浏览器禁止 `file://` 下的 CORS 请求。分拆后用户无法双击打开 `index.html`，必须额外启动一个 HTTP 服务：
+业务逻辑产生的是事件流和状态快照，叙事层负责把它们转化为玩家读到的文本。
+在架构中，叙事生成器位于 Presentation Layer 之上，作为一个视图模型转换器：它读取当前 Bloc 状态与最近事件，调用模板引擎和文本编织器，生成情境描述、选项文案和后果反馈。
 
-```bash
-python3 -m http.server
-```
+之前讨论的"文本编织器"就挂在这里，而非在领域逻辑中拼凑字符串。
 
-这对原型阶段是摩擦。保持单文件意味着"任何人都能直接打开运行"。
+—
 
-### 2. 当前模块体量不到分拆拐点
+## 七、从原型到完整系统的演进路径
 
-当前 JS 约 280 行，5 个模块平均 56 行：
+1. **第一阶段：Cubit 原型**
+   · 单个场景，CommanderCubit + 简化的 Force 状态
+   · 验证意图过滤器、后果计算的基本体验
+   · 无时间系统，事件不持久化
 
-| 模块 | 实际行数 | 分拆判断 |
-|------|---------|---------|
-| Game.HexGrid | ~25 | 56 行不值得一个独立文件 |
-| Game.State | ~45 | 同上 |
-| Game.Intel | ~10 | 纯数据，未来可外部化 |
-| Game.Command | ~75 | 接近但还没到 |
-| Game.UI | ~110 | 最大模块，到 200 行时分拆 |
+2. **第二阶段：引入 Bloc + 核心模块**
+   · CommanderBloc、ForceBloc（单部队）、BattlefieldBloc（简单敌军脚本）
+   · 时间模块上线，体力衰减生效
+   · 情报延迟简单模拟（固定延迟5分钟）
+   · 日志开始记录事件，但未持久化
 
-**56 行不需要一个独立文件来管理**。等任何模块超过 150-200 行时，"在这个文件里滚动查找"的成本才高于"切换到另一个文件"的成本。
+3. **第三阶段：多部队、多线程后果、事件持久化**
+   · ForceBloc 支持多实例（每个纵队一个）
+   · 情报模块加入可信度与时效性
+   · 审计模块接入，支持复盘
+   · 撤退机制、组织韧性实现
 
-### 3. onclick 属性的技术限制
-
-HTML 中的事件绑定方式决定了全局函数的必要性：
-
-```html
-<button onclick="confirmExecution()">确认执行</button>
-```
-
-分拆为独立文件后，这个 `onclick` 仍然需要一个全局函数作为入口。两种方案：
-- **保持 5 行全局包装函数**（和当前一样）—— 只是把包装函数移到了另一个文件
-- **将 HTML 事件改为 `addEventListener`** —— 额外改动，与模块化本身无关
-
-当前方案选择保持全局包装函数，不在模块化重构中引入无关变更。
-
-### 4. 协作规模
-
-当前是单人项目。多文件的主要收益是"减少 git 冲突概率"和"不同开发者可以各改各的模块"——这两个收益在单人项目中为零。
-
-## 分拆时机
-
-当以下任一条件满足时，分拆的 ROI 才大于不分拆：
-
-1. **任一模块超过 150 行**（当前最大模块 110 行）
-2. **需要引入构建工具**（如打包、转译、压缩）
-3. **有第二个开发者加入**
-
-届时迁移路径：
-
-```
-src/
-├── index.html           # HTML + CSS
-├── js/
-│   ├── state.js         # Game.State
-│   ├── hexgrid.js       # Game.HexGrid
-│   ├── intel.js         # Game.Intel
-│   ├── command.js       # Game.Command
-│   ├── ui.js            # Game.UI
-│   └── init.js          # 入口
-└── css/
-    └── style.css        # 所有样式
-```
+4. **第四阶段：完整战役 + 分支推演 + AI 对手**
+   · 完整战役剧本（如豫东），多节点动态目标
+   · 分支推演 UI：从历史节点创建分支，独立运行
+   · 敌军 AI 升级为可配置策略的 Bloc
+   · 可能与后端集成，实现多人异步对战
