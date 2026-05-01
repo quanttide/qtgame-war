@@ -85,6 +85,24 @@
         .turn-log { padding: 4px 12px; background: #0d1117; border: 1px solid #30363d; border-top: none; border-radius: 0 0 3px 3px; font-size: 11px; color: #8b949e; display: none; }
         .turn-log.show { display: block; }
         
+        .commander-hud { display: flex; gap: 10px; padding: 6px 12px; background: rgba(22,27,34,0.92); border: 1px solid #30363d; border-radius: 3px; font-size: 11px; color: #8b949e; align-items: center; flex-wrap: wrap; backdrop-filter: blur(4px); margin-bottom: 4px; }
+        .commander-hud .stat { display: flex; align-items: center; gap: 4px; }
+        .commander-hud .bar { width: 50px; height: 4px; background: #21262d; border-radius: 2px; overflow: hidden; }
+        .commander-hud .bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+        .commander-hud .bar-fill.stress { background: #f78166; }
+        .commander-hud .bar-fill.fatigue { background: #ffd700; }
+        .commander-hud .bar-fill.confidence { background: #3fb950; }
+        .commander-hud .letter-badge { color: #f78166; cursor: pointer; }
+        .commander-hud .letter-badge:hover { text-decoration: underline; }
+        
+        .letter-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; }
+        .letter-modal.show { display: flex; }
+        .letter-content { background: #161b22; border: 1px solid #30363d; padding: 24px; border-radius: 5px; max-width: 420px; }
+        .letter-content h3 { color: #f78166; margin-bottom: 12px; font-size: 14px; }
+        .letter-content .body { color: #c9d1d9; font-size: 13px; line-height: 1.8; margin-bottom: 16px; white-space: pre-wrap; }
+        .letter-content .effect { color: #3fb950; font-size: 12px; margin-bottom: 12px; }
+        .letter-content .btn-letter-close { background: #30363d; color: #c9d1d9; border: none; padding: 8px 24px; border-radius: 3px; cursor: pointer; font-size: 13px; }
+        
         .execute-bar { background: #161b22; border: 1px solid #30363d; padding: 15px; margin-top: 15px; border-radius: 3px; display: none; }
         .execute-bar.show { display: block; }
         .execute-bar p { color: #8b949e; font-size: 13px; margin-bottom: 10px; }
@@ -218,6 +236,12 @@
                 <span class="sep">|</span>
                 <span>情报 <strong id="fogLevel">高</strong></span>
             </div>
+            <div class="commander-hud" id="commanderHud">
+                <span class="stat">压力 <span class="bar"><span class="bar-fill stress" id="stressBar" style="width:30%"></span></span><span id="stressVal">30</span></span>
+                <span class="stat">疲劳 <span class="bar"><span class="bar-fill fatigue" id="fatigueBar" style="width:10%"></span></span><span id="fatigueVal">10</span></span>
+                <span class="stat">信心 <span class="bar"><span class="bar-fill confidence" id="confidenceBar" style="width:75%"></span></span><span id="confidenceVal">75</span></span>
+                <span class="letter-badge" id="letterBadge" style="display:none;" onclick="Game.Commander.openLetter()">📨 家信</span>
+            </div>
             <div class="map-legend">
                 <span><span class="legend-dot green"></span> 我军进展</span>
                 <span><span class="legend-dot red"></span> 敌军进展</span>
@@ -249,6 +273,15 @@
             </pattern>
         </defs>
     </svg>
+    
+    <div class="letter-modal" id="letterModal">
+        <div class="letter-content">
+            <h3 id="letterTitle">📨 来自后方的信</h3>
+            <div class="body" id="letterBody"></div>
+            <div class="effect" id="letterEffect"></div>
+            <button class="btn-letter-close" onclick="Game.Commander.closeLetter()">看完收起</button>
+        </div>
+    </div>
     
     <div class="result-modal" id="resultModal">
         <div class="result-content">
@@ -346,6 +379,71 @@
             },
         };
         
+        /* ====== Game.Commander — 指挥官心态 ====== */
+        Game.Commander = {
+            state: { stress: 30, fatigue: 10, confidence: 75 },
+            
+            letters: [
+                { turn: 4, title: '来自小妹的信', body: '父亲：\n家中一切安好。你母亲问你是否需要冬天的衣物。前线冷吗？\n\n—— 小妹', effects: { stress: -5, confidence: 5 } },
+                { turn: 7, title: '来自参谋部的通知', body: '指挥官：\n你的晋升申请已获批准。恭喜，准将。\n\n但你的部队仍然缺编两个连。', effects: { confidence: 10, stress: 5 } },
+                { turn: 10, title: '女儿的画', body: '随信附上一幅画。她说是"爸爸在打坏人"。\n她问你什么时候回家。\n\n—— 你妻子', effects: { stress: -10, confidence: 10 } },
+            ],
+            
+            psychCost: {
+                A: { desc: '正面冲锋的伤亡报告让你整夜没睡', stress: 15, confidence: 5, fatigue: 5 },
+                B: { desc: '迂回部队的补给告急，你一直在等消息', stress: 8, confidence: 8, fatigue: 10 },
+                C: { desc: '等待敌军进攻比发起进攻更煎熬', stress: 5, confidence: -10, fatigue: 3 },
+                C_fail: { desc: '等着挨打还打输了——士气跌到冰点', stress: 20, confidence: -20, fatigue: 5 },
+                custom: { desc: '非常规方案总是让你心里没底', stress: 5, confidence: 3, fatigue: 5 },
+            },
+            
+            pendingLetter: null,
+            
+            applyCommandEffects(cmd, outcome) {
+                const key = cmd === 'C' && outcome === 'fail' ? 'C_fail' : cmd;
+                const cost = this.psychCost[key] || this.psychCost.custom;
+                this.state.stress = Math.max(0, Math.min(100, this.state.stress + cost.stress));
+                this.state.confidence = Math.max(0, Math.min(100, this.state.confidence + cost.confidence));
+                this.state.fatigue = Math.max(0, Math.min(100, this.state.fatigue + cost.fatigue));
+                return cost;
+            },
+            
+            checkEvents(turn) {
+                const letter = this.letters.find(l => l.turn === turn && !l._read);
+                if (letter) {
+                    this.pendingLetter = letter;
+                    letter._read = true;
+                    return letter;
+                }
+                return null;
+            },
+            
+            openLetter() {
+                const letter = this.pendingLetter;
+                if (!letter) return;
+                document.getElementById('letterTitle').textContent = '📨 ' + letter.title;
+                document.getElementById('letterBody').textContent = letter.body;
+                const eff = letter.effects;
+                const parts = [];
+                if (eff.stress) parts.push('精神压力 ' + (eff.stress > 0 ? '+' : '') + eff.stress);
+                if (eff.confidence) parts.push('信心 ' + (eff.confidence > 0 ? '+' : '') + eff.confidence);
+                document.getElementById('letterEffect').textContent = '效果：' + parts.join('，');
+                document.getElementById('letterModal').classList.add('show');
+            },
+            
+            closeLetter() {
+                const letter = this.pendingLetter;
+                if (letter) {
+                    const eff = letter.effects;
+                    if (eff.stress) this.state.stress = Math.max(0, Math.min(100, this.state.stress + eff.stress));
+                    if (eff.confidence) this.state.confidence = Math.max(0, Math.min(100, this.state.confidence + eff.confidence));
+                }
+                this.pendingLetter = null;
+                document.getElementById('letterModal').classList.remove('show');
+                Game.UI.updateCommanderHUD();
+            },
+        };
+        
         /* ====== Game.Intel — 情报数据 ====== */
         Game.Intel = {
             reports: [
@@ -413,12 +511,19 @@
                 const r = JSON.parse(JSON.stringify(this.results[cmd]));
                 if (cmd === 'custom') r.msg = 'AI参谋方案已执行：' + customText;
                 
+                const psychCost = Game.Commander.applyCommandEffects(cmd, r.outcome);
+                r.psychDesc = psychCost.desc;
+                
                 Game.State.control = parseInt(r.control);
                 Game.State.turn++;
                 Game.State.applyCommandEffects(cmd);
                 Game.UI.showResult(r, Game.State.turn);
                 Game.UI.updateHUD(Game.State.control, Game.State.turn);
+                Game.UI.updateCommanderHUD();
                 Game.UI.updateLog('回合 ' + (Game.State.turn - 1) + '：' + r.title + ' — ' + r.msg);
+                
+                const letter = Game.Commander.checkEvents(Game.State.turn - 1);
+                if (letter) Game.Commander.openLetter();
             },
         };
         
@@ -511,9 +616,11 @@
             
             showResult(r, turn) {
                 document.getElementById('resultTitle').textContent = r.title;
+                const psychHtml = r.psychDesc ? `<div style="margin-top:8px;padding:8px;background:#1c2030;border-radius:3px;font-size:12px;color:#ffd700;">🧠 ${r.psychDesc}</div>` : '';
                 document.getElementById('resultBody').innerHTML = `
                     <div class="outcome ${r.outcome}">${r.msg}</div>
                     <p>${r.detail}</p>
+                    ${psychHtml}
                     <p style="margin-top:15px;color:#8b949e;">战场控制: ${r.control}%</p>
                     <button class="btn-next" onclick="closeResult()">继续</button>`;
             },
@@ -521,6 +628,19 @@
             updateHUD(control, turn) {
                 document.getElementById('control').textContent = control + '%';
                 document.getElementById('turnNum').textContent = turn;
+            },
+            
+            updateCommanderHUD() {
+                const s = Game.Commander.state;
+                document.getElementById('stressBar').style.width = s.stress + '%';
+                document.getElementById('stressVal').textContent = s.stress;
+                document.getElementById('fatigueBar').style.width = s.fatigue + '%';
+                document.getElementById('fatigueVal').textContent = s.fatigue;
+                document.getElementById('confidenceBar').style.width = s.confidence + '%';
+                document.getElementById('confidenceVal').textContent = s.confidence;
+                if (Game.Commander.pendingLetter) {
+                    document.getElementById('letterBadge').style.display = 'inline';
+                }
             },
             
             updateLog(text) {
@@ -548,6 +668,7 @@
         /* ====== Init ====== */
         Game.State.init();
         Game.UI.renderHexGrid();
+        Game.UI.updateCommanderHUD();
         
         let zoomLevel = 1;
         document.querySelector('.hex-map').addEventListener('wheel', function(e) {

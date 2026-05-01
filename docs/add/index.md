@@ -29,6 +29,7 @@ Game           游戏状态管理
 ├── State      核心状态（turn, control, hexData）
 ├── HexGrid    六角格引擎（坐标、地形、渲染）
 ├── Intel      情报系统（报告、可信度）
+├── Commander  指挥官心态（压力、疲劳、信心、私人事务）
 ├── Command    命令系统（选项、执行、结果）
 └── UI         界面管理（面板、弹窗、HUD）
 ```
