@@ -1,94 +1,89 @@
-enum Side { pla, nationalist }
+enum Side { blue, red }
 
-enum UnitAbility { assault }
-
-class Unit {
-  final int id;
+class UnitType {
   final String name;
-  final Side side;
-  final int col;
-  final int row;
   final int maxHp;
-  final int hp;
   final int baseAttack;
   final int baseDefense;
   final int baseMoveRange;
   final int attackRange;
-  final UnitAbility? special;
-  final bool hasActed;
-  final bool revealed;
-  final bool alive;
-  final bool isReinforcement;
+  final bool isAssault;
 
-  Unit({
-    required this.id,
+  const UnitType({
     required this.name,
-    required this.side,
-    required this.col,
-    required this.row,
     required this.maxHp,
-    int? hp,
     required this.baseAttack,
     required this.baseDefense,
     required this.baseMoveRange,
     required this.attackRange,
-    this.special,
+    this.isAssault = false,
+  });
+}
+
+class UnitLibrary {
+  static const lightInfantry = UnitType(
+    name: '轻步兵', maxHp: 3, baseAttack: 2, baseDefense: 0, baseMoveRange: 4, attackRange: 1,
+  );
+
+  static const heavyInfantry = UnitType(
+    name: '重步兵', maxHp: 4, baseAttack: 3, baseDefense: 1, baseMoveRange: 3, attackRange: 1,
+  );
+
+  static const artillery = UnitType(
+    name: '炮兵', maxHp: 2, baseAttack: 4, baseDefense: 0, baseMoveRange: 3, attackRange: 3,
+  );
+
+  static const cavalry = UnitType(
+    name: '骑兵', maxHp: 3, baseAttack: 2, baseDefense: 0, baseMoveRange: 6, attackRange: 1,
+  );
+
+  static const assaultInfantry = UnitType(
+    name: '突击步兵', maxHp: 3, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1, isAssault: true,
+  );
+
+  static final List<UnitType> all = [
+    lightInfantry, heavyInfantry, artillery, cavalry, assaultInfantry,
+  ];
+}
+
+class Unit {
+  final int id;
+  final Side side;
+  final UnitType type;
+  int col;
+  int row;
+  int hp;
+  bool hasActed;
+  bool revealed;
+  bool alive;
+  bool isReinforcement;
+
+  Unit({
+    required this.id,
+    required this.side,
+    required this.type,
+    required this.col,
+    required this.row,
+    int? hp,
     this.hasActed = false,
     this.revealed = false,
     this.alive = true,
     this.isReinforcement = false,
-  }) : hp = hp ?? maxHp;
+  }) : hp = hp ?? type.maxHp;
 
-  int get effectiveMoveRange => baseMoveRange;
+  int get effectiveMoveRange => type.baseMoveRange;
+  int get maxHp => type.maxHp;
 
-  Unit copyWith({
-    int? id,
-    String? name,
-    Side? side,
-    int? col,
-    int? row,
-    int? maxHp,
-    int? hp,
-    int? baseAttack,
-    int? baseDefense,
-    int? baseMoveRange,
-    int? attackRange,
-    UnitAbility? special,
-    bool? hasActed,
-    bool? revealed,
-    bool? alive,
-    bool? isReinforcement,
-  }) {
-    return Unit(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      side: side ?? this.side,
-      col: col ?? this.col,
-      row: row ?? this.row,
-      maxHp: maxHp ?? this.maxHp,
-      hp: hp ?? this.hp,
-      baseAttack: baseAttack ?? this.baseAttack,
-      baseDefense: baseDefense ?? this.baseDefense,
-      baseMoveRange: baseMoveRange ?? this.baseMoveRange,
-      attackRange: attackRange ?? this.attackRange,
-      special: special ?? this.special,
-      hasActed: hasActed ?? this.hasActed,
-      revealed: revealed ?? this.revealed,
-      alive: alive ?? this.alive,
-      isReinforcement: isReinforcement ?? this.isReinforcement,
-    );
+  void moveTo(int newCol, int newRow) { col = newCol; row = newRow; }
+
+  void takeDamage(int damage) {
+    hp = (hp - damage).clamp(0, type.maxHp);
+    if (hp <= 0) alive = false;
   }
 
-  Unit moveTo(int newCol, int newRow) => copyWith(col: newCol, row: newRow);
+  void markActed() { hasActed = true; }
 
-  Unit takeDamage(int damage) {
-    final newHp = (hp - damage).clamp(0, maxHp);
-    return copyWith(hp: newHp, alive: newHp > 0);
-  }
+  void reveal() { revealed = true; }
 
-  Unit markActed() => copyWith(hasActed: true);
-
-  Unit reveal() => copyWith(revealed: true);
-
-  Unit markReinforcement() => copyWith(isReinforcement: true);
+  void markReinforcement() { isReinforcement = true; }
 }

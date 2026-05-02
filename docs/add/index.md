@@ -29,7 +29,7 @@
 │  - 输入适配器（鼠标/触摸 → 游戏事件）           │
 ├──────────────────────────────────────────────┤
 │            应用层 (Application)                 │
-│  - Bloc 状态容器                               │
+│  - GameController (ChangeNotifier)             │
 │  - 事件分发与协作                              │
 │  - 副作用管理（AI 延迟、动画、时间脉冲）         │
 ├──────────────────────────────────────────────┤
@@ -51,8 +51,8 @@
 
 核心原则：
 - 领域层：纯 Dart 代码，不依赖 Flutter 或 Bloc
-- 应用层：Bloc 驻留于此，负责接收事件、协调领域对象、产出新状态
-- 表现层：纯 UI 渲染，通过 BlocBuilder 订阅状态变化，不含业务逻辑
+- 应用层：GameController 驻留于此（ChangeNotifier），负责接收事件、协调领域对象、更新状态
+- 表现层：纯 UI 渲染，通过 ListenableBuilder 订阅状态变化，不含业务逻辑
 - 基础设施层：日志持久化、AI 适配、存储等外部关注点
 
 ---
@@ -63,5 +63,5 @@
 |------|---------|------|
 | [domain.md](domain.md) | 领域层 | 数据模型、六角格坐标、战斗结算、意图系统、情报不对称、AI 策略 |
 | [presentation.md](presentation.md) | 表现层 | 渲染器、叙事生成器、输入适配器、UI 组件 |
-| [application.md](application.md) | 应用层 | Bloc 职责、事件流与生命周期 |
+| [application.md](application.md) | 应用层 | GameController 职责、事件流与生命周期 |
 | [evolution.md](evolution.md) | 全局 | 多尺度兼容、剧本系统、AI 策略化、网络对战 |

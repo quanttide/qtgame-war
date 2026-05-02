@@ -1,44 +1,44 @@
-# Bloc 层现状
+# 状态管理层现状
 
-## GameBloc
+BLoC 已移除，替换为 `GameController`（ChangeNotifier）。
 
-事件驱动已成形（SelectUnit、ClickHex、EndTurn、AiStep），回合骨架（player/ai/gameOver）已就位。仍依赖 Game engine，有直接状态修改。
+## GameController
 
-### 核心问题
-1. **状态被直接修改** — `unit.col = tc`、`defender.revealed = true` 等
-2. **依赖 Game engine** — engine.resolveCombat() 仍直接改 defender
-3. **Bloc 中有 Future.delayed** — 应移到 UI 层
-4. **AI 逻辑内嵌** — _onAiStep 占 1/3 代码，应抽 AiService
-5. **字符串类型仍在** — side 用 'pla'/'nationalist'
+`lib/controller/game_controller.dart` — 单文件，包含：
 
-## GameEvent
+| 组成部分 | 说明 |
+|---------|------|
+| `GamePhase` enum | player / ai / gameOver |
+| `GameState` class | 全 mutable 状态容器，无 copyWith，无 Equatable |
+| `GameController` class | ChangeNotifier，提供方法替代 BLoC 事件 |
 
-| 事件 | 触发者 | 含义 |
-|------|--------|------|
-| SelectUnit | 玩家 | 选中单位 |
-| ClickHex | 玩家 | 移动/攻击/切换 |
-| EndTurn | 玩家 | 结束回合 |
-| ResetGame | 玩家 | 重新开始 |
-| AiStep | 内部 | 执行 AI |
-| ClearSelection | 内部 | 取消选中 |
+## 方法替代事件
 
-问题：AiStep/ClearSelection 是内部事件，应改为私有方法；ClickHex 职责过重。
+| 旧事件 | 新方法 |
+|--------|--------|
+| SelectUnit | `selectUnit(int id)` |
+| ClickHex | `clickHex(int col, int row)` |
+| EndTurn | `endTurn()` |
+| ResetGame | `reset()` |
+| AiStep | `_aiStep()`（私有） |
+| ClearSelection | `_clearSelection()`（私有） |
 
-## GameState
+## UI 绑定
 
-Equatable + copyWith 尝试不可变语义，但 Unit/Campaign 仍可变。
+- `ListenableBuilder` 替代 `BlocBuilder`
+- `controller.addListener(callback)` 替代 `BlocListener`
+- 直接调用 `controller.xxx()` 替代 `context.read<GameBloc>().add(Event)`
+- 视图通过构造参数接收 `controller`，无 InheritedWidget / Provider 开销
 
-### 核心问题
-1. **copyWith 默认深拷贝** — 全量复制单位列表，性能浪费
-2. **clearSelection 逻辑逃逸** — 布尔标志混在 copyWith 中
-3. **props 字符串签名脆弱** — 依赖 units 顺序
-4. **Unit/Campaign 可变性仍在** — 容器不可变但内容裸奔
+## GameState 字段
 
-## 改进方向（Bloc 层）
-
-1. Unit 不可变化，copyWith 直接复用引用
-2. 移除 Future.delayed（UI 层监听 phase）
-3. AI 逻辑抽到 AiService
-4. 拆掉 Game engine，改用纯 Service
-5. 类型强化（Side 枚举）
-6. 内部事件改为私有方法
+| 字段 | 类型 | 可变性 |
+|------|------|--------|
+| units | `List<Unit>` | mutable list, mutable items |
+| selectedUnitId | `int?` | mutable |
+| moveCandidates | `Set<String>` | mutable |
+| attackCandidates | `Set<String>` | mutable |
+| currentTurn | `int` | mutable |
+| phase | `GamePhase` | mutable |
+| campaign | `Campaign` | mutable |
+| logMessages | `List<Dispatch>` | reassignable |

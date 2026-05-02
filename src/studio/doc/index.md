@@ -2,54 +2,36 @@
 
 ## 当前状态
 
-主线已就位（GameBloc + 事件驱动），但底层仍是原型泥潭：
-- Unit/Campaign 可变 → 状态不可变无法成立
-- Game 类大杂烩（规则+副作用+工厂）
-- Bloc 内混杂时序、AI、直接状态修改
+BLoC 已被移除，改为 `GameController`（ChangeNotifier）+ 全可变状态。主线（事件驱动 → 回合循环）不变，但状态管理从"伪不可变"降级为诚实的全可变。
 
-## 核心问题
+## 核心调整
 
-| # | 问题 | 影响 |
-|---|------|------|
-| 1 | Unit/Campaign 可变 | 回放/测试/撤销受阻 |
-| 2 | Game 类职责过重 | 不可控修改 + 硬编码 |
-| 3 | Bloc 直接修改状态 | 历史状态污染 |
+| 之前（BLoC + Equatable） | 现在（ChangeNotifier） |
+|---|---|
+| GameState 不可变 + copyWith | GameState 所有字段 mutable |
+| Unit 不可变 + copyWith | Unit 字段 public non-final |
+| Campaign copy() 浅拷贝 | Campaign 直接变异 |
+| Equatable.props 字符串签名伪比较 | notifyListeners() 直接通知 |
+| flutter_bloc + equatable 依赖 | 零状态管理依赖 |
 
-## 重构步骤
+## 为什么
 
-**第1步：Unit/Campaign 不可变**
-- Unit 所有字段 final，提供 `moveTo()`、`takeDamage()` 等方法返回新实例
-- Campaign 拆分为 Config（不可变配置）+ State（不可变状态）
+兵棋的核心 loop（选中→移动→攻击→伤害→下一回合）本质是**原地改状态**。之前试图用 BLoC + copyWith 实现不可变，但在 AI 循环里已被绕过（`state.units.addAll()`、`campaign.gameOver = true`）。与其两头不靠，不如诚实可变。
 
-**第2步：拆解出纯服务，删除 Game 类**
-- MovementService、CombatService、VisibilityService
-- ReinforcementService、VictoryService
-- 地形方法移到 Battlefield 或 TerrainHelper
+## 影响
 
-**第3步：重构 GameBloc**
-- 注入服务，消除直接状态修改
-- AI 逻辑抽到 AiService
-- 移除 Future.delayed（移到 UI 层）
+- 不再支持时间旅行调试 / 状态回放（当前不需要）
+- 代码量减少（-copyWith 样板、-Equatable props）
+- 依赖减少（删除 flutter_bloc、equatable）
+- 游戏逻辑更直接，阅读负担降低
 
-**第4步：优化 GameState/GameEvent**
-- 移除 clearSelection 标志，改用显式字段
-- props 改用基于不可变对象的比较
-
-**第5步：命名清理**
-- `side` → `enum Side { pla, nationalist }`
-- `special` → `enum UnitAbility { assault }`
-- `huayePower` → `offensivePower`
-- 地图/单位数据迁到独立配置
-
-## 目标架构
+## 当前架构
 
 ```
-UI → GameBloc (事件→状态)
-       ↓ 调用
-    MovementService / CombatService / AiService
-    ReinforcementService / VictoryService
-       ↓ 返回
-    新 GameState (不可变)
+UI → GameController (ChangeNotifier) → notifyListeners()
+       ↓ 直接变异
+     GameState (全部 mutable)
+       ├─ List<Unit> (mutable)
+       ├─ Campaign (mutable)
+       └─ engine → Game (纯函数工具, 不变)
 ```
-
-特征：任何 emit 的状态都是独立快照，可序列化、可回放。

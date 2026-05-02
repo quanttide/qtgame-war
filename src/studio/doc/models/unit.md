@@ -1,91 +1,98 @@
-# Unit 模块现状
+# Unit 模块
 
-## 当前状态
+## 架构：本体-实例分离
 
-不可变数据模型，所有字段 final，通过 copyWith 和操作方法返回新实例。
+兵种静态属性收敛到 `UnitType`（本体），战场状态保留在 `Unit`（实例）。
 
-## 字段说明
+### UnitType（本体）
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| id | int | 单位唯一标识，用于选择和引用 |
-| name | String | 显示名称（如"步兵连"、"坦克营"） |
-| side | Side | 所属阵营，枚举值：pla（解放军）、nationalist（国民党军） |
-| col | int | 当前所在列坐标（0-based） |
-| row | int | 当前所在行坐标（0-based） |
-| maxHp | int | 最大生命值，创建时设定，战斗中不变 |
-| hp | int | 当前生命值，初始等于 maxHp，受伤后减少，≤0 时单位死亡 |
-| baseAttack | int | 基础攻击力，战斗计算基准值 |
-| baseDefense | int | 基础防御力，战斗计算基准值 |
-| baseMoveRange | int | 基础移动范围（格数），effectiveMoveRange 的基准 |
-| attackRange | int | 攻击范围（格数），1 为近战，≥2 为远程 |
-| special | UnitAbility? | 特殊能力，null 或 UnitAbility.assault（突击） |
-| hasActed | bool | 本回合是否已行动（移动/攻击），true 时不可再操作 |
-| revealed | bool | 是否已被敌方发现（用于迷雾/隐藏机制） |
-| alive | bool | 是否存活，hp≤0 时自动设为 false |
-| isReinforcement | bool | 是否为增援单位（影响初始显示/部署逻辑） |
+| name | String | 兵种名称 |
+| maxHp | int | 最大生命值 |
+| baseAttack | int | 基础攻击力 |
+| baseDefense | int | 基础防御力 |
+| baseMoveRange | int | 基础移动范围（格数） |
+| attackRange | int | 攻击范围，1 近战 ≥2 远程 |
+| isAssault | bool | 是否具备突击能力，默认 false |
 
-## 枚举定义
+### Unit（实例）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | int | 单位唯一标识 |
+| side | Side | 阵营：blue / red，战役映射为己方命名 |
+| type | UnitType | 兵种本体引用 |
+| col / row | int | 战场坐标 |
+| hp | int | 当前生命值，默认 type.maxHp |
+| hasActed | bool | 本回合是否已行动 |
+| revealed | bool | 是否已被发现 |
+| alive | bool | hp≤0 时自动 false |
+| isReinforcement | bool | 是否为增援单位 |
+
+获取类型属性时通过 `unit.type.xxx` 访问，如 `unit.type.name`、`unit.type.baseAttack`。
+### UnitLibrary（框架通用兵种）
 
 ```dart
-enum Side { pla, nationalist }
-enum UnitAbility { assault }
+class UnitLibrary {
+  static const lightInfantry = UnitType(name: '轻步兵', maxHp: 3, ...);
+  static const heavyInfantry = UnitType(name: '重步兵', maxHp: 4, ...);
+  static const artillery     = UnitType(name: '炮兵',   maxHp: 2, ...);
+  static const cavalry       = UnitType(name: '骑兵',   maxHp: 3, ...);
+  static const assaultInfantry = UnitType(name: '突击步兵', maxHp: 3, special: assault, ...);
+  static final all = [lightInfantry, heavyInfantry, artillery, cavalry, assaultInfantry];
+}
 ```
 
-## 方法说明
+提供通用模板。战役可自行定义专属 UnitType（如帝丘店的"四纵十二师"）。
 
-### 构造方法
-- `Unit({required id, required name, required side, required col, required row, required maxHp, int? hp, required baseAttack, required baseDefense, required baseMoveRange, required attackRange, UnitAbility? special, bool hasActed = false, bool revealed = false, bool alive = true, bool isReinforcement = false})`
-  - hp 可选，未提供时默认等于 maxHp
-  - 其他布尔字段默认 false
-
-### 计算方法
-- `int get effectiveMoveRange => baseMoveRange`
-  - 当前直接返回 baseMoveRange，预留战役/地形修正接口
-
-### 操作方法（均返回新实例，不修改原对象）
-- `Unit copyWith({...})` — 通用拷贝方法，可选覆盖任意字段
-- `Unit moveTo(int newCol, int newRow)` — 移动到新坐标，返回新实例
-- `Unit takeDamage(int damage)` — 承受伤害，hp 减少 damage（下限 0），alive 根据新 hp 自动更新
-- `Unit markActed()` — 标记已行动（hasActed = true）
-- `Unit reveal()` — 标记为已揭示（revealed = true）
-- `Unit markReinforcement()` — 标记为增援单位（isReinforcement = true）
-
-## 使用示例
+## 枚举
 
 ```dart
-// 创建单位
-final unit = Unit(
-  id: 1,
-  name: '步兵连',
-  side: Side.pla,
-  col: 3, row: 5,
-  maxHp: 10, hp: 10,
-  baseAttack: 5, baseDefense: 3,
-  baseMoveRange: 3, attackRange: 1,
-);
+enum Side { blue, red }
+```
 
-// 移动
-final moved = unit.moveTo(4, 5);
+`blue` / `red` 是通用叫法，各战役映射为己方命名（如帝丘店：蓝色 = 华野，红色 = 国军）。
 
-// 受伤
-final damaged = unit.takeDamage(3); // hp=7, alive=true
+## 特殊能力
 
-// 致命伤害
-final dead = unit.takeDamage(10); // hp=0, alive=false
+特殊能力用 `bool` 字段表示，当前仅支持一种：
 
-// 标记已行动
-final acted = unit.markActed();
+| 字段 | 效果 |
+|------|------|
+| `isAssault`（突击） | ① 可进入核心阵地（`coreFort`），其他不可；② 对掩体内单位（`fullCover`）造成 2 点伤害（普通为 1）；③ UI 显示 ⚡ 图标 |
+
+## 实例操作（原地变异，无返回值）
+
+- `moveTo(col, row)` — 修改坐标
+- `takeDamage(damage)` — 扣血，hp≤0 时 alive 自动置 false
+- `markActed()` — hasActed = true
+- `reveal()` — revealed = true
+- `markReinforcement()` — isReinforcement = true
+
+所有操作均为 void，直接修改字段，不返回新实例。`copyWith` 已移除。
+
+## 战役使用示例
+
+```dart
+// 定义兵种
+const ziShiEr = UnitType(name: '四纵十二师', maxHp: 2, baseAttack: 2,
+    baseDefense: 1, baseMoveRange: 5, attackRange: 1, isAssault: true);
+
+// 创建实例
+Unit(id: 1, side: Side.pla, type: ziShiEr, col: 1, row: 2, revealed: true);
+
+// 访问类型属性直接用 unit.type
+print(unit.type.name);         // '四纵十二师'
+print(unit.type.baseAttack);   // 2
+unit.moveTo(2, 3);        // 返回新实例
+unit.takeDamage(1);       // 返回新实例，hp=1
 ```
 
 ## 问题与技术债
 
-| 问题 | 状态 | 说明 |
-|------|------|------|
-| 不可变设计 | ✅ 已解决 | 所有字段 final，操作方法返回新实例 |
-| Side 枚举化 | ✅ 已解决 | enum Side { pla, nationalist } |
-| UnitAbility 枚举化 | ✅ 已解决 | enum UnitAbility { assault } |
-| copyWith 运用 | ✅ 已解决 | 所有操作方法基于 copyWith |
-| effectiveMoveRange 摆设 | ❌ 待解决 | 直接返回 baseMoveRange，战役/地形修正未接入 |
-| 初始数据耦合 | ❌ 待解决 | createInitialUnits() 硬编码在 Game 类，未外置为模板配置 |
-| UnitAbility 单一 | ❌ 待解决 | 仅有 assault，未扩展其他特技类型（防空、侦察、工兵等） |
+| 问题 | 说明 |
+|------|------|
+| effectiveMoveRange 直接返回 baseMoveRange | 预留战役/地形修正接口，尚未接入 |
+| 特殊能力用 bool 字段而非扩展表 | 若未来增加多种能力（防空、侦察、工兵），需重构为枚举或位字段 |
+| initialUnits 硬编码在 Game 类 | 战役单位配置与框架逻辑耦合 |

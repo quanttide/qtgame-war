@@ -38,14 +38,9 @@
   - ≥25 → +1
   - <25 → +2
 
-## 方法说明
-
-### 构造方法
+## 构造方法
 - `Campaign({int huayePower = 85, int fortStrength = 3, int qiuReinforceTurn = 8, int huReinforceTurn = 7, bool qiuArrived = false, bool huArrived = false, bool gameOver = false, bool? victory, String victoryDetail = ''})`
   - 所有字段均有默认值，可直接 `Campaign()` 创建默认战役状态
-
-### 拷贝方法
-- `Campaign copy()` — 返回字段值完全相同的新实例（浅拷贝）
 
 ## 使用示例
 
@@ -61,18 +56,8 @@ final custom = Campaign(
   huReinforceTurn: 9,
 );
 
-// 拷贝并修改（当前需手动逐个字段复制）
-final updated = Campaign(
-  huayePower: campaign.huayePower - 10,
-  fortStrength: campaign.fortStrength,
-  qiuReinforceTurn: campaign.qiuReinforceTurn,
-  huReinforceTurn: campaign.huReinforceTurn,
-  qiuArrived: campaign.qiuArrived,
-  huArrived: campaign.huArrived,
-  gameOver: campaign.gameOver,
-  victory: campaign.victory,
-  victoryDetail: campaign.victoryDetail,
-);
+// 直接修改字段
+campaign.huayePower -= 10;
 
 // 查询战力状态
 print(campaign.powerDesc); // '尚可'（当 huayePower=60）
@@ -84,10 +69,8 @@ print(campaign.moveMod);   // 0
 
 | 问题 | 状态 | 说明 |
 |------|------|------|
-| 可变性泛滥 | ❌ 待解决 | 所有字段可变，无 final，副作用难追踪 |
 | 命名污染 | ❌ 待解决 | huayePower、qiuReinforceTurn 等拼音+英文混用 |
 | 配置/状态混杂 | ❌ 待解决 | qiuReinforceTurn/huReinforceTurn（配置）与 qiuArrived（状态）在同一对象 |
 | 硬编码阈值 | ❌ 待解决 | hitMod/moveMod 的 if-else 链数值写死，无配置化 |
-| copy() 非 copyWith | ❌ 待解决 | 仅支持全量拷贝，缺少增量更新能力 |
 | victory 语义模糊 | ❌ 待解决 | bool? 字段，失败分支在 UI 中未完整实现 |
 | 被动无逻辑 | ❌ 待解决 | 只提供数据，不驱动战役推进（援军到达、战力衰减等） |

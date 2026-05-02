@@ -9,7 +9,7 @@ void main() {
     final engine = Game(Battlefield.createMapTerrain());
     final units = engine.createInitialUnits();
     final attacker = units.first;
-    final defender = units[8]; // nationalist unit
+    final defender = units[8];
     final campaign = Campaign();
 
     final result = resolveCombat(attacker, defender, campaign, engine.mapTerrain);

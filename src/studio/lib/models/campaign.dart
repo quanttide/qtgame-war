@@ -42,17 +42,4 @@ class Campaign {
     return 2;
   }
 
-  Campaign copy() {
-    return Campaign(
-      huayePower: huayePower,
-      fortStrength: fortStrength,
-      qiuReinforceTurn: qiuReinforceTurn,
-      huReinforceTurn: huReinforceTurn,
-      qiuArrived: qiuArrived,
-      huArrived: huArrived,
-      gameOver: gameOver,
-      victory: victory,
-      victoryDetail: victoryDetail,
-    );
-  }
 }

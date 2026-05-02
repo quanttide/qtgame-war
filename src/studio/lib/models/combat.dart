@@ -5,7 +5,7 @@ import 'battlefield.dart';
 
 CombatResult resolveCombat(Unit attacker, Unit defender, Campaign campaign, List<List<TerrainType>> mapTerrain) {
   int hitChance = 55;
-  hitChance += attacker.baseAttack * 6;
+  hitChance += attacker.type.baseAttack * 6;
   hitChance += campaign.hitMod;
   hitChance -= _terrainDefense(defender, mapTerrain) * 8;
   final dist = Battlefield.hexDistance(attacker.col, attacker.row, defender.col, defender.row);
@@ -18,7 +18,7 @@ CombatResult resolveCombat(Unit attacker, Unit defender, Campaign campaign, List
   String text;
 
   if (hit) {
-    if (attacker.special == UnitAbility.assault && _inFullCover(defender, mapTerrain)) {
+    if (attacker.type.isAssault && _inFullCover(defender, mapTerrain)) {
       damage = min(2, defender.hp);
       text = '\u{1F4A5}突击成功！重创核心守军！';
     } else {
