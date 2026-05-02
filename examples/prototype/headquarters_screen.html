@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=no"
+        />
+        <title>指挥部看板 · 六边格战场 · 豫东战役</title>
+        <style>
+            :root {
+                --desk-wood: #5a3a1c;
+                --paper: #f2e8d5;
+                --ink: #2a1f0f;
+                --red-army: #c43a31;
+                --blue-enemy: #2c5f8a;
+                --lamp-glow: rgba(220, 180, 100, 0.25);
+                --confirm-green: #3d7a3d;
+                --speculate-yellow: #b8922e;
+                --doubt-gray: #7a7a7a;
+                --hex-radius: 30px;
+            }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family:
+                    "STSong", "Songti SC", "Noto Serif SC", "SimSun", "KaiTi",
+                    "STKaiti", serif;
+                background: radial-gradient(
+                    ellipse at center,
+                    #5c3d1e 0%,
+                    #3e2210 60%,
+                    #1f0f04 100%
+                );
+                min-height: 100vh;
+                overflow-x: auto;
+                user-select: none;
+                -webkit-user-select: none;
+                cursor: default;
+            }
+            body::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0;
+                background:
+                    radial-gradient(
+                        ellipse at 50% 40%,
+                        var(--lamp-glow) 0%,
+                        transparent 60%
+                    ),
+                    radial-gradient(
+                        ellipse at 25% 60%,
+                        rgba(200, 150, 80, 0.12) 0%,
+                        transparent 45%
+                    ),
+                    radial-gradient(
+                        ellipse at 75% 55%,
+                        rgba(200, 150, 80, 0.1) 0%,
+                        transparent 40%
+                    );
+            }
+            .desk {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                flex-direction: column;
+                min-width: 1280px;
+                max-width: 1600px;
+                min-height: 100vh;
+                margin: 0 auto;
+                padding: 12px 16px 10px;
+                gap: 8px;
+            }
+            .top-bar {
+                display: flex;
+                align-items: center;
+                gap: 24px;
+                padding: 10px 20px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(30, 16, 6, 0.9) 0%,
+                    rgba(40, 22, 10, 0.85) 100%
+                );
+                border-bottom: 2px solid #3a2010;
+                border-radius: 4px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+                z-index: 10;
+                min-height: 52px;
+            }
+            .phase-indicator {
+                font-size: 15px;
+                font-weight: bold;
+                color: #e8d5b0;
+                letter-spacing: 1px;
+                padding: 4px 14px;
+                border: 1px solid #6b5030;
+                border-radius: 3px;
+                background: rgba(0, 0, 0, 0.3);
+                transition: all 0.6s;
+                white-space: nowrap;
+            }
+            .phase-indicator.executing {
+                color: #ffb0b0;
+                border-color: #8b3030;
+                background: rgba(100, 20, 20, 0.4);
+                animation: phase-pulse 2s ease-in-out infinite;
+            }
+            @keyframes phase-pulse {
+                0%,
+                100% {
+                    box-shadow: 0 0 8px rgba(180, 40, 40, 0.3);
+                }
+                50% {
+                    box-shadow: 0 0 20px rgba(200, 50, 50, 0.6);
+                }
+            }
+            .pocket-watch {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-shrink: 0;
+            }
+            .watch-face {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle at 40% 35%,
+                    #f5f0e0 0%,
+                    #d4c8a8 50%,
+                    #a89068 100%
+                );
+                border: 3px solid #8b6914;
+                box-shadow:
+                    0 0 12px rgba(200, 160, 80, 0.35),
+                    inset 0 2px 4px rgba(0, 0, 0, 0.3);
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .watch-center {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #1a1008;
+                position: absolute;
+                z-index: 2;
+            }
+            .watch-hand {
+                position: absolute;
+                bottom: 50%;
+                left: 50%;
+                transform-origin: bottom center;
+                border-radius: 1px;
+                z-index: 1;
+            }
+            .watch-hand.hour {
+                width: 2.5px;
+                height: 14px;
+                background: #1a1008;
+                margin-left: -1.25px;
+                animation: tick-hour 60s linear infinite;
+            }
+            .watch-hand.minute {
+                width: 1.8px;
+                height: 19px;
+                background: #2a1f0f;
+                margin-left: -0.9px;
+                animation: tick-minute 5s linear infinite;
+            }
+            .watch-hand.second {
+                width: 1px;
+                height: 21px;
+                background: #8b2020;
+                margin-left: -0.5px;
+                animation: tick-second 1s linear infinite;
+            }
+            @keyframes tick-hour {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes tick-minute {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes tick-second {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            .watch-label {
+                color: #c8a868;
+                font-size: 13px;
+                letter-spacing: 1px;
+                white-space: nowrap;
+                line-height: 1.3;
+            }
+            .countdown {
+                font-size: 18px;
+                font-weight: bold;
+                color: #e8d5a0;
+                font-family: "Courier New", monospace;
+                letter-spacing: 2px;
+            }
+            .main-area {
+                display: flex;
+                gap: 10px;
+                flex: 1;
+                min-height: 580px;
+            }
+            .left-col {
+                width: 310px;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                overflow-y: auto;
+                padding: 4px;
+                max-height: calc(100vh - 180px);
+            }
+            .intel-card {
+                background: var(--paper);
+                border-radius: 2px;
+                padding: 14px 16px;
+                box-shadow:
+                    0 2px 8px rgba(0, 0, 0, 0.4),
+                    0 1px 2px rgba(0, 0, 0, 0.3);
+                position: relative;
+                cursor: pointer;
+                transition: all 0.3s;
+                border-left: 4px solid transparent;
+                font-size: 13px;
+                line-height: 1.6;
+                color: var(--ink);
+            }
+            .intel-card:hover {
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+                transform: translateY(-1px);
+            }
+            .intel-card.confirmed {
+                border-left-color: var(--confirm-green);
+            }
+            .intel-card.speculated {
+                border-left-color: var(--speculate-yellow);
+            }
+            .intel-card.doubtful {
+                border-left-color: var(--doubt-gray);
+            }
+            .intel-card.selected {
+                box-shadow:
+                    0 0 0 3px rgba(200, 160, 60, 0.7),
+                    0 4px 16px rgba(0, 0, 0, 0.55);
+                background: #faf3e0;
+            }
+            .intel-badge {
+                display: inline-block;
+                font-size: 10px;
+                letter-spacing: 1px;
+                padding: 2px 8px;
+                border-radius: 2px;
+                margin-bottom: 6px;
+                font-weight: bold;
+            }
+            .badge-confirmed {
+                background: #d4ead4;
+                color: #2d5a2d;
+            }
+            .badge-speculated {
+                background: #f0e4c0;
+                color: #6b4e18;
+            }
+            .badge-doubtful {
+                background: #e0e0e0;
+                color: #555;
+            }
+            .intel-check {
+                position: absolute;
+                top: 10px;
+                right: 12px;
+                width: 18px;
+                height: 18px;
+                border: 2px solid #8a7a50;
+                border-radius: 2px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                color: transparent;
+            }
+            .intel-card.selected .intel-check {
+                background: #5a3a1c;
+                border-color: #5a3a1c;
+                color: #f2e8d5;
+            }
+            .adopted-panel {
+                background: rgba(20, 10, 4, 0.8);
+                border: 1px solid #4a3020;
+                border-radius: 3px;
+                padding: 10px 14px;
+                font-size: 11px;
+                color: #c8b080;
+                letter-spacing: 1px;
+                flex-shrink: 0;
+            }
+            .center-col {
+                flex: 1;
+                position: relative;
+                background: #3a4a2a;
+                border-radius: 3px;
+                box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+                overflow: hidden;
+                min-width: 500px;
+                border: 3px solid #2a1a08;
+                cursor: crosshair;
+            }
+            .map-container {
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+            canvas#hexCanvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                pointer-events: none;
+            }
+            .map-feature,
+            .map-piece,
+            .map-legend,
+            .measure-tip {
+                z-index: 2;
+                position: absolute;
+            }
+            .map-feature {
+                pointer-events: none;
+                font-size: 12px;
+                letter-spacing: 1px;
+                color: rgba(220, 210, 170, 0.9);
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+                white-space: nowrap;
+                font-weight: bold;
+            }
+            .map-piece {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                cursor: grab;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                letter-spacing: 1px;
+                color: #fff;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+                transition:
+                    box-shadow 0.2s,
+                    transform 0.1s;
+                border: 2px solid rgba(255, 255, 255, 0.5);
+                transform: translate(-50%, -50%);
+            }
+            .map-piece:active {
+                cursor: grabbing;
+            }
+            .map-piece.red {
+                background: radial-gradient(
+                    circle at 35% 30%,
+                    #d45040,
+                    #8b1a10
+                );
+                box-shadow: 0 0 10px rgba(200, 50, 30, 0.5);
+            }
+            .map-piece.blue {
+                background: radial-gradient(
+                    circle at 35% 30%,
+                    #5088b0,
+                    #1a3a5a
+                );
+                box-shadow: 0 0 10px rgba(40, 100, 160, 0.5);
+            }
+            .map-piece.dragging {
+                z-index: 20;
+                box-shadow: 0 0 20px rgba(255, 200, 80, 0.8);
+                border-color: #ffd080;
+            }
+            .map-piece.locked {
+                cursor: not-allowed;
+                opacity: 0.85;
+                filter: grayscale(10%);
+            }
+            .map-legend {
+                bottom: 10px;
+                left: 10px;
+                background: rgba(0, 0, 0, 0.7);
+                padding: 8px 12px;
+                border-radius: 3px;
+                font-size: 10px;
+                color: #c8b080;
+                z-index: 8;
+                pointer-events: none;
+            }
+            .measure-tip {
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.7);
+                color: #c8b080;
+                font-size: 10px;
+                padding: 6px 10px;
+                border-radius: 3px;
+                z-index: 8;
+                pointer-events: none;
+            }
+            .right-col {
+                width: 440px;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                overflow-y: auto;
+                padding: 4px;
+                max-height: calc(100vh - 180px);
+            }
+            .force-card,
+            .plan-card,
+            .order-sheet {
+                background: var(--paper);
+                border-radius: 2px;
+                padding: 12px 16px;
+                box-shadow:
+                    0 2px 8px rgba(0, 0, 0, 0.4),
+                    0 1px 2px rgba(0, 0, 0, 0.3);
+                font-size: 12px;
+                color: var(--ink);
+            }
+            .order-sheet textarea {
+                width: 100%;
+                min-height: 160px;
+                border: none;
+                background: transparent;
+                font-family: "KaiTi", "STKaiti", serif;
+                font-size: 13px;
+                line-height: 2;
+                color: #1a1008;
+                resize: vertical;
+                outline: none;
+            }
+            .btn-sign {
+                width: 100%;
+                padding: 12px;
+                font-size: 15px;
+                font-weight: bold;
+                letter-spacing: 3px;
+                background: linear-gradient(180deg, #6b3a1a, #4a2010);
+                color: #e8d5b0;
+                border: 2px solid #8b6914;
+                border-radius: 3px;
+                cursor: pointer;
+                transition: all 0.3s;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+                flex-shrink: 0;
+            }
+            .btn-sign.executed {
+                background: #3a1810;
+                border-color: #5a2020;
+                color: #c8a0a0;
+                pointer-events: none;
+            }
+            .bottom-bar {
+                display: flex;
+                gap: 12px;
+                padding: 8px 16px;
+                background: rgba(20, 10, 4, 0.9);
+                border-top: 2px solid #3a2010;
+                border-radius: 4px;
+                box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.5);
+                z-index: 10;
+                align-items: center;
+                min-height: 50px;
+                flex-wrap: wrap;
+            }
+            .radio-unit {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 10px;
+                color: #b8a080;
+                letter-spacing: 1px;
+                padding: 4px 10px;
+                background: rgba(0, 0, 0, 0.4);
+                border-radius: 3px;
+                border: 1px solid #3a2818;
+                cursor: pointer;
+            }
+            .radio-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+            }
+            .radio-dot.green {
+                background: #5a9a5a;
+                box-shadow: 0 0 5px #5a9a5a;
+            }
+            .radio-dot.yellow {
+                background: #c8a030;
+                animation: blink 2s infinite;
+            }
+            .radio-dot.red {
+                background: #a04040;
+                animation: blink 0.8s infinite;
+            }
+            @keyframes blink {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.25;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="desk" id="desk">
+            <div class="top-bar">
+                <div class="pocket-watch">
+                    <div class="watch-face">
+                        <div class="watch-center"></div>
+                        <div class="watch-hand hour"></div>
+                        <div class="watch-hand minute"></div>
+                        <div class="watch-hand second"></div>
+                    </div>
+                    <div class="watch-label">
+                        <div>总攻倒计时</div>
+                        <div class="countdown" id="countdownDisplay">
+                            08:30:00
+                        </div>
+                    </div>
+                </div>
+                <span style="color: #b8a080">│</span>
+                <div class="phase-indicator" id="phaseIndicator">决 策 中</div>
+                <span style="color: #b8a080">│</span>
+                <div style="display: flex; gap: 16px; align-items: center">
+                    <span style="color: #b8a080; font-size: 11px"
+                        >1纵
+                        <span
+                            class="radio-dot green"
+                            style="display: inline-block"
+                        ></span
+                    ></span>
+                    <span style="color: #b8a080; font-size: 11px"
+                        >4纵
+                        <span
+                            class="radio-dot green"
+                            style="display: inline-block"
+                        ></span
+                    ></span>
+                    <span style="color: #b8a080; font-size: 11px"
+                        >6纵
+                        <span
+                            class="radio-dot yellow"
+                            style="display: inline-block"
+                        ></span
+                    ></span>
+                    <span style="color: #b8a080; font-size: 11px"
+                        >中野11纵
+                        <span
+                            class="radio-dot red"
+                            style="display: inline-block"
+                        ></span
+                    ></span>
+                </div>
+                <div style="flex: 1"></div>
+                <span style="color: #8a7a50; font-size: 12px"
+                    >1948年6月27日 · 夜</span
+                >
+            </div>
+
+            <div class="main-area">
+                <div class="left-col" id="leftCol">
+                    <div
+                        class="intel-card confirmed"
+                        data-id="intel1"
+                        onclick="toggleIntel(this)"
+                    >
+                        <span class="intel-badge badge-confirmed">确凿</span
+                        ><span
+                            style="
+                                float: right;
+                                font-size: 10px;
+                                color: #8a7a60;
+                            "
+                            >26日20:10</span
+                        >
+                        <div class="intel-check">✓</div>
+                        <strong>📡 区兵团电：</strong
+                        >“沿睢杞大道西进，预计明日抵杞县以东”。
+                    </div>
+                    <div
+                        class="intel-card confirmed"
+                        data-id="intel2"
+                        onclick="toggleIntel(this)"
+                    >
+                        <span class="intel-badge badge-confirmed">确凿</span
+                        ><span style="float: right; font-size: 10px"
+                            >26日22:30</span
+                        >
+                        <div class="intel-check">✓</div>
+                        <strong>📡 蒋令破译：</strong
+                        >“邱、区东西对进，在睢杞夹击共军”。
+                    </div>
+                    <div
+                        class="intel-card speculated"
+                        data-id="intel3"
+                        onclick="toggleIntel(this)"
+                    >
+                        <span class="intel-badge badge-speculated">推测</span
+                        ><span style="float: right; font-size: 10px"
+                            >26日18:30</span
+                        >
+                        <div class="intel-check">✓</div>
+                        <strong>👁 骑侦：</strong>睢县西北10km发现敌行军纵队。
+                    </div>
+                    <div
+                        class="intel-card speculated"
+                        data-id="intel4"
+                        onclick="toggleIntel(this)"
+                    >
+                        <span class="intel-badge badge-speculated">推测</span>
+                        <div class="intel-check">✓</div>
+                        <strong>👂 百姓口述：</strong
+                        >睢县有汽车电台，龙王店大量敌军。
+                    </div>
+                    <div
+                        class="intel-card doubtful"
+                        data-id="intel5"
+                        onclick="toggleIntel(this)"
+                    >
+                        <span class="intel-badge badge-doubtful">存疑</span>
+                        <div class="intel-check">✓</div>
+                        <strong>❓ 黄百韬、胡琏动向：</strong>无任何情报。
+                    </div>
+                    <div class="adopted-panel">
+                        <div style="font-weight: bold; margin-bottom: 4px">
+                            📋 我采信的情报
+                        </div>
+                        <div id="adoptedList"></div>
+                    </div>
+                </div>
+
+                <div class="center-col" id="mapContainer">
+                    <div class="map-container" id="mapArea">
+                        <canvas id="hexCanvas"></canvas>
+                        <div class="map-feature" style="top: 22%; left: 48%">
+                            睢县
+                        </div>
+                        <div class="map-feature" style="top: 28%; left: 28%">
+                            杞县
+                        </div>
+                        <div class="map-feature" style="top: 18%; left: 55%">
+                            龙王店
+                        </div>
+                        <div class="map-feature" style="top: 35%; left: 52%">
+                            铁佛寺
+                        </div>
+                        <div class="map-feature" style="top: 12%; left: 15%">
+                            开封
+                        </div>
+                        <div class="map-feature" style="top: 55%; left: 22%">
+                            民权
+                        </div>
+                        <!-- 部队棋子：初始百分比会被吸附函数自动对齐到六边形中心 -->
+                        <div
+                            class="map-piece blue"
+                            id="piece-qiu"
+                            style="top: 10%; left: 12%"
+                        >
+                            <span>邱</span>
+                        </div>
+                        <div
+                            class="map-piece blue"
+                            id="piece-qu"
+                            style="top: 24%; left: 50%"
+                        >
+                            <span>区</span>
+                        </div>
+                        <div
+                            class="map-piece blue"
+                            id="piece-qu75"
+                            style="top: 30%; left: 44%"
+                        >
+                            <span style="font-size: 9px">75师</span>
+                        </div>
+                        <div
+                            class="map-piece red"
+                            id="piece-1zong"
+                            style="top: 55%; left: 38%"
+                        >
+                            <span>1纵</span>
+                        </div>
+                        <div
+                            class="map-piece red"
+                            id="piece-4zong"
+                            style="top: 60%; left: 25%"
+                        >
+                            <span>4纵</span>
+                        </div>
+                        <div
+                            class="map-piece red"
+                            id="piece-6zong"
+                            style="top: 50%; left: 55%"
+                        >
+                            <span>6纵</span>
+                        </div>
+                        <div
+                            class="map-piece red"
+                            id="piece-11zong"
+                            style="top: 65%; left: 48%"
+                        >
+                            <span>11纵</span>
+                        </div>
+                        <div class="map-legend">
+                            <span
+                                style="
+                                    background: #c43a31;
+                                    display: inline-block;
+                                    width: 10px;
+                                    height: 10px;
+                                    border-radius: 50%;
+                                    margin-right: 4px;
+                                "
+                            ></span
+                            >华野
+                            <span
+                                style="
+                                    background: #2c5f8a;
+                                    display: inline-block;
+                                    width: 10px;
+                                    height: 10px;
+                                    border-radius: 50%;
+                                    margin-left: 8px;
+                                    margin-right: 4px;
+                                "
+                            ></span
+                            >敌军
+                        </div>
+                        <div class="measure-tip" id="measureTip">
+                            按住 Shift 拖动棋子测距
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-col">
+                    <div class="force-card">
+                        <strong>⚔ 兵力对比估算</strong>
+                        <table
+                            style="
+                                width: 100%;
+                                font-size: 11px;
+                                margin-top: 6px;
+                            "
+                        >
+                            <tr>
+                                <td>突击集团</td>
+                                <td>~7.5万</td>
+                                <td>火炮143</td>
+                            </tr>
+                            <tr>
+                                <td>区寿年兵团</td>
+                                <td>~3-4万</td>
+                                <td>火炮60</td>
+                            </tr>
+                            <tr
+                                style="
+                                    font-weight: bold;
+                                    background: rgba(200, 160, 60, 0.2);
+                                "
+                            >
+                                <td colspan="3">局部优势比 ≈ 2.2 : 1</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div
+                        class="plan-card selected-plan"
+                        id="planA"
+                        onclick="selectPlan('A')"
+                    >
+                        <strong>📋 甲案：集中打区寿年</strong>
+                        <span
+                            style="
+                                background: #f0e4c0;
+                                color: #6b4e18;
+                                font-size: 10px;
+                            "
+                            >风险中</span
+                        >
+                    </div>
+                    <div class="plan-card" id="planB" onclick="selectPlan('B')">
+                        <strong>📋 乙案：先打邱清泉</strong>
+                        <span
+                            style="
+                                background: #f0d0d0;
+                                color: #8b2020;
+                                font-size: 10px;
+                            "
+                            >风险高</span
+                        >
+                    </div>
+                    <div class="order-sheet">
+                        <div
+                            style="
+                                text-align: center;
+                                font-weight: bold;
+                                border-bottom: 1px solid #c8b898;
+                                padding-bottom: 6px;
+                            "
+                        >
+                            作 战 命 令 （草稿）
+                        </div>
+                        <textarea id="orderText">
+令：第1、4、6、11纵队组成突击集团，于6月27日24时前完成对区寿年兵团的包围。…</textarea
+                        >
+                        <div
+                            style="
+                                display: flex;
+                                align-items: flex-end;
+                                justify-content: space-between;
+                                margin-top: 12px;
+                            "
+                        >
+                            <div
+                                id="signLine"
+                                onclick="signOrder()"
+                                style="
+                                    border-bottom: 1px solid #5a3a1c;
+                                    height: 30px;
+                                    flex: 1;
+                                    display: flex;
+                                    align-items: flex-end;
+                                    justify-content: center;
+                                    font-size: 22px;
+                                    letter-spacing: 4px;
+                                    color: #8b1a10;
+                                    font-weight: bold;
+                                    cursor: pointer;
+                                "
+                            >
+                                　
+                            </div>
+                            <span
+                                style="
+                                    font-size: 10px;
+                                    color: #8a7a60;
+                                    margin-left: 10px;
+                                "
+                                >← 签署不可撤回</span
+                            >
+                        </div>
+                    </div>
+                    <button class="btn-sign" id="btnSign" onclick="signOrder()">
+                        签 署 命 令
+                    </button>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <span style="color: #8a7050; font-size: 10px">通 信 科</span>
+                <div class="radio-unit">
+                    <span class="radio-dot green"></span>军委台
+                </div>
+                <div class="radio-unit">
+                    <span class="radio-dot green"></span>1纵
+                </div>
+                <div class="radio-unit">
+                    <span class="radio-dot yellow"></span>6纵
+                </div>
+                <div class="radio-unit">
+                    <span class="radio-dot red"></span>中野11纵
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                let isExecuting = false;
+                let adoptedIntel = new Set(["intel1", "intel2"]);
+                let countdownSeconds = 8 * 3600 + 30 * 60;
+                let countdownInterval;
+
+                function updateCountdown() {
+                    let h = Math.floor(countdownSeconds / 3600),
+                        m = Math.floor((countdownSeconds % 3600) / 60),
+                        s = countdownSeconds % 60;
+                    document.getElementById("countdownDisplay").textContent =
+                        String(h).padStart(2, "0") +
+                        ":" +
+                        String(m).padStart(2, "0") +
+                        ":" +
+                        String(s).padStart(2, "0");
+                }
+                function startCountdown() {
+                    if (countdownInterval) clearInterval(countdownInterval);
+                    countdownInterval = setInterval(() => {
+                        if (countdownSeconds > 0) {
+                            countdownSeconds -= isExecuting ? 3 : 1;
+                            updateCountdown();
+                        }
+                    }, 1000);
+                }
+                updateCountdown();
+                startCountdown();
+
+                window.toggleIntel = function (card) {
+                    if (isExecuting) return;
+                    let id = card.dataset.id;
+                    if (adoptedIntel.has(id)) {
+                        adoptedIntel.delete(id);
+                        card.classList.remove("selected");
+                    } else {
+                        adoptedIntel.add(id);
+                        card.classList.add("selected");
+                    }
+                    updateAdoptedPanel();
+                };
+                function updateAdoptedPanel() {
+                    let list = document.getElementById("adoptedList"),
+                        html = "";
+                    adoptedIntel.forEach((id) => {
+                        let card = document.querySelector(
+                            `.intel-card[data-id="${id}"]`,
+                        );
+                        if (card)
+                            html += `<div style="padding:2px 0;">${card.querySelector("strong").textContent}</div>`;
+                    });
+                    list.innerHTML =
+                        html || '<div style="color:#8a7050;">尚未采信</div>';
+                }
+                document.querySelectorAll(".intel-card").forEach((c) => {
+                    if (adoptedIntel.has(c.dataset.id))
+                        c.classList.add("selected");
+                });
+                updateAdoptedPanel();
+
+                window.selectPlan = function (id) {
+                    if (isExecuting) return;
+                    document
+                        .querySelectorAll(".plan-card")
+                        .forEach((c) => c.classList.remove("selected-plan"));
+                    document
+                        .getElementById("plan" + id)
+                        .classList.add("selected-plan");
+                    document.getElementById("orderText").value =
+                        id === "A"
+                            ? "令：第1、4、6、11纵包围区寿年…"
+                            : "令：主力转向邱清泉…";
+                };
+
+                window.signOrder = function () {
+                    if (isExecuting) return;
+                    let line = document.getElementById("signLine"),
+                        name = "粟 裕",
+                        i = 0;
+                    function type() {
+                        if (i < name.length) {
+                            line.textContent += name[i];
+                            i++;
+                            setTimeout(type, 150);
+                        } else {
+                            isExecuting = true;
+                            document.body.classList.add("executing");
+                            document.getElementById(
+                                "phaseIndicator",
+                            ).textContent = "执 行 中";
+                            document
+                                .getElementById("phaseIndicator")
+                                .classList.add("executing");
+                            document.getElementById("orderText").readOnly =
+                                true;
+                            document
+                                .querySelectorAll(".map-piece")
+                                .forEach((p) => {
+                                    p.classList.add("locked");
+                                    p.style.cursor = "not-allowed";
+                                });
+                            document
+                                .getElementById("btnSign")
+                                .classList.add("executed");
+                            document.getElementById("btnSign").textContent =
+                                "命令已签署 · 执行中";
+                            document.getElementById("measureTip").textContent =
+                                "命令已下达 · 态势锁定中";
+                        }
+                    }
+                    line.textContent = "";
+                    type();
+                };
+
+                // 六边形网格与吸附
+                const mapArea = document.getElementById("mapArea");
+                const canvas = document.getElementById("hexCanvas");
+                const ctx = canvas.getContext("2d");
+                let hexCenters = [];
+
+                function drawHexGrid() {
+                    let rect = mapArea.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    let R = 30,
+                        hexHeight = 2 * R,
+                        hexWidth = Math.sqrt(3) * R;
+                    let vertDist = hexHeight * 0.75,
+                        horizDist = hexWidth;
+                    ctx.clearRect(0, 0, rect.width, rect.height);
+                    ctx.strokeStyle = "rgba(200,180,140,0.3)";
+                    ctx.lineWidth = 0.8;
+                    let cols = Math.ceil(rect.width / horizDist) + 2,
+                        rows = Math.ceil(rect.height / vertDist) + 2;
+                    hexCenters = [];
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            let x =
+                                -horizDist +
+                                col * horizDist +
+                                (row % 2 === 1 ? horizDist / 2 : 0);
+                            let y = -R + row * vertDist;
+                            let cx = x,
+                                cy = y + R;
+                            hexCenters.push({ x: cx, y: cy });
+                            ctx.beginPath();
+                            for (let i = 0; i < 6; i++) {
+                                let angle = Math.PI / 6 + (i * Math.PI) / 3;
+                                let px = cx + R * Math.cos(angle),
+                                    py = cy - R * Math.sin(angle);
+                                i === 0
+                                    ? ctx.moveTo(px, py)
+                                    : ctx.lineTo(px, py);
+                            }
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
+                    }
+                }
+                drawHexGrid();
+                window.addEventListener("resize", () => {
+                    drawHexGrid();
+                    snapAllPieces();
+                });
+
+                function getPieceCenter(piece) {
+                    let rect = mapArea.getBoundingClientRect(),
+                        pRect = piece.getBoundingClientRect();
+                    return {
+                        x: pRect.left - rect.left + pRect.width / 2,
+                        y: pRect.top - rect.top + pRect.height / 2,
+                    };
+                }
+                function setPiecePos(piece, px, py) {
+                    let rect = mapArea.getBoundingClientRect();
+                    piece.style.left = (px / rect.width) * 100 + "%";
+                    piece.style.top = (py / rect.height) * 100 + "%";
+                }
+                function snapPiece(piece) {
+                    if (!hexCenters.length) return;
+                    let pos = getPieceCenter(piece),
+                        min = Infinity,
+                        nearest;
+                    hexCenters.forEach((c) => {
+                        let d = (c.x - pos.x) ** 2 + (c.y - pos.y) ** 2;
+                        if (d < min) {
+                            min = d;
+                            nearest = c;
+                        }
+                    });
+                    setPiecePos(piece, nearest.x, nearest.y);
+                }
+                function snapAllPieces() {
+                    document.querySelectorAll(".map-piece").forEach(snapPiece);
+                }
+                setTimeout(snapAllPieces, 120);
+
+                // 拖拽
+                let dragged = null,
+                    offX,
+                    offY,
+                    measureStart;
+                function onStart(e, piece) {
+                    if (isExecuting || piece.classList.contains("locked"))
+                        return;
+                    e.preventDefault();
+                    dragged = piece;
+                    piece.classList.add("dragging");
+                    let pos = getPieceCenter(piece),
+                        rect = mapArea.getBoundingClientRect();
+                    let cx = e.touches ? e.touches[0].clientX : e.clientX,
+                        cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    offX = cx - (rect.left + pos.x);
+                    offY = cy - (rect.top + pos.y);
+                    if (e.shiftKey)
+                        measureStart = { x: pos.x, y: pos.y, piece };
+                }
+                function onMove(e) {
+                    if (!dragged) return;
+                    e.preventDefault();
+                    let cx = e.touches ? e.touches[0].clientX : e.clientX,
+                        cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    let rect = mapArea.getBoundingClientRect();
+                    setPiecePos(
+                        dragged,
+                        cx - rect.left - offX,
+                        cy - rect.top - offY,
+                    );
+                }
+                function onEnd(e) {
+                    if (!dragged) return;
+                    dragged.classList.remove("dragging");
+                    snapPiece(dragged);
+                    if (measureStart && dragged !== measureStart.piece) {
+                        let end = getPieceCenter(dragged);
+                        let dist = Math.sqrt(
+                            (end.x - measureStart.x) ** 2 +
+                                (end.y - measureStart.y) ** 2,
+                        );
+                        let km = Math.round(
+                            (dist / mapArea.getBoundingClientRect().width) *
+                                200,
+                        );
+                        document.getElementById("measureTip").textContent =
+                            `📏 约${km}km / 步兵行军${Math.round(km / 4)}h`;
+                        setTimeout(() => {
+                            document.getElementById("measureTip").textContent =
+                                isExecuting
+                                    ? "命令已下达"
+                                    : "按住 Shift 拖动棋子测距";
+                        }, 3000);
+                    }
+                    measureStart = null;
+                    dragged = null;
+                }
+                document.querySelectorAll(".map-piece").forEach((p) => {
+                    p.addEventListener("mousedown", (e) => onStart(e, p));
+                    p.addEventListener("touchstart", (e) => onStart(e, p), {
+                        passive: false,
+                    });
+                });
+                document.addEventListener("mousemove", onMove);
+                document.addEventListener("touchmove", onMove, {
+                    passive: false,
+                });
+                document.addEventListener("mouseup", onEnd);
+                document.addEventListener("touchend", onEnd);
+            })();
+        </script>
+    </body>
+</html>
