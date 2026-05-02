@@ -78,21 +78,14 @@ final dead = unit.takeDamage(10); // hp=0, alive=false
 final acted = unit.markActed();
 ```
 
-## 现存问题
+## 问题与技术债
 
-1. **effectiveMoveRange 摆设** — 直接返回 baseMoveRange，战役/地形修正未接入
-2. **初始数据耦合** — createInitialUnits() 硬编码在 Game 类，未外置为模板配置
-3. **UnitAbility 单一** — 仅有 assault，未扩展其他特技类型
-
-## 已解决
-
-- ✅ 不可变设计：所有字段 final，操作方法返回新实例
-- ✅ Side 枚举化：enum Side { pla, nationalist }
-- ✅ UnitAbility 枚举化：enum UnitAbility { assault }
-- ✅ copyWith 已运用：所有操作方法基于 copyWith
-
-## 改进方向
-
-- effectiveMoveRange 接入地形/战役修正逻辑
-- 单位模板数据外置（JSON/配置），解耦初始数据
-- 扩展 UnitAbility 枚举，支持更多特技类型（如防空、侦察、工兵等）
+| 问题 | 状态 | 说明 |
+|------|------|------|
+| 不可变设计 | ✅ 已解决 | 所有字段 final，操作方法返回新实例 |
+| Side 枚举化 | ✅ 已解决 | enum Side { pla, nationalist } |
+| UnitAbility 枚举化 | ✅ 已解决 | enum UnitAbility { assault } |
+| copyWith 运用 | ✅ 已解决 | 所有操作方法基于 copyWith |
+| effectiveMoveRange 摆设 | ❌ 待解决 | 直接返回 baseMoveRange，战役/地形修正未接入 |
+| 初始数据耦合 | ❌ 待解决 | createInitialUnits() 硬编码在 Game 类，未外置为模板配置 |
+| UnitAbility 单一 | ❌ 待解决 | 仅有 assault，未扩展其他特技类型（防空、侦察、工兵等） |
