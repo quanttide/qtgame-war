@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/battlefield.dart';
 import '../models/game.dart';
 import '../controller/game_controller.dart';
 import '../views/battlefield_view.dart';
@@ -15,18 +14,26 @@ class CampaignScreen extends StatefulWidget {
 }
 
 class _CampaignScreenState extends State<CampaignScreen> {
-  late final GameController _controller;
+  GameController? _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = GameController(Game(Battlefield.createMapTerrain()));
-    _controller.addListener(_onGameStateChanged);
+    _load();
+  }
+
+  Future<void> _load() async {
+    final config = await CampaignConfig.load('diqiudian');
+    final controller = GameController(Game(config));
+    controller.addListener(_onGameStateChanged);
+    setState(() => _controller = controller);
   }
 
   void _onGameStateChanged() {
-    if (_controller.state.isGameOver) {
-      final campaign = _controller.state.campaign;
+    final c = _controller;
+    if (c == null) return;
+    if (c.state.isGameOver) {
+      final campaign = c.state.campaign;
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -51,7 +58,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _controller.reset();
+                c.reset();
               },
               child: const Text('\u{1F504} 再来一局',
                   style: TextStyle(color: Color(0xffc9a96e))),
@@ -64,17 +71,24 @@ class _CampaignScreenState extends State<CampaignScreen> {
 
   @override
   void dispose() {
-    _controller.removeListener(_onGameStateChanged);
-    _controller.dispose();
+    _controller?.removeListener(_onGameStateChanged);
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+    if (controller == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xff1e1c17),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return ListenableBuilder(
-      listenable: _controller,
+      listenable: controller,
       builder: (context, _) {
-        final state = _controller.state;
+        final state = controller.state;
         return Scaffold(
           backgroundColor: const Color(0xff1e1c17),
           body: SafeArea(
@@ -88,11 +102,11 @@ class _CampaignScreenState extends State<CampaignScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          BattlefieldView(controller: _controller),
+                          BattlefieldView(controller: controller),
                           const SizedBox(width: 12),
                           SizedBox(
                             width: 225,
-                            child: _sidePanel(state),
+                            child: _sidePanel(state, controller),
                           ),
                         ],
                       ),
@@ -107,7 +121,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
     );
   }
 
-  Widget _sidePanel(GameState state) {
+  Widget _sidePanel(GameState state, GameController controller) {
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
       decoration: BoxDecoration(
@@ -141,9 +155,9 @@ class _CampaignScreenState extends State<CampaignScreen> {
           const SizedBox(height: 5),
           CampaignView(campaign: state.campaign),
           const SizedBox(height: 4),
-          Expanded(child: UnitView(state: state, controller: _controller)),
+          Expanded(child: UnitView(state: state, controller: controller)),
           const SizedBox(height: 5),
-          GameView(state: state, controller: _controller),
+          GameView(state: state, controller: controller),
           const SizedBox(height: 4),
           _legend(),
         ],

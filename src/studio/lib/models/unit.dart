@@ -18,6 +18,16 @@ class UnitType {
     required this.attackRange,
     this.isAssault = false,
   });
+
+  factory UnitType.fromJson(Map<String, dynamic> json) => UnitType(
+    name: json['name'],
+    maxHp: json['max_hp'],
+    baseAttack: json['attack'],
+    baseDefense: json['defense'],
+    baseMoveRange: json['move'],
+    attackRange: json['range'],
+    isAssault: json['assault'] ?? false,
+  );
 }
 
 class UnitLibrary {

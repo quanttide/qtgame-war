@@ -7,8 +7,8 @@ v0.1 QA 文档：指挥官体验验证规格
 C01 · 我第一次说出我的决心
 
 验证模块：指挥官
-参与 Bloc：CommanderBloc
-架构映射：用户点击意图按钮 → CommanderBloc 锁定意图 → 意图指示器更新 → 选项面板根据意图过滤行动
+参与 Controller：CommanderController
+架构映射：用户点击意图按钮 → CommanderController 锁定意图 → 意图指示器更新 → 选项面板根据意图过滤行动
 
 初始状态
 
@@ -37,8 +37,8 @@ C01 · 我第一次说出我的决心
 C02 · 我的部队真的累了
 
 验证模块：部队
-参与 Bloc：ForceBloc
-架构映射：用户点击进攻/休整 → ForceBloc 红线校验（体力≤20则禁止进攻）→ 体力状态更新 → UI按钮可见性控制
+参与 Controller：ForceController
+架构映射：用户点击进攻/休整 → ForceController 红线校验（体力≤20则禁止进攻）→ 体力状态更新 → UI按钮可见性控制
 
 初始状态
 
@@ -68,8 +68,8 @@ C02 · 我的部队真的累了
 C03 · 战场在我不在的时候活着
 
 验证模块：战场
-参与 Bloc：BattlefieldBloc、TimeBloc
-架构映射：TimeBloc emit TimeElapsed → BattlefieldBloc 监听并移动敌军 → UI 更新红标位置 → 到达相邻格时触发提示
+参与 Controller：BattlefieldController、TimeController
+架构映射：TimeController emit TimeElapsed → BattlefieldController 监听并移动敌军 → UI 更新红标位置 → 到达相邻格时触发提示
 
 初始状态
 
@@ -99,8 +99,8 @@ C03 · 战场在我不在的时候活着
 C04 · 我知道这个消息的时候已经晚了
 
 验证模块：情报
-参与 Bloc：IntelBloc、BattlefieldBloc
-架构映射：BattlefieldBloc 持有真实敌军位置 → IntelBloc 生成延迟快照 → UI 同时显示真实态和情报态，请求侦察触发 IntelBloc 刷新但仍滞后
+参与 Controller：IntelController、BattlefieldController
+架构映射：BattlefieldController 持有真实敌军位置 → IntelController 生成延迟快照 → UI 同时显示真实态和情报态，请求侦察触发 IntelController 刷新但仍滞后
 
 初始状态
 
@@ -128,8 +128,8 @@ C04 · 我知道这个消息的时候已经晚了
 C05 · 打了一仗之后，两边都变了
 
 验证模块：多线程后果
-参与 Bloc：CommanderBloc → ForceBloc（消耗）、BattlefieldBloc（态势）、政治影响暂用规则模拟
-架构映射：CommanderBloc 发布命令 → ForceBloc 更新消耗线、BattlefieldBloc 更新态势线、政治线由规则引擎输出 → UI 三条线同时刷新
+参与 Controller：CommanderController → ForceController（消耗）、BattlefieldController（态势）、政治影响暂用规则模拟
+架构映射：CommanderController 发布命令 → ForceController 更新消耗线、BattlefieldController 更新态势线、政治线由规则引擎输出 → UI 三条线同时刷新
 
 初始状态
 
@@ -160,8 +160,8 @@ C05 · 打了一仗之后，两边都变了
 C06 · 打完一仗后，我的命令变成了历史
 
 验证模块：日志/审计
-参与 Bloc：AuditBloc
-架构映射：所有 Bloc 的决策事件 → AuditBloc 接收并序列化 → UI 日志面板按时间倒序渲染
+参与 Controller：AuditController
+架构映射：所有 Controller 的决策事件 → AuditController 接收并序列化 → UI 日志面板按时间倒序渲染
 
 初始状态
 
@@ -190,8 +190,8 @@ C06 · 打完一仗后，我的命令变成了历史
 C07 · 我选了意图之后，世界对我的态度变了
 
 验证模块：情报叙事变体
-参与 Bloc：IntelBloc ← CommanderBloc（意图状态）
-架构映射：IntelBloc 获取 CommanderBloc 当前意图 → 情报生成器根据意图选择不同的叙事模板 → 同一份基础情报产出不同措辞
+参与 Controller：IntelController ← CommanderController（意图状态）
+架构映射：IntelController 获取 CommanderController 当前意图 → 情报生成器根据意图选择不同的叙事模板 → 同一份基础情报产出不同措辞
 
 初始状态
 
@@ -215,8 +215,8 @@ C07 · 我选了意图之后，世界对我的态度变了
 C08 · 我第一次发现自己不能撤退
 
 验证模块：战场 + 部队（战场约束触发部队选项变化）
-参与 Bloc：BattlefieldBloc → ForceBloc
-架构映射：BattlefieldBloc 检测敌军相邻 → 发布位置封锁事件 → ForceBloc 接收后过滤撤退选项 → UI 更新
+参与 Controller：BattlefieldController → ForceController
+架构映射：BattlefieldController 检测敌军相邻 → 发布位置封锁事件 → ForceController 接收后过滤撤退选项 → UI 更新
 
 初始状态
 

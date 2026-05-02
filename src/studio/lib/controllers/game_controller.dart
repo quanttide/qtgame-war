@@ -52,7 +52,12 @@ class GameController extends ChangeNotifier {
   GameController(this.engine)
       : _state = GameState(
           units: engine.createInitialUnits(),
-          campaign: Campaign(),
+          campaign: Campaign(
+            huayePower: engine.config.initialHuayePower,
+            fortStrength: engine.config.initialFortStrength,
+            qiuReinforceTurn: engine.config.qiuReinforceTurn,
+            huReinforceTurn: engine.config.huReinforceTurn,
+          ),
           logMessages: [
             const Dispatch('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
             const Dispatch('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),

@@ -1,11 +1,123 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'unit.dart';
 import 'campaign.dart';
 import 'battlefield.dart';
 
-class Game {
+class CampaignConfig {
   final List<List<TerrainType>> mapTerrain;
+  final Map<String, UnitType> templates;
+  final List<UnitSpec> initialUnits;
+  final List<ReinforcementWave> reinforcementWaves;
+  final int maxTurns;
+  final int initialHuayePower;
+  final int initialFortStrength;
+  final int qiuReinforceTurn;
+  final int huReinforceTurn;
 
-  Game(this.mapTerrain);
+  CampaignConfig({
+    required this.mapTerrain,
+    required this.templates,
+    required this.initialUnits,
+    required this.reinforcementWaves,
+    required this.maxTurns,
+    required this.initialHuayePower,
+    required this.initialFortStrength,
+    required this.qiuReinforceTurn,
+    required this.huReinforceTurn,
+  });
+
+  static Future<CampaignConfig> load(String id) async {
+    final c = jsonDecode(await rootBundle.loadString('assets/campaigns/$id/campaign.json'));
+    final m = jsonDecode(await rootBundle.loadString('assets/campaigns/$id/map.json'));
+    final u = jsonDecode(await rootBundle.loadString('assets/campaigns/$id/units.json'));
+
+    final templates = <String, UnitType>{};
+    for (final t in (u['templates'] as List)) {
+      final ut = UnitType.fromJson(t);
+      templates[t['id']] = ut;
+    }
+
+    final units = (u['units'] as List).map((x) => UnitSpec(
+      id: x['id'],
+      template: templates[x['template']]!,
+      side: x['side'] == 'blue' ? Side.blue : Side.red,
+      col: x['col'],
+      row: x['row'],
+      revealed: x['revealed'] ?? false,
+      isReinforcement: x['is_reinforcement'] ?? false,
+    )).toList();
+
+    final waves = (c['reinforcements'] as List).map((x) => ReinforcementWave(
+      label: x['label'],
+      turn: x['turn'],
+      message: x['message'],
+      units: (x['units'] as List).map((su) => UnitSpec(
+        id: su['id'] ?? 0,
+        template: templates[su['template']]!,
+        side: Side.red,
+        col: su['col'],
+        row: su['row'],
+        revealed: true,
+        isReinforcement: true,
+      )).toList(),
+    )).toList();
+
+    return CampaignConfig(
+      mapTerrain: Battlefield.createMapFromJson(m),
+      templates: templates,
+      initialUnits: units,
+      reinforcementWaves: waves,
+      maxTurns: c['max_turns'],
+      initialHuayePower: c['initial_huaye_power'],
+      initialFortStrength: c['initial_fort_strength'],
+      qiuReinforceTurn: waves.firstWhere((w) => w.label == 'qiu').turn,
+      huReinforceTurn: waves.firstWhere((w) => w.label == 'hu').turn,
+    );
+  }
+}
+
+class UnitSpec {
+  final int id;
+  final UnitType template;
+  final Side side;
+  final int col;
+  final int row;
+  final bool revealed;
+  final bool isReinforcement;
+
+  const UnitSpec({
+    required this.id,
+    required this.template,
+    required this.side,
+    required this.col,
+    required this.row,
+    this.revealed = false,
+    this.isReinforcement = false,
+  });
+}
+
+class ReinforcementWave {
+  final String label;
+  final int turn;
+  final String message;
+  final List<UnitSpec> units;
+
+  const ReinforcementWave({
+    required this.label,
+    required this.turn,
+    required this.message,
+    required this.units,
+  });
+}
+
+class Game {
+  final CampaignConfig config;
+  late final List<List<TerrainType>> mapTerrain;
+
+  Game(this.config) {
+    mapTerrain = config.mapTerrain;
+  }
 
   static int terrainDefense(Unit unit, List<List<TerrainType>> map) =>
       terrainProps[map[unit.row][unit.col]]!.defenseBonus;
@@ -60,25 +172,30 @@ class Game {
       List<Unit> units, Campaign campaign, int currentTurn) {
     final newUnits = <Unit>[];
     final logs = <Dispatch>[];
-    if (currentTurn >= campaign.qiuReinforceTurn && !campaign.qiuArrived) {
-      campaign.qiuArrived = true;
-      const qiuVan = UnitType(name: '邱清泉·第5军先头', maxHp: 2, baseAttack: 3, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-      const qiuDiv = UnitType(name: '邱清泉·第70师', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 4, attackRange: 2);
-      newUnits.addAll([
-        Unit(id: 30, side: Side.red, type: qiuVan, col: 0, row: 2, hp: 2, revealed: true, isReinforcement: true),
-        Unit(id: 31, side: Side.red, type: qiuDiv, col: 0, row: 3, hp: 2, revealed: true, isReinforcement: true),
-      ]);
-      logs.add(Dispatch('\u{1F4A5}邱清泉兵团援军从西面抵达战场！', 'urgent', currentTurn));
-    }
-    if (currentTurn >= campaign.huReinforceTurn && !campaign.huArrived) {
-      campaign.huArrived = true;
-      const huVan = UnitType(name: '胡琏·整11师先头', maxHp: 2, baseAttack: 3, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-      const huMain = UnitType(name: '胡琏·整11师主力', maxHp: 3, baseAttack: 2, baseDefense: 1, baseMoveRange: 4, attackRange: 1);
-      newUnits.addAll([
-        Unit(id: 32, side: Side.red, type: huVan, col: 7, row: 6, hp: 2, revealed: true, isReinforcement: true),
-        Unit(id: 33, side: Side.red, type: huMain, col: 8, row: 5, hp: 3, revealed: true, isReinforcement: true),
-      ]);
-      logs.add(Dispatch('\u{1F4A5}胡琏兵团援军从南面抵达战场！', 'urgent', currentTurn));
+
+    for (final wave in config.reinforcementWaves) {
+      final arrived = wave.label == 'qiu' ? campaign.qiuArrived : campaign.huArrived;
+      if (currentTurn >= wave.turn && !arrived) {
+        if (wave.label == 'qiu') {
+          campaign.qiuArrived = true;
+        } else {
+          campaign.huArrived = true;
+        }
+        for (final spec in wave.units) {
+          final nextId = units.fold(0, (max, u) => u.id > max ? u.id : max) + 1;
+          newUnits.add(Unit(
+            id: nextId,
+            side: Side.red,
+            type: spec.template,
+            col: spec.col,
+            row: spec.row,
+            hp: spec.template.maxHp,
+            revealed: true,
+            isReinforcement: true,
+          ));
+        }
+        logs.add(Dispatch(wave.message, 'urgent', currentTurn));
+      }
     }
     return (newUnits, logs);
   }
@@ -108,38 +225,22 @@ class Game {
   }
 
   List<Unit> createInitialUnits() {
-    const ziShiEr = UnitType(name: '四纵十二师', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1, isAssault: true);
-    const ziShi = UnitType(name: '四纵十师', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-    const ziYi = UnitType(name: '四纵十一师', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-    const yiYi = UnitType(name: '一纵一师', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-    const yiEr = UnitType(name: '一纵二师', maxHp: 2, baseAttack: 2, baseDefense: 0, baseMoveRange: 4, attackRange: 1);
-    const liuShiLiu = UnitType(name: '六纵十六师', maxHp: 3, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-    const liuShiQi = UnitType(name: '六纵十七师', maxHp: 2, baseAttack: 1, baseDefense: 1, baseMoveRange: 4, attackRange: 2);
-    const teArt = UnitType(name: '特纵炮兵群', maxHp: 2, baseAttack: 3, baseDefense: 0, baseMoveRange: 3, attackRange: 3);
-
-    const zheng40 = UnitType(name: '整25师40旅(核心)', maxHp: 3, baseAttack: 2, baseDefense: 2, baseMoveRange: 2, attackRange: 1);
-    const zheng108 = UnitType(name: '整25师108旅', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 3, attackRange: 1);
-    const kuaiSu = UnitType(name: '快速纵队', maxHp: 2, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1);
-    const tian = UnitType(name: '田花园守备团', maxHp: 1, baseAttack: 1, baseDefense: 1, baseMoveRange: 1, attackRange: 1);
-    const maKou = UnitType(name: '马口守备队', maxHp: 1, baseAttack: 1, baseDefense: 1, baseMoveRange: 1, attackRange: 1);
-    const liuLou = UnitType(name: '刘楼守备队', maxHp: 1, baseAttack: 1, baseDefense: 1, baseMoveRange: 1, attackRange: 1);
-
-    return [
-      Unit(id: 1, side: Side.blue, type: ziShiEr, col: 1, row: 2, revealed: true),
-      Unit(id: 2, side: Side.blue, type: ziShi, col: 0, row: 1, revealed: true),
-      Unit(id: 3, side: Side.blue, type: ziYi, col: 2, row: 3, revealed: true),
-      Unit(id: 4, side: Side.blue, type: yiYi, col: 1, row: 4, revealed: true),
-      Unit(id: 5, side: Side.blue, type: yiEr, col: 3, row: 5, revealed: true),
-      Unit(id: 6, side: Side.blue, type: liuShiLiu, col: 5, row: 5, revealed: true),
-      Unit(id: 7, side: Side.blue, type: liuShiQi, col: 6, row: 5, revealed: true),
-      Unit(id: 8, side: Side.blue, type: teArt, col: 0, row: 3, revealed: true),
-      Unit(id: 20, side: Side.red, type: zheng40, col: 5, row: 4),
-      Unit(id: 21, side: Side.red, type: zheng108, col: 4, row: 4),
-      Unit(id: 22, side: Side.red, type: kuaiSu, col: 6, row: 4),
-      Unit(id: 23, side: Side.red, type: tian, col: 3, row: 2, revealed: true),
-      Unit(id: 24, side: Side.red, type: maKou, col: 2, row: 5, revealed: true),
-      Unit(id: 25, side: Side.red, type: liuLou, col: 7, row: 1, revealed: true),
-    ];
+    int id = 0;
+    final specs = config.initialUnits;
+    final units = <Unit>[];
+    for (final spec in specs) {
+      units.add(Unit(
+        id: spec.id,
+        side: spec.side,
+        type: spec.template,
+        col: spec.col,
+        row: spec.row,
+        revealed: spec.revealed,
+        isReinforcement: spec.isReinforcement,
+      ));
+      if (spec.id > id) id = spec.id;
+    }
+    return units;
   }
 }
 

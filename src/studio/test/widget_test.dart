@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/models/combat.dart';
 import 'package:studio/models/game.dart';
-import 'package:studio/models/battlefield.dart';
 import 'package:studio/models/campaign.dart';
 
 void main() {
-  test('Game resolves combat', () {
-    final engine = Game(Battlefield.createMapTerrain());
+  testWidgets('Game resolves combat', (tester) async {
+    final config = await CampaignConfig.load('diqiudian');
+    final engine = Game(config);
     final units = engine.createInitialUnits();
     final attacker = units.first;
     final defender = units[8];

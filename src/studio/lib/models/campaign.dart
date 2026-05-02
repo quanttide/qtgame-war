@@ -21,6 +21,13 @@ class Campaign {
     this.victoryDetail = '',
   });
 
+  factory Campaign.fromJson(Map<String, dynamic> json) => Campaign(
+    huayePower: json['initial_huaye_power'],
+    fortStrength: json['initial_fort_strength'],
+    qiuReinforceTurn: json['reinforcements'].firstWhere((r) => r['label'] == 'qiu')['turn'],
+    huReinforceTurn: json['reinforcements'].firstWhere((r) => r['label'] == 'hu')['turn'],
+  );
+
   String get powerDesc {
     if (huayePower >= 70) return '充沛';
     if (huayePower >= 45) return '尚可';

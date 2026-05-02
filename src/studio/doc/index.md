@@ -1,28 +1,28 @@
-# 重构路线
+# 架构现状
 
-## 当前状态
+## 状态管理
 
-BLoC 已被移除，改为 `GameController`（ChangeNotifier）+ 全可变状态。主线（事件驱动 → 回合循环）不变，但状态管理从"伪不可变"降级为诚实的全可变。
+使用 `GameController`（ChangeNotifier）+ 全可变状态。状态管理从"伪不可变"降级为诚实的全可变。
 
-## 核心调整
+## 核心决策
 
-| 之前（BLoC + Equatable） | 现在（ChangeNotifier） |
+| 之前 | 现在 |
 |---|---|
 | GameState 不可变 + copyWith | GameState 所有字段 mutable |
 | Unit 不可变 + copyWith | Unit 字段 public non-final |
 | Campaign copy() 浅拷贝 | Campaign 直接变异 |
 | Equatable.props 字符串签名伪比较 | notifyListeners() 直接通知 |
-| flutter_bloc + equatable 依赖 | 零状态管理依赖 |
+| 外部状态管理库依赖 | 零状态管理依赖 |
 
 ## 为什么
 
-兵棋的核心 loop（选中→移动→攻击→伤害→下一回合）本质是**原地改状态**。之前试图用 BLoC + copyWith 实现不可变，但在 AI 循环里已被绕过（`state.units.addAll()`、`campaign.gameOver = true`）。与其两头不靠，不如诚实可变。
+兵棋的核心 loop（选中→移动→攻击→伤害→下一回合）本质是**原地改状态**。与其维持一个没人遵守的不可变约束，不如诚实可变。
 
 ## 影响
 
 - 不再支持时间旅行调试 / 状态回放（当前不需要）
 - 代码量减少（-copyWith 样板、-Equatable props）
-- 依赖减少（删除 flutter_bloc、equatable）
+- 依赖减少（删除外部状态管理库）
 - 游戏逻辑更直接，阅读负担降低
 
 ## 当前架构

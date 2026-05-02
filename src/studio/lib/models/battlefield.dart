@@ -111,6 +111,31 @@ class Battlefield {
   static const double canvasWidth = 572;
   static const double canvasHeight = 350;
 
+  static List<List<TerrainType>> createMapFromJson(Map<String, dynamic> json) {
+    final grid = List.generate(rows, (_) => List.filled(cols, TerrainType.plain));
+    void st(int c, int r, TerrainType t) {
+      if (r >= 0 && r < rows && c >= 0 && c < cols) grid[r][c] = t;
+    }
+    final terrains = json['terrains'] as Map<String, dynamic>;
+    for (final entry in terrains.entries) {
+      final t = _terrainFromKey(entry.key);
+      for (final cell in (entry.value as List)) {
+        st(cell[0], cell[1], t);
+      }
+    }
+    return grid;
+  }
+
+  static TerrainType _terrainFromKey(String key) {
+    switch (key) {
+      case 'river': return TerrainType.river;
+      case 'core_fort': return TerrainType.coreFort;
+      case 'town': return TerrainType.town;
+      case 'village': return TerrainType.village;
+      default: return TerrainType.plain;
+    }
+  }
+
   static List<List<TerrainType>> createMapTerrain() {
     final grid = List.generate(rows, (_) => List.filled(cols, TerrainType.plain));
 

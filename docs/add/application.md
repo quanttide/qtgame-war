@@ -34,7 +34,7 @@
 
 ## 架构说明
 
-- GameController 继承 `ChangeNotifier`，不是 Bloc
+- GameController 继承 `ChangeNotifier`
 - 状态直接变异，不产生新对象
 - UI 通过 `ListenableBuilder` 或手动 `addListener` 订阅变更
 - 无事件类定义（方法调用替代事件类 + 分发）

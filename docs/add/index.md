@@ -50,7 +50,7 @@
 ```
 
 核心原则：
-- 领域层：纯 Dart 代码，不依赖 Flutter 或 Bloc
+- 领域层：纯 Dart 代码，不依赖 Flutter
 - 应用层：GameController 驻留于此（ChangeNotifier），负责接收事件、协调领域对象、更新状态
 - 表现层：纯 UI 渲染，通过 ListenableBuilder 订阅状态变化，不含业务逻辑
 - 基础设施层：日志持久化、AI 适配、存储等外部关注点
