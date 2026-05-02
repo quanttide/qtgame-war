@@ -77,6 +77,14 @@ void main() {
 
     setUp(() {
       config = CampaignConfig(
+        name: '测试战役',
+        description: '测试用',
+        date: '1948年7月',
+        blueName: '华野',
+        redName: '国军',
+        gridCols: 10,
+        gridRows: 7,
+        hexSize: 27,
         mapTerrain: Battlefield.createMapTerrain(),
         templates: {
           'inf': UnitLibrary.lightInfantry,
@@ -94,18 +102,16 @@ void main() {
           UnitSpec(id: 12, template: UnitLibrary.heavyInfantry, side: Side.red, col: 6, row: 4),
         ],
         reinforcementWaves: [
-          ReinforcementWave(label: 'qiu', turn: 8, message: '邱兵团到达', units: [
+          ReinforcementWave(label: 'qiu', name: '邱清泉', turn: 8, message: '邱兵团到达', arrivedFlag: 'qiu_arrived', units: [
             UnitSpec(id: 0, template: UnitLibrary.cavalry, side: Side.red, col: 0, row: 2, revealed: true, isReinforcement: true),
           ]),
-          ReinforcementWave(label: 'hu', turn: 7, message: '胡兵团到达', units: [
+          ReinforcementWave(label: 'hu', name: '胡琏', turn: 7, message: '胡兵团到达', arrivedFlag: 'hu_arrived', units: [
             UnitSpec(id: 0, template: UnitLibrary.lightInfantry, side: Side.red, col: 8, row: 5, revealed: true, isReinforcement: true),
           ]),
         ],
         maxTurns: 12,
         initialHuayePower: 85,
         initialFortStrength: 3,
-        qiuReinforceTurn: 8,
-        huReinforceTurn: 7,
       );
       game = Game(config);
       initialUnits = game.createInitialUnits();
@@ -168,14 +174,14 @@ void main() {
     });
 
     test('spawnReinforcements does not spawn before wave turn', () {
-      final campaign = Campaign(huayePower: 85, fortStrength: 3, qiuReinforceTurn: 8, huReinforceTurn: 7);
+      final campaign = Campaign(huayePower: 85, fortStrength: 3);
       final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 1);
       expect(newUnits, isEmpty);
       expect(logs, isEmpty);
     });
 
     test('spawnReinforcements spawns at wave turn', () {
-      final campaign = Campaign(huayePower: 85, fortStrength: 3, qiuReinforceTurn: 8, huReinforceTurn: 7);
+      final campaign = Campaign(huayePower: 85, fortStrength: 3);
       final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 7);
       expect(newUnits, hasLength(1));
       expect(logs, hasLength(1));
@@ -183,7 +189,7 @@ void main() {
     });
 
     test('spawnReinforcements does not re-spawn already arrived wave', () {
-      final campaign = Campaign(huayePower: 85, fortStrength: 3, qiuReinforceTurn: 8, huReinforceTurn: 7);
+      final campaign = Campaign(huayePower: 85, fortStrength: 3);
       game.spawnReinforcements(initialUnits, campaign, 7); // hu arrives
       game.spawnReinforcements(initialUnits, campaign, 8); // qiu arrives
       final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 10);
@@ -213,6 +219,14 @@ void main() {
     setUp(() {
       final terrain = Battlefield.createMapTerrain();
       final config = CampaignConfig(
+        name: '测试战役',
+        description: '测试用',
+        date: '1948年7月',
+        blueName: '华野',
+        redName: '国军',
+        gridCols: 10,
+        gridRows: 7,
+        hexSize: 27,
         mapTerrain: terrain,
         templates: {'inf': UnitLibrary.lightInfantry, 'aslt': UnitLibrary.assaultInfantry, 'hvy': UnitLibrary.heavyInfantry},
         initialUnits: [
@@ -223,8 +237,6 @@ void main() {
         maxTurns: 12,
         initialHuayePower: 85,
         initialFortStrength: 3,
-        qiuReinforceTurn: 99,
-        huReinforceTurn: 99,
       );
       game = Game(config);
       controller = GameController(game);

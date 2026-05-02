@@ -16,22 +16,24 @@
   "reinforcements": [
     {
       "label": "qiu",
-      "turn": 8,
+      "name": "邱清泉",
+      "turn": 7,
       "message": "💥邱清泉兵团援军从西面抵达战场！",
       "arrived_flag": "qiu_arrived",
       "units": [
-        { "template": "qiu_van", "col": 0, "row": 2 },
-        { "template": "qiu_div", "col": 0, "row": 3 }
+        { "id": 30, "template": "qiu_van", "side": "red", "col": 0, "row": 2 },
+        { "id": 31, "template": "qiu_div", "side": "red", "col": 0, "row": 4 }
       ]
     },
     {
       "label": "hu",
-      "turn": 7,
+      "name": "胡琏",
+      "turn": 8,
       "message": "💥胡琏兵团援军从南面抵达战场！",
       "arrived_flag": "hu_arrived",
       "units": [
-        { "template": "hu_van", "col": 7, "row": 6 },
-        { "template": "hu_main", "col": 8, "row": 5 }
+        { "id": 32, "template": "hu_van", "side": "red", "col": 7, "row": 6 },
+        { "id": 33, "template": "hu_main", "side": "red", "col": 8, "row": 5 }
       ]
     }
   ]

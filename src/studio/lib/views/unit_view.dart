@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../controller/game_controller.dart';
+import '../models/game.dart';
+import '../controllers/game_controller.dart';
 
 class UnitView extends StatelessWidget {
   final GameState state;

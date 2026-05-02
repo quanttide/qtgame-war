@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/unit.dart';
 import '../models/battlefield.dart';
-import '../controller/game_controller.dart';
+import '../models/game.dart';
+import '../controllers/game_controller.dart';
 
 class BattlefieldView extends StatelessWidget {
   final GameController controller;

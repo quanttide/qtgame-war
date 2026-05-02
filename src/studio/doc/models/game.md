@@ -1,25 +1,49 @@
-# Game 模块现状
+# Game 模块
 
-## 当前状态
+本文件还包含 `GamePhase`（三态枚举）和 `GameState`（可变状态容器），与 `Game` 放在一起因为三者都是 game 概念的数据/逻辑，而非 controller 的实现细节。
 
-规则工具箱：BFS 移动计算、战斗结算、援军生成、胜利判定。算法清晰，但职责过重，无回合管理。
+## 职责
 
-## 核心问题
+纯查询 + 工具方法，不持有状态，不管理回合。`GameController` 持有 `GameState` 并调用 `Game` 的方法。
 
-1. **违反单一职责** — 地形、移动、战斗、援军、胜负全在一个类
-2. **可测试性差** — Random().nextInt(100) 硬编码，副作用直接改对象
-3. **无回合管理** — 没有回合状态机，谁行动、何时结束回合全无定义
-4. **AI 完全空白** — 敌方只能被动挨打
-5. **硬编码严重** — 命中率、系数等魔法数字，单位 ID 写死
-6. **地图数据耦合** — createInitialUnits()、spawnReinforcements() 绑定特定剧本
+| 方法 | 输入 | 输出 |
+|------|------|------|
+| `getMoveRange` | unit, allUnits | `Map<String, int>` 可达位置 → 剩余移动力 |
+| `getAttackTargets` | unit, allUnits | `Set<String>` 可攻击位置 |
+| `spawnReinforcements` | units, campaign, turn | `(List<Unit>, List<Dispatch>)` |
+| `checkVictory` | units, campaign, turn | `void`（变异 campaign） |
+| `getUnitAt` | col, row, units | `Unit?` |
+| `createInitialUnits` | — | `List<Unit>` |
 
-## 改进方向
+## CampaignConfig
 
-拆分为纯服务：
-- **MovementService** — 计算移动范围
-- **CombatService** — 战斗结算（返回 CombatResult，不改对象）
-- **ReinforcementService** — 生成援军数据
-- **VictoryService** — 检查胜负
-- **Battlefield** — 吸纳地形静态方法
+所有剧本数据通过 `CampaignConfig` 注入，从 JSON 加载或直接构造：
 
-完成后可删除 Game 类。
+| 字段 | 类型 | 来源 |
+|------|------|------|
+| `mapTerrain` | `List<List<TerrainType>>` | `map.json` |
+| `templates` | `Map<String, UnitType>` | `units.json` |
+| `initialUnits` | `List<UnitSpec>` | `units.json` |
+| `reinforcementWaves` | `List<ReinforcementWave>` | `campaign.json` |
+| `maxTurns` | `int` | `campaign.json` |
+| `initialHuayePower` / `initialFortStrength` | `int` | `campaign.json` |
+
+`UnitSpec` 和 `ReinforcementWave` 是纯数据类，用 `fromJson` 析出。
+
+## 依赖关系
+
+```
+CampaignConfig ← Game ─→ GameController → Unit/Campaign (变异)
+                        ↕
+                   CombatService (combat.dart, 纯函数)
+```
+
+- Game 不依赖 GameController
+- 战斗逻辑已抽离到 `combat.dart`（`resolveCombat` 纯函数，仅含 `Random` 副作用）
+- 回合管理、AI 逻辑、UI 通知全部在 GameController
+
+## 未解决的问题
+
+- `getMoveRange` 在调用时展开 BFS，无缓存。如果未来需要频繁查询，考虑预计算可达域
+- `checkVictory` 副作用直接改 `campaign`，不是纯函数（但与 GameController 模式一致：方法改状态，不返回新对象）
+- `spawnReinforcements` 同时做生成和日志，两层耦合。必要时可拆为 spawner + logger

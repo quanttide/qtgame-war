@@ -1,10 +1,7 @@
 class Campaign {
   int huayePower;
   int fortStrength;
-  int qiuReinforceTurn;
-  int huReinforceTurn;
-  bool qiuArrived;
-  bool huArrived;
+  Map<String, bool> arrived;
   bool gameOver;
   bool? victory;
   String victoryDetail;
@@ -12,21 +9,24 @@ class Campaign {
   Campaign({
     this.huayePower = 85,
     this.fortStrength = 3,
-    this.qiuReinforceTurn = 8,
-    this.huReinforceTurn = 7,
-    this.qiuArrived = false,
-    this.huArrived = false,
     this.gameOver = false,
     this.victory,
     this.victoryDetail = '',
-  });
+  }) : arrived = {};
 
-  factory Campaign.fromJson(Map<String, dynamic> json) => Campaign(
-    huayePower: json['initial_huaye_power'],
-    fortStrength: json['initial_fort_strength'],
-    qiuReinforceTurn: json['reinforcements'].firstWhere((r) => r['label'] == 'qiu')['turn'],
-    huReinforceTurn: json['reinforcements'].firstWhere((r) => r['label'] == 'hu')['turn'],
-  );
+  factory Campaign.fromJson(Map<String, dynamic> json) {
+    final camp = Campaign(
+      huayePower: json['initial_huaye_power'],
+      fortStrength: json['initial_fort_strength'],
+    );
+    if (json['reinforcements'] != null) {
+      for (final r in (json['reinforcements'] as List)) {
+        final flag = r['arrived_flag'] as String? ?? '${r['label']}_arrived';
+        camp.arrived[flag] = false;
+      }
+    }
+    return camp;
+  }
 
   String get powerDesc {
     if (huayePower >= 70) return '充沛';
@@ -48,5 +48,4 @@ class Campaign {
     if (huayePower >= 25) return 1;
     return 2;
   }
-
 }

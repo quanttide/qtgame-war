@@ -5,6 +5,14 @@ import 'campaign.dart';
 import 'battlefield.dart';
 
 class CampaignConfig {
+  final String name;
+  final String description;
+  final String date;
+  final String blueName;
+  final String redName;
+  final int gridCols;
+  final int gridRows;
+  final double hexSize;
   final List<List<TerrainType>> mapTerrain;
   final Map<String, UnitType> templates;
   final List<UnitSpec> initialUnits;
@@ -12,10 +20,16 @@ class CampaignConfig {
   final int maxTurns;
   final int initialHuayePower;
   final int initialFortStrength;
-  final int qiuReinforceTurn;
-  final int huReinforceTurn;
 
   CampaignConfig({
+    required this.name,
+    required this.description,
+    required this.date,
+    required this.blueName,
+    required this.redName,
+    required this.gridCols,
+    required this.gridRows,
+    required this.hexSize,
     required this.mapTerrain,
     required this.templates,
     required this.initialUnits,
@@ -23,8 +37,6 @@ class CampaignConfig {
     required this.maxTurns,
     required this.initialHuayePower,
     required this.initialFortStrength,
-    required this.qiuReinforceTurn,
-    required this.huReinforceTurn,
   });
 
   static Future<CampaignConfig> load(String id) async {
@@ -50,12 +62,14 @@ class CampaignConfig {
 
     final waves = (c['reinforcements'] as List).map((x) => ReinforcementWave(
       label: x['label'],
+      name: x['name'] ?? x['label'],
       turn: x['turn'],
       message: x['message'],
+      arrivedFlag: x['arrived_flag'] as String? ?? '${x['label']}_arrived',
       units: (x['units'] as List).map((su) => UnitSpec(
         id: su['id'] ?? 0,
         template: templates[su['template']]!,
-        side: Side.red,
+        side: su['side'] == 'blue' ? Side.blue : Side.red,
         col: su['col'],
         row: su['row'],
         revealed: true,
@@ -64,6 +78,14 @@ class CampaignConfig {
     )).toList();
 
     return CampaignConfig(
+      name: c['name'] ?? '',
+      description: c['description'] ?? '',
+      date: c['date'] ?? '',
+      blueName: c['blue_name'] ?? '蓝方',
+      redName: c['red_name'] ?? '红方',
+      gridCols: c['grid_cols'] ?? 10,
+      gridRows: c['grid_rows'] ?? 7,
+      hexSize: (c['hex_size'] ?? 27).toDouble(),
       mapTerrain: Battlefield.createMapFromJson(m),
       templates: templates,
       initialUnits: units,
@@ -71,8 +93,6 @@ class CampaignConfig {
       maxTurns: c['max_turns'],
       initialHuayePower: c['initial_huaye_power'],
       initialFortStrength: c['initial_fort_strength'],
-      qiuReinforceTurn: waves.firstWhere((w) => w.label == 'qiu').turn,
-      huReinforceTurn: waves.firstWhere((w) => w.label == 'hu').turn,
     );
   }
 }
@@ -99,15 +119,19 @@ class UnitSpec {
 
 class ReinforcementWave {
   final String label;
+  final String name;
   final int turn;
   final String message;
   final List<UnitSpec> units;
+  final String arrivedFlag;
 
   const ReinforcementWave({
     required this.label,
+    required this.name,
     required this.turn,
     required this.message,
     required this.units,
+    required this.arrivedFlag,
   });
 }
 
@@ -174,18 +198,13 @@ class Game {
     final logs = <Dispatch>[];
 
     for (final wave in config.reinforcementWaves) {
-      final arrived = wave.label == 'qiu' ? campaign.qiuArrived : campaign.huArrived;
-      if (currentTurn >= wave.turn && !arrived) {
-        if (wave.label == 'qiu') {
-          campaign.qiuArrived = true;
-        } else {
-          campaign.huArrived = true;
-        }
+      if (currentTurn >= wave.turn && !(campaign.arrived[wave.arrivedFlag] ?? false)) {
+        campaign.arrived[wave.arrivedFlag] = true;
         for (final spec in wave.units) {
           final nextId = units.fold(0, (max, u) => u.id > max ? u.id : max) + 1;
           newUnits.add(Unit(
             id: nextId,
-            side: Side.red,
+            side: spec.side,
             type: spec.template,
             col: spec.col,
             row: spec.row,
@@ -242,6 +261,44 @@ class Game {
     }
     return units;
   }
+}
+
+enum GamePhase { player, ai, gameOver }
+
+class GameState {
+  List<Unit> units;
+  int? selectedUnitId;
+  Set<String> moveCandidates;
+  Set<String> attackCandidates;
+  int currentTurn;
+  GamePhase phase;
+  Campaign campaign;
+  List<Dispatch> logMessages;
+
+  GameState({
+    required this.units,
+    this.selectedUnitId,
+    this.moveCandidates = const {},
+    this.attackCandidates = const {},
+    this.currentTurn = 1,
+    this.phase = GamePhase.player,
+    required this.campaign,
+    this.logMessages = const [],
+  });
+
+  List<Unit> get playerUnits =>
+      units.where((u) => u.alive && u.side == Side.blue).toList();
+  List<Unit> get enemyUnits =>
+      units.where((u) => u.alive && u.side == Side.red).toList();
+  List<Unit> get readyPlayerUnits =>
+      units.where((u) => u.alive && u.side == Side.blue && !u.hasActed).toList();
+  Unit? get selectedUnit => selectedUnitId != null
+      ? units.cast<Unit?>().firstWhere(
+            (u) => u!.id == selectedUnitId,
+            orElse: () => null,
+          )
+      : null;
+  bool get isGameOver => phase == GamePhase.gameOver;
 }
 
 class Dispatch {

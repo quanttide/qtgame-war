@@ -6,44 +6,6 @@ import '../models/combat.dart';
 import '../models/game.dart';
 import '../models/battlefield.dart';
 
-enum GamePhase { player, ai, gameOver }
-
-class GameState {
-  List<Unit> units;
-  int? selectedUnitId;
-  Set<String> moveCandidates;
-  Set<String> attackCandidates;
-  int currentTurn;
-  GamePhase phase;
-  Campaign campaign;
-  List<Dispatch> logMessages;
-
-  GameState({
-    required this.units,
-    this.selectedUnitId,
-    this.moveCandidates = const {},
-    this.attackCandidates = const {},
-    this.currentTurn = 1,
-    this.phase = GamePhase.player,
-    required this.campaign,
-    this.logMessages = const [],
-  });
-
-  List<Unit> get playerUnits =>
-      units.where((u) => u.alive && u.side == Side.blue).toList();
-  List<Unit> get enemyUnits =>
-      units.where((u) => u.alive && u.side == Side.red).toList();
-  List<Unit> get readyPlayerUnits =>
-      units.where((u) => u.alive && u.side == Side.blue && !u.hasActed).toList();
-  Unit? get selectedUnit => selectedUnitId != null
-      ? units.cast<Unit?>().firstWhere(
-            (u) => u!.id == selectedUnitId,
-            orElse: () => null,
-          )
-      : null;
-  bool get isGameOver => phase == GamePhase.gameOver;
-}
-
 class GameController extends ChangeNotifier {
   final Game engine;
   final GameState _state;
@@ -55,15 +17,19 @@ class GameController extends ChangeNotifier {
           campaign: Campaign(
             huayePower: engine.config.initialHuayePower,
             fortStrength: engine.config.initialFortStrength,
-            qiuReinforceTurn: engine.config.qiuReinforceTurn,
-            huReinforceTurn: engine.config.huReinforceTurn,
           ),
           logMessages: [
-            const Dispatch('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
-            const Dispatch('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
+            Dispatch('\u{1F4FB}野司：包围${engine.config.name}！', 'info', 1),
+            Dispatch('\u{23F0}${_reinforceDesc(engine.config)}', 'info', 1),
             const Dispatch('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
           ],
         );
+
+  static String _reinforceDesc(CampaignConfig config) {
+    return config.reinforcementWaves
+        .map((w) => '${w.name}预计第${w.turn}回合到达')
+        .join('，');
+  }
 
   void selectUnit(int unitId) {
     if (_state.phase != GamePhase.player || _state.isGameOver) return;
@@ -291,15 +257,18 @@ class GameController extends ChangeNotifier {
 
   void reset() {
     _state.units = engine.createInitialUnits();
-    _state.campaign = Campaign();
+    _state.campaign = Campaign(
+      huayePower: engine.config.initialHuayePower,
+      fortStrength: engine.config.initialFortStrength,
+    );
     _state.selectedUnitId = null;
     _state.moveCandidates = {};
     _state.attackCandidates = {};
     _state.currentTurn = 1;
     _state.phase = GamePhase.player;
     _state.logMessages = [
-      const Dispatch('\u{1F4FB}野司：包围黄百韬于帝丘店！', 'info', 1),
-      const Dispatch('\u23F0邱清泉预计第8回合到达，胡琏第7回合', 'info', 1),
+      Dispatch('\u{1F4FB}野司：包围${engine.config.name}！', 'info', 1),
+      Dispatch('\u{23F0}${_reinforceDesc(engine.config)}', 'info', 1),
       const Dispatch('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
     ];
     notifyListeners();

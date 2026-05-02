@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/campaign.dart';
+import '../models/game.dart';
 
 class CampaignView extends StatelessWidget {
   final Campaign campaign;
+  final List<ReinforcementWave> waves;
 
-  const CampaignView({super.key, required this.campaign});
+  const CampaignView({super.key, required this.campaign, required this.waves});
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +21,11 @@ class CampaignView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _line('\u{1F3AF}目标：', '攻占帝丘店', const Color(0xffa04030)),
-          _line('\u23F3邱清泉：',
-              campaign.qiuArrived ? '已到达！' : '第${campaign.qiuReinforceTurn}回合', const Color(0xff9e7a40)),
-          _line('\u23F3胡琏：',
-              campaign.huArrived ? '已到达！' : '第${campaign.huReinforceTurn}回合', const Color(0xff9e7a40)),
+          ...waves.map((w) => _line(
+            '\u23F3${w.name}：',
+            campaign.arrived[w.arrivedFlag] == true ? '已到达！' : '第${w.turn}回合',
+            const Color(0xff9e7a40),
+          )),
           _line('\u26A1华野战力：', campaign.powerDesc, _powerColor(campaign.powerDesc)),
           _line('\u{1F3F0}帝丘店防御：', '坚固(${campaign.fortStrength})', const Color(0xffa04030)),
         ],

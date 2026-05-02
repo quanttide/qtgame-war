@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/game.dart';
-import '../controller/game_controller.dart';
+import '../controllers/game_controller.dart';
 import '../views/battlefield_view.dart';
 import '../views/campaign_view.dart';
 import '../views/unit_view.dart';
@@ -140,7 +140,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
         children: [
           _panelTitle(),
           const SizedBox(height: 6),
-          _infoRow('当前回合', '第${state.currentTurn}回合 / 12'),
+          _infoRow('当前回合', '第${state.currentTurn}回合 / ${_controller!.engine.config.maxTurns}'),
           _infoRow(
             '阶段',
             state.isGameOver
@@ -153,7 +153,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
               valueColor:
                   state.readyPlayerUnits.isNotEmpty ? const Color(0xff5a7a4a) : null),
           const SizedBox(height: 5),
-          CampaignView(campaign: state.campaign),
+          CampaignView(campaign: state.campaign, waves: _controller!.engine.config.reinforcementWaves),
           const SizedBox(height: 4),
           Expanded(child: UnitView(state: state, controller: controller)),
           const SizedBox(height: 5),
@@ -166,14 +166,15 @@ class _CampaignScreenState extends State<CampaignScreen> {
   }
 
   Widget _panelTitle() {
+    final config = _controller!.engine.config;
     return Container(
       padding: const EdgeInsets.only(bottom: 6),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xffc8bfae))),
       ),
-      child: const Text('\u{1F4CB} 华野司令部',
+      child: Text('\u{1F4CB} ${config.blueName}司令部',
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: Color(0xff2c2416),
@@ -239,27 +240,28 @@ class _CampaignScreenState extends State<CampaignScreen> {
   }
 
   Widget _titleBar() {
+    final config = _controller!.engine.config;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         children: [
           Text(
-            '\u2694\uFE0F 帝丘店 \u00B7 豫东战役第三阶段',
-            style: TextStyle(
+            '\u2694\uFE0F ${config.name}',
+            style: const TextStyle(
               fontSize: 18,
-              color: const Color(0xffc9a96e),
+              color: Color(0xffc9a96e),
               fontWeight: FontWeight.bold,
               fontFamily: 'serif',
               shadows: [
                 Shadow(
-                    color: const Color(0xffc9a96e).withValues(alpha: 0.45),
+                    color: Color.fromRGBO(201, 169, 110, 0.45),
                     blurRadius: 18)
               ],
             ),
           ),
-          const Text(
-            '1948年7月2-6日 \u00B7 华野围攻黄百韬兵团 \u00B7 邱清泉胡琏紧急驰援',
-            style: TextStyle(fontSize: 11, color: Color(0xff988878)),
+          Text(
+            '${config.date} \u00B7 ${config.description}',
+            style: const TextStyle(fontSize: 11, color: Color(0xff988878)),
           ),
         ],
       ),
