@@ -2,10 +2,15 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/unit.dart';
 import '../models/campaign.dart';
+import '../models/combat.dart';
 import '../models/game.dart';
 import '../models/battlefield.dart';
 import 'game_state.dart';
 import 'game_event.dart';
+
+List<Unit> _updateUnit(List<Unit> units, Unit updated) {
+  return units.map((u) => u.id == updated.id ? updated : u).toList();
+}
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final Game engine;
@@ -31,7 +36,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   void _onSelectUnit(SelectUnit event, Emitter<GameState> emit) {
     if (state.phase != GamePhase.player || state.isGameOver) return;
     final unit = state.units.cast<Unit?>().firstWhere((u) => u!.id == event.unitId, orElse: () => null);
-    if (unit == null || !unit.alive || unit.side != 'pla' || unit.hasActed) return;
+    if (unit == null || !unit.alive || unit.side != Side.pla || unit.hasActed) return;
 
     if (state.selectedUnitId == event.unitId) {
       emit(state.copyWith(clearSelection: true));
@@ -57,7 +62,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     if (state.selectedUnitId != null) {
       final su = state.selectedUnit;
       if (su != null && su.alive && !su.hasActed) {
-        if (state.attackCandidates.contains(key) && clicked != null && clicked.side == 'nationalist' && clicked.revealed) {
+        if (state.attackCandidates.contains(key) && clicked != null && clicked.side == Side.nationalist && clicked.revealed) {
           _executeAttack(su, clicked, emit);
           return;
         }
@@ -65,7 +70,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           _executeMove(su, col, row, emit);
           return;
         }
-        if (clicked != null && clicked.side == 'pla' && clicked.id != state.selectedUnitId) {
+        if (clicked != null && clicked.side == Side.pla && clicked.id != state.selectedUnitId) {
           add(SelectUnit(clicked.id));
           return;
         }
@@ -76,7 +81,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
     }
 
-    if (clicked != null && clicked.side == 'pla' && clicked.alive && !clicked.hasActed) {
+    if (clicked != null && clicked.side == Side.pla && clicked.alive && !clicked.hasActed) {
       add(SelectUnit(clicked.id));
       return;
     }
@@ -90,17 +95,18 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     final key = '$tc,$tr';
     if (!state.moveCandidates.contains(key)) return;
 
-    unit.col = tc;
-    unit.row = tr;
+    final movedUnit = unit.moveTo(tc, tr);
+    final newUnits = _updateUnit(state.units, movedUnit);
 
     final newCampaign = state.campaign.copy();
     newCampaign.huayePower = (newCampaign.huayePower - 1).clamp(5, 100);
 
     final newLogs = [...state.logMessages, Dispatch('${unit.name} 向 ($tc,$tr) 推进', 'info', state.currentTurn)];
 
-    final attackRange = engine.getAttackTargets(unit, state.units);
+    final attackRange = engine.getAttackTargets(movedUnit, newUnits);
 
     emit(state.copyWith(
+      units: newUnits,
       moveCandidates: {},
       attackCandidates: attackRange,
       campaign: newCampaign,
@@ -109,27 +115,37 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   }
 
   void _executeAttack(Unit attacker, Unit defender, Emitter<GameState> emit) {
-    final result = engine.resolveCombat(attacker, defender, state.campaign);
+    final result = resolveCombat(attacker, defender, state.campaign, engine.mapTerrain);
     final newCampaign = state.campaign.copy();
     newCampaign.huayePower = (newCampaign.huayePower - 3).clamp(5, 100);
 
     final newLogs = <Dispatch>[...state.logMessages];
-    newLogs.add(Dispatch('${attacker.name} \u2192 ${defender.name}：${result.text}', 'hit', state.currentTurn));
+    newLogs.add(Dispatch('${attacker.name} → ${defender.name}：${result.text}', 'hit', state.currentTurn));
+
+    var newUnits = List<Unit>.from(state.units);
 
     if (result.killed) {
       final defTerrain = engine.mapTerrain[defender.row][defender.col];
       if (terrainProps[defTerrain]!.isCore) {
         newCampaign.fortStrength = (newCampaign.fortStrength - 1).clamp(0, 5);
-        newLogs.add(Dispatch('\u{1F3F0}帝丘店核心防御被削弱！（剩余强度${newCampaign.fortStrength}）', 'urgent', state.currentTurn));
+        newLogs.add(Dispatch('🏰帝丘店核心防御被削弱！（剩余强度${newCampaign.fortStrength}）', 'urgent', state.currentTurn));
       }
     }
 
-    defender.revealed = true;
-    attacker.hasActed = true;
+    // Update defender based on combat result
+    final updatedDefender = defender
+        .reveal()
+        .takeDamage(result.damage);
+    newUnits = _updateUnit(newUnits, updatedDefender);
 
-    engine.checkVictory(state.units, newCampaign, state.currentTurn);
+    // Mark attacker as acted
+    final updatedAttacker = attacker.markActed();
+    newUnits = _updateUnit(newUnits, updatedAttacker);
+
+    engine.checkVictory(newUnits, newCampaign, state.currentTurn);
 
     emit(state.copyWith(
+      units: newUnits,
       selectedUnitId: null,
       moveCandidates: {},
       attackCandidates: {},
@@ -142,13 +158,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   Future<void> _onEndTurn(EndTurn event, Emitter<GameState> emit) async {
     if (state.phase != GamePhase.player || state.isGameOver) return;
 
-    for (final u in state.units) {
-      if (u.side == 'pla') u.hasActed = true;
-    }
+    final newUnits = state.units.map((u) => u.side == Side.pla ? u.markActed() : u).toList();
 
-    final newLogs = [...state.logMessages, Dispatch('\u23F0华野回合结束，国军开始行动\u2026', 'info', state.currentTurn)];
+    final newLogs = [...state.logMessages, Dispatch('⏰华野回合结束，国军开始行动…', 'info', state.currentTurn)];
 
     emit(state.copyWith(
+      units: newUnits,
       selectedUnitId: null,
       moveCandidates: {},
       attackCandidates: {},
@@ -181,10 +196,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }).toList();
 
       if (targets.isNotEmpty) {
-        targets.sort((a, b) => (b.baseAttack + (b.special == 'assault' ? 5 : 0))
-            .compareTo(a.baseAttack + (a.special == 'assault' ? 5 : 0)));
-        final result = engine.resolveCombat(nu, targets.first, currentCampaign);
-        currentLogs.add(Dispatch('${nu.name} \u2192 ${targets.first.name}：${result.text}', 'urgent', state.currentTurn));
+        targets.sort((a, b) => (b.baseAttack + (b.special == UnitAbility.assault ? 5 : 0))
+            .compareTo(a.baseAttack + (a.special == UnitAbility.assault ? 5 : 0)));
+        final result = resolveCombat(nu, targets.first, currentCampaign, engine.mapTerrain);
+        currentLogs.add(Dispatch('${nu.name} → ${targets.first.name}：${result.text}', 'urgent', state.currentTurn));
 
         if (state.playerUnits.isEmpty) {
           currentCampaign.gameOver = true;
@@ -222,11 +237,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       return;
     }
 
-    for (final u in state.units) {
-      if (u.side == 'pla') u.hasActed = false;
-    }
+    final newUnits = state.units.map((u) => u.side == Side.pla ? u.copyWith(hasActed: false) : u).toList();
 
     emit(state.copyWith(
+      units: newUnits,
       selectedUnitId: null,
       moveCandidates: {},
       attackCandidates: {},

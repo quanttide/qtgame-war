@@ -82,13 +82,13 @@ class _BattlefieldPainter extends CustomPainter {
 
     for (final unit in state.units) {
       if (!unit.alive) continue;
-      if (unit.side == 'nationalist' && !unit.revealed) continue;
+      if (unit.side == Side.nationalist && !unit.revealed) continue;
       final center = Battlefield.hexCenter(unit.col, unit.row);
       _drawUnit(canvas, center.x, center.y, unit, hexSize);
     }
 
     for (final unit in state.units) {
-      if (!unit.alive || unit.side != 'nationalist' || unit.revealed) continue;
+      if (!unit.alive || unit.side != Side.nationalist || unit.revealed) continue;
       final center = Battlefield.hexCenter(unit.col, unit.row);
       _drawHiddenEnemy(canvas, center.x, center.y, hexSize);
     }
@@ -124,15 +124,15 @@ class _BattlefieldPainter extends CustomPainter {
     final path = Path()..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
 
     canvas.drawPath(path, Paint()
-      ..color = unit.side == 'pla' ? const Color(0xff3a1a10) : const Color(0xff0a1a2a)
+        ..color = unit.side == Side.pla ? const Color(0xff3a1a10) : const Color(0xff0a1a2a)
       ..style = PaintingStyle.fill);
     canvas.drawPath(path, Paint()
-      ..color = unit.side == 'pla' ? const Color(0xffc44b3c) : const Color(0xff4a80b4)
+        ..color = unit.side == Side.pla ? const Color(0xffc44b3c) : const Color(0xff4a80b4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.2);
 
     String sym = '\u25A0';
-    if (unit.special == 'assault') { sym = '\u26A1'; }
+    if (unit.special == UnitAbility.assault) { sym = '\u26A1'; }
     else if (unit.attackRange >= 2) { sym = '\u25C8'; }
     else if (unit.baseMoveRange >= 5) { sym = '\u25C6'; }
 
@@ -140,7 +140,7 @@ class _BattlefieldPainter extends CustomPainter {
       text: TextSpan(
         text: sym,
         style: TextStyle(
-          color: unit.side == 'pla' ? const Color(0xfff0c0a0) : const Color(0xffa0c8f0),
+          color: unit.side == Side.pla ? const Color(0xfff0c0a0) : const Color(0xffa0c8f0),
           fontSize: r * 1.0,
           fontWeight: FontWeight.bold,
         ),
@@ -163,7 +163,7 @@ class _BattlefieldPainter extends CustomPainter {
       );
     }
 
-    if (unit.hasActed && unit.side == 'pla') {
+    if (unit.hasActed && unit.side == Side.pla) {
       canvas.drawPath(path, Paint()..color = const Color.fromRGBO(0, 0, 0, 0.4)..style = PaintingStyle.fill);
       final dot = TextPainter(
         text: const TextSpan(text: '\u2713', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),

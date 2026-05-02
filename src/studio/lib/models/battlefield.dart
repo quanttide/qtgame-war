@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:hex_toolkit/hex_toolkit.dart';
 
 enum TerrainType {
   plain,
@@ -66,67 +67,49 @@ class Battlefield {
   static const double paddingX = 50;
   static const double paddingY = 40;
 
-  static double get sqr3 => sqrt(3);
-  static double get colSpacing => 1.5 * hexSize;
-  static double get rowSpacing => sqr3 * hexSize;
-  static double get oddRowOffset => 0.75 * hexSize;
-  static double get canvasWidth => cols * colSpacing + hexSize * 0.5 + paddingX * 2;
-  static double get canvasHeight => rows * rowSpacing + hexSize * 0.5 + paddingY * 2;
+  static Hex _hex(int col, int row) =>
+      Hex.fromOffset(GridOffset(col, row));
 
   static HexPoint hexCenter(int col, int row) {
-    double x = paddingX + col * colSpacing + hexSize;
-    if (row % 2 == 1) x += oddRowOffset;
-    double y = paddingY + row * rowSpacing + rowSpacing / 2;
-    return HexPoint(x, y);
+    final p = _hex(col, row).centerPoint(hexSize);
+    return HexPoint(paddingX + p.x, paddingY + p.y);
   }
 
   static List<HexPoint> hexVertices(double cx, double cy, double size) {
     return List.generate(6, (i) {
-      double a = pi / 180 * (60 * i);
+      final a = pi / 180 * (60 * i);
       return HexPoint(cx + size * cos(a), cy + size * sin(a));
     });
   }
 
   static (int col, int row)? pixelToHex(double mx, double my) {
-    (int, int)? best;
-    double bestDist = double.infinity;
-    for (int r = 0; r < rows; r++) {
-      for (int c = 0; c < cols; c++) {
-        final center = hexCenter(c, r);
-        double dx = (mx - center.x).abs();
-        double dy = (my - center.y).abs();
-        if (dx > hexSize || dy > rowSpacing / 2) continue;
-        if (dx > hexSize / 2 && dy > (hexSize - dx) * sqr3) continue;
-        double dist = sqrt(dx * dx + dy * dy);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = (c, r);
-        }
-      }
+    final hex = Hex.fromPixelPoint(
+      PixelPoint(mx - paddingX, my - paddingY), hexSize);
+    final off = hex.toOffset();
+    if (off.q >= 0 && off.q < cols && off.r >= 0 && off.r < rows) {
+      return (off.q, off.r);
     }
-    return best;
+    return null;
   }
 
   static List<(int, int)> getNeighbors(int col, int row) {
-    final offsets = row % 2 == 1
-        ? [(0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 0)]
-        : [(-1, -1), (0, -1), (1, 0), (0, 1), (-1, 1), (-1, 0)];
-    final result = <(int, int)>[];
-    for (final (dc, dr) in offsets) {
-      int nc = col + dc;
-      int nr = row + dr;
-      if (nc >= 0 && nc < cols && nr >= 0 && nr < rows) {
-        result.add((nc, nr));
-      }
-    }
-    return result;
+    return _hex(col, row).neighbors()
+        .map((h) {
+          final o = h.toOffset();
+          return (o.q, o.r);
+        })
+        .where((n) => n.$1 >= 0 && n.$1 < cols && n.$2 >= 0 && n.$2 < rows)
+        .toList();
   }
 
   static int hexDistance(int c1, int r1, int c2, int r2) {
-    int q1 = c1 - (r1 - (r1 & 1)) ~/ 2;
-    int q2 = c2 - (r2 - (r2 & 1)) ~/ 2;
-    return max(max((q1 - q2).abs(), (r1 - r2).abs()), (-q1 - r1 - (-q2 - r2)).abs());
+    return _hex(c1, r1).distanceTo(_hex(c2, r2));
   }
+
+  // Computed for 10x7 grid, hexSize=27
+  // Pointy-top hex grid: widest at col=9, odd row; tallest at row=6
+  static const double canvasWidth = 572;
+  static const double canvasHeight = 350;
 
   static List<List<TerrainType>> createMapTerrain() {
     final grid = List.generate(rows, (_) => List.filled(cols, TerrainType.plain));

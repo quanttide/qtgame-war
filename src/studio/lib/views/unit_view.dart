@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../models/unit.dart';
 import '../bloc/game_state.dart';
 import '../bloc/game_event.dart';
 import '../bloc/game_bloc.dart';
@@ -46,7 +47,7 @@ class UnitView extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        u.special == 'assault' ? '\u26A1' : u.attackRange >= 2 ? '\u25C8' : '\u25C6',
+                        u.special == UnitAbility.assault ? '\u26A1' : u.attackRange >= 2 ? '\u25C8' : '\u25C6',
                         style: const TextStyle(color: Color(0xfff0c0a0), fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ),

@@ -26,9 +26,9 @@ class GameState extends Equatable {
     this.logMessages = const [],
   });
 
-  List<Unit> get playerUnits => units.where((u) => u.alive && u.side == 'pla').toList();
-  List<Unit> get nationalistUnits => units.where((u) => u.alive && u.side == 'nationalist').toList();
-  List<Unit> get readyPlayerUnits => units.where((u) => u.alive && u.side == 'pla' && !u.hasActed).toList();
+  List<Unit> get playerUnits => units.where((u) => u.alive && u.side == Side.pla).toList();
+  List<Unit> get nationalistUnits => units.where((u) => u.alive && u.side == Side.nationalist).toList();
+  List<Unit> get readyPlayerUnits => units.where((u) => u.alive && u.side == Side.pla && !u.hasActed).toList();
   Unit? get selectedUnit => selectedUnitId != null ? units.cast<Unit?>().firstWhere((u) => u!.id == selectedUnitId, orElse: () => null) : null;
   bool get isGameOver => phase == GamePhase.gameOver;
 
@@ -44,7 +44,7 @@ class GameState extends Equatable {
     bool clearSelection = false,
   }) {
     return GameState(
-      units: units ?? this.units.map((u) => u.copy()).toList(),
+      units: units ?? this.units,
       selectedUnitId: clearSelection ? null : (selectedUnitId ?? this.selectedUnitId),
       moveCandidates: moveCandidates ?? this.moveCandidates,
       attackCandidates: attackCandidates ?? this.attackCandidates,

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studio/models/combat.dart';
 import 'package:studio/models/game.dart';
 import 'package:studio/models/battlefield.dart';
 import 'package:studio/models/campaign.dart';
@@ -11,7 +12,7 @@ void main() {
     final defender = units[8]; // nationalist unit
     final campaign = Campaign();
 
-    final result = engine.resolveCombat(attacker, defender, campaign);
+    final result = resolveCombat(attacker, defender, campaign, engine.mapTerrain);
     expect(result.hit == true || result.hit == false, true);
   });
 }
