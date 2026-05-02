@@ -113,3 +113,24 @@ type: feat / fix / docs / chore / refactor
 - `docs: add interaction design report for prototype`
 - `fix: map now updates after command execution`
 - `chore: shorten filenames - interaction-report→interaction`
+
+## 文档贡献规范
+
+### AI 辅助生成文档要求
+
+1. **避免对话残留**：删除 AI 的对话式表达（如"这就说得通了""奇怪就对了"）
+2. **消除重复**：跨文件重复的分析内容只保留一份，用索引引用
+3. **结论优先**：删除推导过程，只保留最终结论和可执行方案
+4. **格式规范**：用表格/清单代替长段落，代码只保留关键接口
+5. **分层清晰**：
+   - `docs/index.md`：重构路线/核心方案
+   - `docs/模块/index.md`：模块现状清单
+   - 避免同一层级内容拆成多个文件
+
+### 文档质量检查清单
+
+- [ ] 无对话语气残留
+- [ ] 跨文件重复内容已合并
+- [ ] 所有分析都有对应结论/方案
+- [ ] 代码块与当前实现一致（或仅保留接口）
+- [ ] 用表格/清单替代长段落
