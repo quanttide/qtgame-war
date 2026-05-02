@@ -1,0 +1,38 @@
+{
+  "name": "帝丘店战役",
+  "description": "豫东战役第三阶段，华野围攻黄百韬兵团，邱清泉胡琏紧急驰援",
+  "date": "1948年7月2-6日",
+  "max_turns": 12,
+  "grid_cols": 10,
+  "grid_rows": 7,
+  "hex_size": 27,
+
+  "blue_name": "华野",
+  "red_name": "国军",
+
+  "initial_huaye_power": 85,
+  "initial_fort_strength": 3,
+
+  "reinforcements": [
+    {
+      "label": "qiu",
+      "turn": 8,
+      "message": "💥邱清泉兵团援军从西面抵达战场！",
+      "arrived_flag": "qiu_arrived",
+      "units": [
+        { "template": "qiu_van", "col": 0, "row": 2 },
+        { "template": "qiu_div", "col": 0, "row": 3 }
+      ]
+    },
+    {
+      "label": "hu",
+      "turn": 7,
+      "message": "💥胡琏兵团援军从南面抵达战场！",
+      "arrived_flag": "hu_arrived",
+      "units": [
+        { "template": "hu_van", "col": 7, "row": 6 },
+        { "template": "hu_main", "col": 8, "row": 5 }
+      ]
+    }
+  ]
+}
