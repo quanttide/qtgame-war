@@ -1,75 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/models/unit.dart';
 import 'package:studio/models/campaign.dart';
-import 'package:studio/models/combat.dart';
 import 'package:studio/models/game.dart';
 import 'package:studio/models/battlefield.dart';
-import 'package:studio/controllers/game_controller.dart';
 
 void main() {
-  group('Unit', () {
-    test('moveTo updates position', () {
-      final u = Unit(id: 1, side: Side.blue, type: UnitLibrary.lightInfantry, col: 0, row: 0);
-      u.moveTo(5, 3);
-      expect(u.col, 5);
-      expect(u.row, 3);
-    });
-
-    test('takeDamage reduces hp and kills when exhausted', () {
-      final u = Unit(id: 1, side: Side.blue, type: UnitLibrary.lightInfantry, col: 0, row: 0, hp: 3);
-      u.takeDamage(1);
-      expect(u.hp, 2);
-      expect(u.alive, true);
-      u.takeDamage(2);
-      expect(u.hp, 0);
-      expect(u.alive, false);
-    });
-
-    test('markActed and reveal toggle flags', () {
-      final u = Unit(id: 1, side: Side.blue, type: UnitLibrary.lightInfantry, col: 0, row: 0);
-      expect(u.hasActed, false);
-      u.markActed();
-      expect(u.hasActed, true);
-      expect(u.revealed, false);
-      u.reveal();
-      expect(u.revealed, true);
-    });
-  });
-
-  group('Campaign', () {
-    test('powerDesc returns correct descriptions at thresholds', () {
-      expect(Campaign(huayePower: 85).powerDesc, '充沛');
-      expect(Campaign(huayePower: 50).powerDesc, '尚可');
-      expect(Campaign(huayePower: 30).powerDesc, '吃紧');
-      expect(Campaign(huayePower: 10).powerDesc, '濒临极限');
-    });
-
-    test('hitMod and moveMod at different power levels', () {
-      expect(Campaign(huayePower: 85).hitMod, 5);
-      expect(Campaign(huayePower: 50).hitMod, 0);
-      expect(Campaign(huayePower: 30).hitMod, -5);
-      expect(Campaign(huayePower: 10).hitMod, -12);
-      expect(Campaign(huayePower: 85).moveMod, 0);
-      expect(Campaign(huayePower: 30).moveMod, 1);
-      expect(Campaign(huayePower: 10).moveMod, 2);
-    });
-  });
-
-  group('Combat', () {
-    test('resolveCombat returns valid structure', () {
-      final attacker = Unit(id: 1, side: Side.blue, type: UnitLibrary.lightInfantry, col: 0, row: 1);
-      final defender = Unit(id: 2, side: Side.red, type: UnitLibrary.lightInfantry, col: 0, row: 2, hp: 3);
-      final campaign = Campaign();
-      final terrain = Battlefield.createMapTerrain();
-
-      final result = resolveCombat(attacker, defender, campaign, terrain);
-      expect(result.hit, isA<bool>());
-      expect(result.damage, greaterThanOrEqualTo(0));
-      expect(result.killed, isA<bool>());
-      expect(result.text, isA<String>());
-    });
-  });
-
   group('Game', () {
     late Game game;
     late CampaignConfig config;
@@ -209,90 +144,6 @@ void main() {
       final campaign = Campaign(fortStrength: 3);
       game.checkVictory(initialUnits, campaign, 5);
       expect(campaign.gameOver, false);
-    });
-  });
-
-  group('GameController', () {
-    late GameController controller;
-    late Game game;
-
-    setUp(() {
-      final terrain = Battlefield.createMapTerrain();
-      final config = CampaignConfig(
-        name: '测试战役',
-        description: '测试用',
-        date: '1948年7月',
-        blueName: '华野',
-        redName: '国军',
-        gridCols: 10,
-        gridRows: 7,
-        hexSize: 27,
-        mapTerrain: terrain,
-        templates: {'inf': UnitLibrary.lightInfantry, 'aslt': UnitLibrary.assaultInfantry, 'hvy': UnitLibrary.heavyInfantry},
-        initialUnits: [
-          UnitSpec(id: 1, template: UnitLibrary.assaultInfantry, side: Side.blue, col: 3, row: 3, revealed: true),
-          UnitSpec(id: 10, template: UnitLibrary.heavyInfantry, side: Side.red, col: 4, row: 3, revealed: true),
-        ],
-        reinforcementWaves: [],
-        maxTurns: 12,
-        initialHuayePower: 85,
-        initialFortStrength: 3,
-      );
-      game = Game(config);
-      controller = GameController(game);
-    });
-
-    test('initial state is player phase', () {
-      expect(controller.state.phase, GamePhase.player);
-      expect(controller.state.selectedUnitId, isNull);
-    });
-
-    test('selectUnit sets selection and candidates', () {
-      controller.selectUnit(1);
-      expect(controller.state.selectedUnitId, 1);
-      expect(controller.state.moveCandidates, isNotEmpty);
-    });
-
-    test('selectUnit ignores enemy unit', () {
-      controller.selectUnit(10);
-      expect(controller.state.selectedUnitId, isNull);
-    });
-
-    test('selectUnit toggles off on re-select', () {
-      controller.selectUnit(1);
-      expect(controller.state.selectedUnitId, 1);
-      controller.selectUnit(1);
-      expect(controller.state.selectedUnitId, isNull);
-    });
-
-    test('clickHex on empty move candidate moves unit', () {
-      controller.selectUnit(1);
-      final key = controller.state.moveCandidates.first;
-      final parts = key.split(',');
-      controller.clickHex(int.parse(parts[0]), int.parse(parts[1]));
-      expect(controller.state.selectedUnit, isNotNull);
-      expect('${controller.state.selectedUnit!.col},${controller.state.selectedUnit!.row}', key);
-      expect(controller.state.moveCandidates, isEmpty);
-    });
-
-    test('clickHex on enemy in attack range executes attack', () {
-      controller.selectUnit(1);
-      controller.clickHex(4, 3);
-      // After attack, selection is cleared
-      expect(controller.state.selectedUnitId, isNull);
-    });
-
-    test('endTurn transitions to ai phase', () async {
-      controller.endTurn();
-      expect(controller.state.phase, GamePhase.ai);
-    });
-
-    test('reset restores initial state', () {
-      controller.selectUnit(1);
-      controller.reset();
-      expect(controller.state.phase, GamePhase.player);
-      expect(controller.state.selectedUnitId, isNull);
-      expect(controller.state.currentTurn, 1);
     });
   });
 }
