@@ -39,7 +39,7 @@ class UnitLibrary {
   static const heavyInfantry = UnitType(name: '重步兵', maxHp: 4, ...);
   static const artillery     = UnitType(name: '炮兵',   maxHp: 2, ...);
   static const cavalry       = UnitType(name: '骑兵',   maxHp: 3, ...);
-  static const assaultInfantry = UnitType(name: '突击步兵', maxHp: 3, special: assault, ...);
+  static const assaultInfantry = UnitType(name: '突击步兵', maxHp: 3, isAssault: true, ...);
   static final all = [lightInfantry, heavyInfantry, artillery, cavalry, assaultInfantry];
 }
 ```
@@ -80,13 +80,13 @@ const ziShiEr = UnitType(name: '四纵十二师', maxHp: 2, baseAttack: 2,
     baseDefense: 1, baseMoveRange: 5, attackRange: 1, isAssault: true);
 
 // 创建实例
-Unit(id: 1, side: Side.pla, type: ziShiEr, col: 1, row: 2, revealed: true);
+Unit(id: 1, side: Side.blue, type: ziShiEr, col: 1, row: 2, revealed: true);
 
 // 访问类型属性直接用 unit.type
 print(unit.type.name);         // '四纵十二师'
 print(unit.type.baseAttack);   // 2
-unit.moveTo(2, 3);        // 返回新实例
-unit.takeDamage(1);       // 返回新实例，hp=1
+unit.moveTo(2, 3);        // 坐标变为 (2,3)
+unit.takeDamage(1);       // hp 减 1
 ```
 
 ## 问题与技术债
@@ -95,4 +95,4 @@ unit.takeDamage(1);       // 返回新实例，hp=1
 |------|------|
 | effectiveMoveRange 直接返回 baseMoveRange | 预留战役/地形修正接口，尚未接入 |
 | 特殊能力用 bool 字段而非扩展表 | 若未来增加多种能力（防空、侦察、工兵），需重构为枚举或位字段 |
-| initialUnits 硬编码在 Game 类 | 战役单位配置与框架逻辑耦合 |
+| (已解决) initialUnits 从 JSON 加载 | 通过 CampaignConfig.load 从 assets/campaigns/ 读取 |

@@ -10,10 +10,7 @@
 |------|------|------|
 | huayePower | int | 华野战力值（0-100+），影响命中修正和移动修正，默认 85 |
 | fortStrength | int | 帝丘店防御强度，默认 3，影响攻城战斗 |
-| qiuReinforceTurn | int | 邱清泉援军到达回合（配置值），默认 8 |
-| huReinforceTurn | int | 胡琏援军到达回合（配置值），默认 7 |
-| qiuArrived | bool | 邱清泉援军是否已到达，默认 false |
-| huArrived | bool | 胡琏援军是否已到达，默认 false |
+| arrived | `Map<String, bool>` | 援军到达标记，key 为 `arrived_flag`，如 `{'qiu_arrived': false, 'hu_arrived': false}` |
 | gameOver | bool | 游戏是否结束，默认 false |
 | victory | bool? | 胜负状态：null=进行中，true=玩家胜利，false=玩家失败 |
 | victoryDetail | String | 胜利/失败的详细描述，默认空字符串 |
@@ -39,8 +36,9 @@
   - <25 → +2
 
 ## 构造方法
-- `Campaign({int huayePower = 85, int fortStrength = 3, int qiuReinforceTurn = 8, int huReinforceTurn = 7, bool qiuArrived = false, bool huArrived = false, bool gameOver = false, bool? victory, String victoryDetail = ''})`
-  - 所有字段均有默认值，可直接 `Campaign()` 创建默认战役状态
+- `Campaign({int huayePower = 85, int fortStrength = 3, bool gameOver = false, bool? victory, String victoryDetail = ''})`
+  - `arrived` 初始化为空 map `{}`，由 `fromJson` 工厂预填充各援军标记
+- `Campaign.fromJson(Map<String, dynamic> json)` — 从 `campaign.json` 构造，自动初始化 `arrived` 键
 
 ## 使用示例
 
@@ -70,7 +68,7 @@ print(campaign.moveMod);   // 0
 | 问题 | 状态 | 说明 |
 |------|------|------|
 | 命名污染 | ❌ 待解决 | huayePower、qiuReinforceTurn 等拼音+英文混用 |
-| 配置/状态混杂 | ❌ 待解决 | qiuReinforceTurn/huReinforceTurn（配置）与 qiuArrived（状态）在同一对象 |
+| 配置/状态混杂 | ✅ 已解决 | qiuReinforceTurn/huReinforceTurn（配置）已移至 CampaignConfig，arrived（状态）保留在 Campaign |
 | 硬编码阈值 | ❌ 待解决 | hitMod/moveMod 的 if-else 链数值写死，无配置化 |
 | victory 语义模糊 | ❌ 待解决 | bool? 字段，失败分支在 UI 中未完整实现 |
 | 被动无逻辑 | ❌ 待解决 | 只提供数据，不驱动战役推进（援军到达、战力衰减等） |

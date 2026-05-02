@@ -62,7 +62,8 @@ enum TerrainType { plain, village, town, river, coreFort }
 - `static int hexDistance(int c1, int r1, int c2, int r2)` — 计算两个格子之间的六边形距离
 
 ### 地图生成
-- `static List<List<TerrainType>> createMapTerrain()` — 创建 10×7 的地形网格，硬编码河流、城镇、村庄位置
+- `static List<List<TerrainType>> createMapTerrain()` — 创建 10×7 的地形网格（硬编码方式，已弃用）
+- `static List<List<TerrainType>> createMapFromJson(Map<String, dynamic> json)` — 从 JSON 数据创建地形网格，数据格式参见 `assets/campaigns/diqiudian/map.json`
 
 ## 使用示例
 
@@ -86,8 +87,9 @@ print('相邻格子: $neighbors'); // [(5,2), (6,3), (5,4), (4,3)...]
 final dist = Battlefield.hexDistance(0, 0, 9, 6);
 print('距离: $dist');
 
-// 创建地图
-final terrain = Battlefield.createMapTerrain();
+// 创建地图（JSON 方式）
+final mapJson = jsonDecode(...);
+final terrain = Battlefield.createMapFromJson(mapJson);
 print('地形: ${terrain[5][4]}'); // TerrainType.coreFort
 
 // 查询地形属性
@@ -99,7 +101,7 @@ print('${props.name}, 移动消耗: ${props.moveCost}, 防御: ${props.defenseBo
 
 | 问题 | 状态 | 说明 |
 |------|------|------|
-| 地图数据硬编码 | ❌ 待解决 | createMapTerrain() 内河流/城镇坐标写死，换地图需改代码 |
+| 地图数据硬编码 | ✅ 已解决 | 通过 createMapFromJson 从 JSON 加载 |
 | 可变列表暴露 | ❌ 待解决 | createMapTerrain() 返回 List<List<TerrainType>>，可被外部修改 |
 | 常量绑定特定战役 | ❌ 待解决 | cols=10, rows=7, hexSize=27 写死，无法复用给其他战役 |
 | 地形属性硬编码 | ❌ 待解决 | terrainProps 映射表写死，无法动态配置 |
