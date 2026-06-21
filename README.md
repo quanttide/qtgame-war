@@ -22,6 +22,7 @@ qtgame-war/
 │   │   └── qa/              # QA 验收规格
 │   ├── roadmap/             # 路线图（Phase 1-4）
 │   ├── intention/           # 意图系统设计概念
+│   ├── insight/             # 设计洞察（关键认知转折的记录）
 │   ├── brochure/            # 面向玩家的功能说明
 │   ├── spec/                # 领域规范
 │   ├── bylaw/               # 产品研发章程
