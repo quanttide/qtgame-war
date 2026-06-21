@@ -155,7 +155,7 @@
 | 类别 | 目录 | 内容 | 读者 |
 |------|------|------|------|
 | —— | `docs/context/` | **草稿箱。** PRD、ADD、BRD、IXD、QA 等设计过程中产生的推演材料。不发布，不代表产品当前状态。 | 开发者、设计者 |
-| 发布体系 | `docs/roadmap/`、`docs/STATUS.md`、`docs/brochure/`、`docs/insight/`、`docs/intention/`、`docs/spec/`、`docs/bylaw/` | 经过清洗的正式文档。可以发布。回答"接下来做什么"、"为什么设计成这样"、"你会体验到什么"、"我们学到了什么"。 | 开发者、设计者、玩家 |
+| 发布体系 | `docs/roadmap/`、`docs/STATUS.md`、`docs/brochure/`、`docs/insight/`、`docs/intention/`、`docs/spec/`、`docs/bylaw/` | 经过清洗的正式文档。可以发布。 | 开发者、设计者、玩家 |
 | 案例 | `examples/` | 实验原型，验证设计假设。不在发布体系内。 | 开发者 |
 
 **工程纪律**：
@@ -164,3 +164,14 @@
 - context 的内容经过清洗提炼后，可以迁移到发布体系中对应的文档里（如 PRD 提炼到 brochure）。但 context 本身不删除——它保留设计过程。
 - insight 只记录认知转折和经验教训，不写设计和实现细节（那些在 context 里）。
 - examples 的实验原型验证通过后，功能实现才进入正式代码。原型本身不进入产品。
+
+### "意图"一词的文档位置区分
+
+本项目使用"意图"指代两种不同东西，按文档位置区分：
+
+| 术语 | 文档位置 | 含义 |
+|------|---------|------|
+| 游戏设计意图 | `docs/intention/` | 设计者的设计理念。回答"这个游戏想传达什么体验"、"为什么设计成这样"。 |
+| 指挥官意图系统 | `docs/roadmap/intent.md` | 游戏内的具体功能。指挥官在战场上的行动立场，决定哪些行动可用。 |
+
+`docs/intention/` 是概念层目录（可理解为 design intention），`docs/roadmap/intent.md` 是功能实现文件。两者不同目录、不同含义，不混用。其他文档引用时应写完整路径，避免歧义。
