@@ -31,8 +31,18 @@ h1 {
   font-weight: normal;
   letter-spacing: 2px;
 }
+/* 战役信息 */
+.campaign-info {
+  text-align: center;
+  font-size: 12px;
+  color: #8a7a6a;
+  margin-bottom: 16px;
+  padding: 6px;
+  border-bottom: 1px solid #3a2a1a;
+}
+.campaign-info .title { color: #c8a878; font-size: 14px; }
 /* 意图选择 */
-.intent-panel { margin-bottom: 20px; }
+.intent-panel { margin-bottom: 12px; }
 .intent-label {
   font-size: 12px;
   color: #8a7a6a;
@@ -50,13 +60,9 @@ h1 {
   font-size: 14px;
   transition: all 0.2s;
 }
-.btn-intent:hover:not(:disabled) {
+.btn-intent:hover {
   background: #4a3a28;
   border-color: #c8a878;
-}
-.btn-intent:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }
 .btn-intent.active {
   border-color: #c8a878;
@@ -65,15 +71,33 @@ h1 {
 }
 /* 当前意图显示 */
 .current-intent {
-  display: none;
   padding: 8px 12px;
   background: #3a3024;
   border-left: 3px solid #c8a878;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   font-size: 14px;
   color: #c8a878;
 }
-.current-intent.visible { display: block; }
+/* 初始意图提示 */
+.init-hint {
+  display: none;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: #6a5a4a;
+}
+.init-hint.visible { display: block; }
+/* 切换代价 */
+.switch-cost {
+  display: none;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: #3a2820;
+  border-left: 3px solid #aa6a4a;
+  font-size: 12px;
+  color: #aa8a6a;
+}
+.switch-cost.visible { display: block; }
 /* 情报面板 */
 .intel-panel {
   background: #221a12;
@@ -92,21 +116,11 @@ h1 {
   line-height: 1.6;
   color: #d4c8b8;
 }
-.intel-meta {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #7a6a5a;
-}
-.intel-meta .stale { color: #8a7a6a; }
+.intel-meta { margin-top: 6px; font-size: 11px; color: #7a6a5a; }
 .intel-meta .reliable { color: #8aaa7a; }
-.intel-meta .unreliable { color: #aa7a6a; }
 /* 行动面板 */
 .action-panel { margin-bottom: 16px; }
-.action-label {
-  font-size: 12px;
-  color: #8a7a6a;
-  margin-bottom: 8px;
-}
+.action-label { font-size: 12px; color: #8a7a6a; margin-bottom: 8px; }
 .action-buttons { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; }
 .btn-action {
   padding: 8px 16px;
@@ -116,7 +130,6 @@ h1 {
   border-radius: 4px;
   font-size: 13px;
   cursor: default;
-  transition: all 0.2s;
 }
 /* 重置按钮 */
 .btn-reset {
@@ -129,9 +142,28 @@ h1 {
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
 }
 .btn-reset:hover { background: #3a3024; color: #c8a878; }
+/* 战役选择 */
+.campaign-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #3a2a1a;
+}
+.btn-campaign {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #3a2a1a;
+  background: #221a12;
+  color: #8a7a6a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.btn-campaign:hover { border-color: #5a4a38; color: #c8a878; }
+.btn-campaign.active { border-color: #c8a878; color: #c8a878; }
 </style>
 </head>
 <body>
@@ -139,8 +171,15 @@ h1 {
 <div class="prototype" id="app">
   <h1>指 挥 官 意 图</h1>
 
+  <div class="campaign-selector" id="campaignSelector"></div>
+
+  <div class="campaign-info">
+    <div class="title" id="campaignTitle"></div>
+    <div id="campaignDesc"></div>
+  </div>
+
   <div class="intent-panel">
-    <div class="intent-label">锁定指挥意图</div>
+    <div class="intent-label">指挥意图（可随时切换）</div>
     <div class="intent-buttons" id="intentButtons">
       <button class="btn-intent" data-intent="protect">🛡️ 保护平民</button>
       <button class="btn-intent" data-intent="defend">⚡ 积极防御</button>
@@ -149,15 +188,15 @@ h1 {
   </div>
 
   <div class="current-intent" id="currentIntent"></div>
+  <div class="init-hint" id="initHint"></div>
+  <div class="switch-cost" id="switchCost"></div>
 
   <div class="intel-panel">
     <div class="intel-header">最 新 情 报</div>
-    <div class="intel-text" id="intelText">
-      敌军约2000人在西北方向移动。意图不明。
-    </div>
+    <div class="intel-text" id="intelText">敌军约2000人在西北方向移动。意图不明。</div>
     <div class="intel-meta">
-      <span>最后确认：3小时前</span>
-      <span style="margin-left:12px;" class="reliable">可信度：中</span>
+      <span id="intelAge">最后确认：3小时前</span>
+      <span style="margin-left:12px;" class="reliable" id="intelCred">可信度：中</span>
     </div>
   </div>
 
@@ -166,10 +205,50 @@ h1 {
     <div class="action-buttons" id="actionButtons"></div>
   </div>
 
-  <button class="btn-reset" id="resetBtn">↺ 重 置</button>
+  <button class="btn-reset" id="resetBtn">↺ 重置战役</button>
 </div>
 
 <script>
+// === 战役配置（类似 campaign.json） ===
+const CAMPAIGNS = {
+  diqiudian: {
+    id: 'diqiudian',
+    name: '帝丘店战役',
+    description: '华野围攻黄百韬兵团，邱清泉胡琏紧急驰援',
+    date: '1948年7月2-6日',
+    initialIntent: 'defend',
+    intel: {
+      text: '黄百韬整25师收缩至帝丘店核心阵地。邱清泉兵团第5军先头已逼近考城，预计3日内抵达。',
+      age: '4小时前',
+      cred: '中高'
+    }
+  },
+  kaifeng: {
+    id: 'kaifeng',
+    name: '开封战役',
+    description: '华野首次攻占省会城市，政治敏感度高',
+    date: '1948年6月17-22日',
+    initialIntent: 'protect',
+    intel: {
+      text: '开封守敌约3万余人，城防工事坚固。居民约40万人未疏散。',
+      age: '2小时前',
+      cred: '高'
+    }
+  },
+  yudong_phase1: {
+    id: 'yudong_phase1',
+    name: '豫东战役·第一阶段',
+    description: '原定围歼区寿年兵团，战场态势不明',
+    date: '1948年6月27日',
+    initialIntent: 'scout',
+    intel: {
+      text: '区寿年兵团在龙王店、铁佛寺一带构筑防御。敌军番号及兵力密度尚未完全掌握。',
+      age: '6小时前',
+      cred: '低'
+    }
+  }
+};
+
 const INTENT_MAP = {
   protect: {
     label: '🛡️ 保护平民',
@@ -189,53 +268,108 @@ const INTENT_MAP = {
 };
 
 const BASE_INTEL = '敌军约2000人在西北方向移动。意图不明。';
-let currentIntent = null;
 
+let currentCampaign = null;
+let currentIntent = null;
+let switchCount = 0;
+let hasSwitched = false;  // 是否主动切换过（区别于初始）
+
+const campaignSelector = document.getElementById('campaignSelector');
+const campaignTitle = document.getElementById('campaignTitle');
+const campaignDesc = document.getElementById('campaignDesc');
 const intentButtons = document.getElementById('intentButtons');
 const currentIntentEl = document.getElementById('currentIntent');
+const initHintEl = document.getElementById('initHint');
+const switchCostEl = document.getElementById('switchCost');
 const intelText = document.getElementById('intelText');
+const intelAge = document.getElementById('intelAge');
+const intelCred = document.getElementById('intelCred');
 const actionButtons = document.getElementById('actionButtons');
 const resetBtn = document.getElementById('resetBtn');
 
-function setIntent(value) {
-  currentIntent = value;
-  const data = INTENT_MAP[value];
+function loadCampaign(id) {
+  const camp = CAMPAIGNS[id];
+  currentCampaign = id;
+  switchCount = 0;
+  hasSwitched = false;
 
-  // 锁定按钮
-  document.querySelectorAll('.btn-intent').forEach(btn => {
-    btn.disabled = true;
-    if (btn.dataset.intent === value) btn.classList.add('active');
+  // 战役信息
+  campaignTitle.textContent = camp.name;
+  campaignDesc.textContent = camp.description + ' · ' + camp.date;
+
+  // 战役选择器高亮
+  document.querySelectorAll('.btn-campaign').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.campaign === id);
   });
 
-  // 显示当前意图
+  // 情报
+  intelText.textContent = camp.intel.text;
+  intelAge.textContent = '最后确认：' + camp.intel.age;
+  intelCred.textContent = '可信度：' + camp.intel.cred;
+
+  // 设置初始意图
+  setIntent(camp.initialIntent, true);
+
+  // 显示"初始意图"提示
+  initHintEl.textContent = '开局形势：' + INTENT_MAP[camp.initialIntent].label;
+  initHintEl.classList.add('visible');
+  switchCostEl.classList.remove('visible');
+}
+
+function setIntent(value, isInitial) {
+  const data = INTENT_MAP[value];
+  if (!data) return;
+
+  if (currentIntent && currentIntent !== value && !isInitial) {
+    switchCount++;
+    hasSwitched = true;
+    switchCostEl.textContent = '⏱ 切换意图，消耗 +1（累计消耗：' + switchCount + '）';
+    switchCostEl.classList.add('visible');
+    initHintEl.classList.remove('visible');
+  }
+
+  currentIntent = value;
+
+  document.querySelectorAll('.btn-intent').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.intent === value);
+  });
+
   currentIntentEl.textContent = '🎯 意图：' + data.label;
-  currentIntentEl.classList.add('visible');
 
-  // 更新情报文本
-  intelText.textContent = BASE_INTEL + ' ' + data.intelVariant;
+  // 情报叙事 = 基础情报 + 意图变体
+  const camp = CAMPAIGNS[currentCampaign];
+  intelText.textContent = camp.intel.text + ' ' + data.intelVariant;
 
-  // 渲染行动按钮
   actionButtons.innerHTML = data.actions.map(a => `<button class="btn-action">${a}</button>`).join('');
 }
 
-function reset() {
-  currentIntent = null;
-  document.querySelectorAll('.btn-intent').forEach(btn => {
-    btn.disabled = false;
-    btn.classList.remove('active');
-  });
-  currentIntentEl.classList.remove('visible');
-  intelText.textContent = BASE_INTEL;
-  actionButtons.innerHTML = '';
+function resetToCurrent() {
+  loadCampaign(currentCampaign);
 }
+
+// 渲染战役选择器
+const campaignKeys = Object.keys(CAMPAIGNS);
+campaignSelector.innerHTML = campaignKeys.map(id =>
+  `<button class="btn-campaign" data-campaign="${id}">${CAMPAIGNS[id].name}</button>`
+).join('');
+
+// 默认加载第一个
+loadCampaign(campaignKeys[0]);
+
+// 事件
+campaignSelector.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-campaign');
+  if (!btn) return;
+  loadCampaign(btn.dataset.campaign);
+});
 
 intentButtons.addEventListener('click', (e) => {
   const btn = e.target.closest('.btn-intent');
-  if (!btn || btn.disabled || currentIntent) return;
-  setIntent(btn.dataset.intent);
+  if (!btn) return;
+  setIntent(btn.dataset.intent, false);
 });
 
-resetBtn.addEventListener('click', reset);
+resetBtn.addEventListener('click', resetToCurrent);
 </script>
 
 </body>
