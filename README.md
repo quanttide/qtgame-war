@@ -14,17 +14,18 @@ qtgame-war/
 │       └── views/           # 视图组件
 ├── docs/
 │   ├── index.md             # 游戏设计文档（概念层：动机、玩法、建模）
-│   ├── roadmap/              # 路线图（Phase 1-4）
-│   ├── intention/            # 意图系统设计概念
-│   ├── brochure/             # 面向玩家的功能说明
-│   ├── STATUS.md            # 现状与差距分析（设计和实现的鸿沟）
-│   ├── prd/                 # 产品需求文档
-│   ├── add/                 # 架构设计文档
-│   ├── ixd/                 # 交互设计文档
-│   ├── qa/                  # QA 验收规格
-│   ├── brd/                 # 商业需求文档
+│   ├── context/             # 设计上下文文档
+│   │   ├── prd/             # 产品需求文档
+│   │   ├── add/             # 架构设计文档
+│   │   ├── brd/             # 商业需求文档
+│   │   ├── ixd/             # 交互设计文档
+│   │   └── qa/              # QA 验收规格
+│   ├── roadmap/             # 路线图（Phase 1-4）
+│   ├── intention/           # 意图系统设计概念
+│   ├── brochure/            # 面向玩家的功能说明
 │   ├── spec/                # 领域规范
-│   └── bylaw/               # 产品研发章程
+│   ├── bylaw/               # 产品研发章程
+│   └── STATUS.md            # 现状与差距分析
 ├── tests/                   # 测试和审计工具
 ├── CONTRIBUTING.md
 ├── AGENTS.md
