@@ -30,11 +30,11 @@
 
 ### 2.2 意图系统
 
-详见 `docs/intention/roadmap.md`。以下为核心引用：
+详见 `docs/roadmap/intent.md`。以下为核心引用：
 
 - Phase A：HTML 原型验证 ✅
-- Phase B：概念确认（接口定义 + 战役配置扩展）
-- Phase C：Flutter 实现（模型、切换后果、行动面板、叙事影响）
+- Phase B：概念确认（接口定义 + 战役配置扩展 + **设计评审：参谋长模式 vs 极简模式**）
+- Phase C：Flutter 实现（模型、切换后果、行动面板、叙事影响、**参谋长分析层**）
 - Phase D：集成联调
 
 ### 2.3 命令协议
