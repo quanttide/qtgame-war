@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>意图系统原型</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #1a1410;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #d4c8b8;
+}
+.prototype {
+  width: 600px;
+  background: #2a2218;
+  border: 1px solid #4a3a28;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+h1 {
+  font-size: 18px;
+  color: #c8a878;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: normal;
+  letter-spacing: 2px;
+}
+/* 意图选择 */
+.intent-panel { margin-bottom: 20px; }
+.intent-label {
+  font-size: 12px;
+  color: #8a7a6a;
+  margin-bottom: 8px;
+}
+.intent-buttons { display: flex; gap: 8px; }
+.btn-intent {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #5a4a38;
+  background: #3a3024;
+  color: #d4c8b8;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.btn-intent:hover:not(:disabled) {
+  background: #4a3a28;
+  border-color: #c8a878;
+}
+.btn-intent:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.btn-intent.active {
+  border-color: #c8a878;
+  background: #4a3a28;
+  color: #e8d8c8;
+}
+/* 当前意图显示 */
+.current-intent {
+  display: none;
+  padding: 8px 12px;
+  background: #3a3024;
+  border-left: 3px solid #c8a878;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #c8a878;
+}
+.current-intent.visible { display: block; }
+/* 情报面板 */
+.intel-panel {
+  background: #221a12;
+  border: 1px solid #3a2a1a;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.intel-header {
+  font-size: 11px;
+  color: #6a5a4a;
+  margin-bottom: 6px;
+}
+.intel-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d4c8b8;
+}
+.intel-meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #7a6a5a;
+}
+.intel-meta .stale { color: #8a7a6a; }
+.intel-meta .reliable { color: #8aaa7a; }
+.intel-meta .unreliable { color: #aa7a6a; }
+/* 行动面板 */
+.action-panel { margin-bottom: 16px; }
+.action-label {
+  font-size: 12px;
+  color: #8a7a6a;
+  margin-bottom: 8px;
+}
+.action-buttons { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; }
+.btn-action {
+  padding: 8px 16px;
+  border: 1px solid #4a3a28;
+  background: #2a2218;
+  color: #d4c8b8;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: default;
+  transition: all 0.2s;
+}
+/* 重置按钮 */
+.btn-reset {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #4a3a28;
+  background: #2a2218;
+  color: #8a7a6a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.btn-reset:hover { background: #3a3024; color: #c8a878; }
+</style>
+</head>
+<body>
+
+<div class="prototype" id="app">
+  <h1>指 挥 官 意 图</h1>
+
+  <div class="intent-panel">
+    <div class="intent-label">锁定指挥意图</div>
+    <div class="intent-buttons" id="intentButtons">
+      <button class="btn-intent" data-intent="protect">🛡️ 保护平民</button>
+      <button class="btn-intent" data-intent="defend">⚡ 积极防御</button>
+      <button class="btn-intent" data-intent="scout">🕵️ 收集情报</button>
+    </div>
+  </div>
+
+  <div class="current-intent" id="currentIntent"></div>
+
+  <div class="intel-panel">
+    <div class="intel-header">最 新 情 报</div>
+    <div class="intel-text" id="intelText">
+      敌军约2000人在西北方向移动。意图不明。
+    </div>
+    <div class="intel-meta">
+      <span>最后确认：3小时前</span>
+      <span style="margin-left:12px;" class="reliable">可信度：中</span>
+    </div>
+  </div>
+
+  <div class="action-panel">
+    <div class="action-label">可 行 动</div>
+    <div class="action-buttons" id="actionButtons"></div>
+  </div>
+
+  <button class="btn-reset" id="resetBtn">↺ 重 置</button>
+</div>
+
+<script>
+const INTENT_MAP = {
+  protect: {
+    label: '🛡️ 保护平民',
+    actions: ['🚁 疏散平民', '📜 开启谈判'],
+    intelVariant: '当地村庄面临威胁。您保护平民的决心正在被前哨观察。'
+  },
+  defend: {
+    label: '⚡ 积极防御',
+    actions: ['🏗️ 构筑工事', '⚔️ 出击'],
+    intelVariant: '侦察兵注意到我方在构筑攻势阵地。他们可能预判您将出击。'
+  },
+  scout: {
+    label: '🕵️ 收集情报',
+    actions: ['📡 请求侦察', '🔍 审讯俘虏'],
+    intelVariant: '情报显示敌军有异动。建议立即派出侦察分队确认其真实意图。'
+  }
+};
+
+const BASE_INTEL = '敌军约2000人在西北方向移动。意图不明。';
+let currentIntent = null;
+
+const intentButtons = document.getElementById('intentButtons');
+const currentIntentEl = document.getElementById('currentIntent');
+const intelText = document.getElementById('intelText');
+const actionButtons = document.getElementById('actionButtons');
+const resetBtn = document.getElementById('resetBtn');
+
+function setIntent(value) {
+  currentIntent = value;
+  const data = INTENT_MAP[value];
+
+  // 锁定按钮
+  document.querySelectorAll('.btn-intent').forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.intent === value) btn.classList.add('active');
+  });
+
+  // 显示当前意图
+  currentIntentEl.textContent = '🎯 意图：' + data.label;
+  currentIntentEl.classList.add('visible');
+
+  // 更新情报文本
+  intelText.textContent = BASE_INTEL + ' ' + data.intelVariant;
+
+  // 渲染行动按钮
+  actionButtons.innerHTML = data.actions.map(a => `<button class="btn-action">${a}</button>`).join('');
+}
+
+function reset() {
+  currentIntent = null;
+  document.querySelectorAll('.btn-intent').forEach(btn => {
+    btn.disabled = false;
+    btn.classList.remove('active');
+  });
+  currentIntentEl.classList.remove('visible');
+  intelText.textContent = BASE_INTEL;
+  actionButtons.innerHTML = '';
+}
+
+intentButtons.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-intent');
+  if (!btn || btn.disabled || currentIntent) return;
+  setIntent(btn.dataset.intent);
+});
+
+resetBtn.addEventListener('click', reset);
+</script>
+
+</body>
+</html>
