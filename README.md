@@ -14,6 +14,9 @@ qtgame-war/
 │       └── views/           # 视图组件
 ├── docs/
 │   ├── index.md             # 游戏设计文档（概念层：动机、玩法、建模）
+│   ├── roadmap/              # 路线图（Phase 1-4）
+│   ├── intention/            # 意图系统设计概念
+│   ├── brochure/             # 面向玩家的功能说明
 │   ├── STATUS.md            # 现状与差距分析（设计和实现的鸿沟）
 │   ├── prd/                 # 产品需求文档
 │   ├── add/                 # 架构设计文档
