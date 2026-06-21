@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>参谋长模式原型</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #1a1410;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 24px;
+  color: #d4c8b8;
+}
+.prototype {
+  width: 680px;
+  background: #2a2218;
+  border: 1px solid #4a3a28;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+h1 {
+  font-size: 16px;
+  color: #c8a878;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: normal;
+  letter-spacing: 2px;
+}
+/* 步骤指示器 */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 11px;
+  color: #6a5a4a;
+}
+.step-indicator .step {
+  padding: 2px 8px;
+  border: 1px solid #3a2a1a;
+  border-radius: 2px;
+}
+.step-indicator .step.active { border-color: #c8a878; color: #c8a878; }
+.step-indicator .step.done { border-color: #5a6a4a; color: #8aaa7a; }
+.step-indicator .arrow { padding: 2px 4px; }
+
+/* 战役选择 */
+.campaign-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #3a2a1a;
+}
+.btn-campaign {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #3a2a1a;
+  background: #221a12;
+  color: #8a7a6a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.btn-campaign:hover { border-color: #5a4a38; color: #c8a878; }
+.btn-campaign.active { border-color: #c8a878; color: #c8a878; }
+
+/* 战役信息 */
+.campaign-info {
+  text-align: center;
+  font-size: 12px;
+  color: #8a7a6a;
+  margin-bottom: 16px;
+  padding: 6px;
+  border-bottom: 1px solid #3a2a1a;
+}
+.campaign-info .title { color: #c8a878; font-size: 14px; }
+
+/* === 4 区布局 === */
+
+/* 1. 情报面板 - 灰底，原文不加修饰 */
+.intel-panel {
+  background: #1e1812;
+  border: 1px solid #3a2a1a;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.intel-header {
+  font-size: 11px;
+  color: #6a5a4a;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.intel-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #d4c8b8;
+}
+.intel-meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #7a6a5a;
+  display: flex;
+  gap: 16px;
+}
+.intel-meta .tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+}
+.tag-cred-high { background: #2a3a2a; color: #8aaa7a; }
+.tag-cred-mid { background: #3a3a2a; color: #c8b86a; }
+.tag-cred-low { background: #3a2a2a; color: #c87a6a; }
+.tag-age-fresh { color: #8aaa7a; }
+.tag-age-stale { color: #c87a6a; }
+.tag-age-old { color: #6a5a4a; }
+
+/* 2. 参谋长分析框 - 虚线边框，不同底色 */
+.chief-staff-panel {
+  background: #222820;
+  border: 1px dashed #6a8a5a;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.chief-staff-header {
+  font-size: 11px;
+  color: #8aaa7a;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.chief-staff-header .badge {
+  font-size: 10px;
+  color: #8aaa7a;
+  border: 1px solid #6a8a5a;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+.chief-staff-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #c8d8b8;
+}
+.chief-staff-body .judgment { margin-bottom: 6px; }
+.chief-staff-body .intent-suggest {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #1a2820;
+  border-left: 3px solid #8aaa7a;
+  font-size: 12px;
+  color: #a8c898;
+}
+.chief-staff-footer {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #5a6a4a;
+  font-style: italic;
+}
+
+/* 3. 行动面板 */
+.action-panel {
+  margin-bottom: 8px;
+}
+.action-label {
+  font-size: 11px;
+  color: #8a7a6a;
+  margin-bottom: 6px;
+}
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.btn-action {
+  padding: 10px 18px;
+  border: 1px solid #5a4a38;
+  background: #3a3024;
+  color: #d4c8b8;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-action:hover {
+  background: #4a3a28;
+  border-color: #c8a878;
+}
+.btn-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 4. 意图反馈标签 - 纯标签不可交互 */
+.intent-feedback {
+  display: none;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: #2a2820;
+  border-left: 3px solid #c8a878;
+  font-size: 13px;
+  color: #c8a878;
+}
+.intent-feedback.visible { display: block; }
+
+/* 切换代价 */
+.switch-cost {
+  display: none;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: #2a2820;
+  border: 1px solid #4a3a28;
+  font-size: 12px;
+  color: #aa8a6a;
+  line-height: 1.6;
+}
+.switch-cost.visible { display: block; }
+.switch-cost .cost-item {
+  padding: 2px 0;
+}
+.switch-cost .cost-label { color: #c86a4a; }
+
+/* 重置 */
+.btn-reset {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  border: 1px solid #4a3a28;
+  background: #2a2218;
+  color: #8a7a6a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.btn-reset:hover { background: #3a3024; color: #c8a878; }
+
+/* 决策历史 */
+.decision-log {
+  margin-top: 12px;
+  border-top: 1px solid #3a2a1a;
+  padding-top: 8px;
+}
+.decision-log-header {
+  font-size: 11px;
+  color: #6a5a4a;
+  margin-bottom: 4px;
+}
+.decision-log-item {
+  font-size: 11px;
+  color: #8a7a6a;
+  padding: 3px 0;
+  border-bottom: 1px solid #2a2218;
+}
+
+/* 场景标签 */
+.scenario-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-left: 8px;
+}
+.scenario-normal { background: #2a3a2a; color: #8aaa7a; }
+.scenario-mislead { background: #3a2a2a; color: #c87a6a; }
+.scenario-contradict { background: #3a3828; color: #c8b86a; }
+</style>
+</head>
+<body>
+
+<div class="prototype" id="app">
+  <h1>指 挥 所 — 参谋长模式</h1>
+
+  <div class="campaign-selector" id="campaignSelector"></div>
+
+  <div class="step-indicator">
+    <span class="step" id="step1">① 情报接收</span>
+    <span class="arrow">→</span>
+    <span class="step" id="step2">② 参谋长分析</span>
+    <span class="arrow">→</span>
+    <span class="step" id="step3">③ 指挥官决策</span>
+    <span class="arrow">→</span>
+    <span class="step" id="step4">④ 意图反馈</span>
+  </div>
+
+  <div class="campaign-info">
+    <div class="title" id="campaignTitle"></div>
+    <div id="campaignDesc"></div>
+  </div>
+
+  <!-- 1. 情报面板 -->
+  <div class="intel-panel">
+    <div class="intel-header">
+      <span>📡 战场情报</span>
+      <span id="intelPhase">第 1 回合</span>
+    </div>
+    <div class="intel-body" id="intelBody"></div>
+    <div class="intel-meta" id="intelMeta"></div>
+  </div>
+
+  <!-- 2. 参谋长分析框 -->
+  <div class="chief-staff-panel" id="chiefStaffPanel" style="display:block;">
+    <div class="chief-staff-header">
+      <span>🎖️ 参谋长分析</span>
+      <span class="badge">参谋部 · 仅供指挥官参考</span>
+    </div>
+    <div class="chief-staff-body" id="chiefStaffBody">
+      <div class="judgment" id="csJudgment"></div>
+      <div class="intent-suggest" id="csSuggest"></div>
+    </div>
+    <div class="chief-staff-footer">— 参谋长已阅读上述情报，以上为参谋部分析建议 —</div>
+  </div>
+
+  <!-- 4. 意图反馈标签 -->
+  <div class="intent-feedback" id="intentFeedback"></div>
+
+  <!-- 切换代价 -->
+  <div class="switch-cost" id="switchCost"></div>
+
+  <!-- 3. 行动面板 -->
+  <div class="action-panel">
+    <div class="action-label">📋 指挥官决策</div>
+    <div class="action-buttons" id="actionButtons"></div>
+  </div>
+
+  <!-- 决策历史 -->
+  <div class="decision-log" id="decisionLog" style="display:none;">
+    <div class="decision-log-header">📜 决策记录</div>
+    <div id="decisionLogList"></div>
+  </div>
+
+  <button class="btn-reset" id="resetBtn">↺ 重置战役</button>
+  <div style="font-size:10px;color:#4a3a28;text-align:center;margin-top:8px;">
+    参谋长模式 · 情报→分析→决策→反馈 · 意图是判断的副产品
+  </div>
+</div>
+
+<script>
+// === 战役配置（5 场景：2 基准 + 3 边缘） ===
+const SCENARIOS = {
+  defend_baseline: {
+    id: 'defend_baseline',
+    name: '帝丘店·基准',
+    description: '华野围攻黄百韬，邱清泉驰援 · 基准场景',
+    tag: 'normal',
+    tagLabel: '基准',
+    turn: 1,
+    intel: [
+      { text: '黄百韬整25师收缩至帝丘店核心阵地。邱清泉兵团第5军先头已逼近考城，预计3日内抵达。', age: '3 小时前', cred: '高', credLabel: '高' }
+    ],
+    chiefStaff: {
+      judgment: '敌援军逼近，我军尚在围攻状态。时间紧迫，必须在邱清泉到达前解决黄百韬或完成防御部署。',
+      intent: 'defend',
+      explain: '建议优先构筑防御阵地，在阻击邱清泉的同时继续压制黄百韬。态势要求我方抢时间。'
+    },
+    actions: [
+      { id: 'fortify', label: '🏗️ 构筑工事', intent: 'defend', desc: '组织部队加固防御阵地，准备迎击援军' },
+      { id: 'assault', label: '⚔️ 发起突击', intent: 'defend', desc: '集中兵力猛攻黄百韬核心阵地，期望在援军到来前解决' },
+      { id: 'negotiate', label: '📜 派人喊话', intent: 'protect', desc: '向黄百韬劝降，避免巷战造成平民伤亡' },
+      { id: 'scout', label: '📡 派出侦察', intent: 'scout', desc: '派出多路侦察分队，摸清邱清泉主力的确切位置和番号' }
+    ],
+    afterIntel: '邱清泉兵团前锋距帝丘店已不足 60 里。部队加固防御阵地中。',
+    afterAge: '1 小时前'
+  },
+  scout_baseline: {
+    id: 'scout_baseline',
+    name: '豫东·第一阶段',
+    description: '原定围歼区寿年兵团，态势不明 · 基准场景',
+    tag: 'normal',
+    tagLabel: '基准',
+    turn: 1,
+    intel: [
+      { text: '区寿年兵团在龙王店、铁佛寺一带构筑防御。敌军番号及兵力密度尚未完全掌握。', age: '6 小时前', cred: '低', credLabel: '低' }
+    ],
+    chiefStaff: {
+      judgment: '情报不足。敌兵力密度不明，贸然分兵可能陷入包围。区寿年兵团具体编制、邱清泉是否已与区部会合均不清晰。',
+      intent: 'scout',
+      explain: '建议先派出侦察力量确认敌兵力部署和番号，再决定是围歼还是调整部署。在情报充足前不宜冒进。'
+    },
+    actions: [
+      { id: 'scout', label: '📡 派出侦察', intent: 'scout', desc: '派遣多路侦察分队，查明敌军番号和兵力部署' },
+      { id: 'interrogate', label: '🔍 审讯俘虏', intent: 'scout', desc: '审问当前战俘，获取敌军编制情报' },
+      { id: 'fortify', label: '🏗️ 构筑工事', intent: 'defend', desc: '虽然敌情不明，但先构筑防御阵地不会错' },
+      { id: 'advance', label: '🚩 向前推进', intent: 'defend', desc: '大军压上，在机动中寻找战机' }
+    ],
+    afterIntel: '侦察分队回报：区寿年兵力约 2 个整编师，邱清泉部尚未与区部会合。',
+    afterAge: '2 小时前',
+    afterCred: '中'
+  },
+  mislead_tanks: {
+    id: 'mislead_tanks',
+    name: '帝丘店·误报',
+    description: '侦察兵报告"看到大量坦克"，实际是假目标 · 误导场景',
+    tag: 'mislead',
+    tagLabel: '误导',
+    turn: 1,
+    intel: [
+      { text: '黄百韬部在帝丘店东南方向集结。侦察兵报告在龙王庙附近发现大量坦克和装甲车辆，判断为邱清泉主力战车连已抵达。', age: '2 小时前', cred: '中', credLabel: '中' },
+      { text: '另据地方武装报告：前日深夜听到龙王庙方向有持续发动机轰鸣声。', age: '夜间报告', cred: '低', credLabel: '低' }
+    ],
+    // 实际是假目标——邱清泉战车连未到，黄百韬设假目标迷惑我军
+    chiefStaff: {
+      judgment: '邱清泉战车连提前抵达，对我围攻部队侧翼构成重大威胁。敌军机械化部队一旦投入反击，我军将陷入两面夹击。',
+      intent: 'defend',
+      explain: '建议紧急调整部署：暂缓正面进攻，在侧翼构筑防坦克阵地。同时派出独立侦察分队核实敌军装甲部队的确切规模。'
+    },
+    actions: [
+      { id: 'antitank', label: '🛡️ 构筑反坦克阵地', intent: 'defend', desc: '在侧翼紧急构筑防坦克工事，准备迎击邱清泉战车部队' },
+      { id: 'fallback', label: '⬅️ 收缩防线', intent: 'defend', desc: '暂缓进攻，收缩防线避免被夹击' },
+      { id: 'verify', label: '🔍 派人核实', intent: 'scout', desc: '派遣独立侦察分队核实坦克部队的真实情况' },
+      { id: 'continue', label: '⚔️ 继续进攻', intent: 'defend', desc: '不信敌军战车已到，按原计划继续猛攻黄百韬核心阵地' }
+    ],
+    // 误导继续：玩家选反坦克阵地后，发现坦克是假目标
+    afterIntel: '独立侦察分队回报：龙王庙附近的坦克和装甲车辆均为假目标——木制模型和旧卡车改装。邱清泉战车连尚未抵达。',
+    afterAge: '刚刚',
+    afterCred: '高'
+  },
+  mislead_retreat: {
+    id: 'mislead_retreat',
+    name: '豫东·假撤退',
+    description: '情报称"敌军向西撤退"，实际是迂回包抄 · 误导场景',
+    tag: 'mislead',
+    tagLabel: '误导',
+    turn: 1,
+    intel: [
+      { text: '区寿年兵团一部在龙王店以西被发现正在向西撤离。当地民团报告看到敌军辎重队列向西移动。', age: '4 小时前', cred: '中', credLabel: '中' },
+      { text: '另据线报：区寿年指挥部已从铁佛寺转移，去向不明。', age: '6 小时前', cred: '中', credLabel: '中' }
+    ],
+    // 实际是区寿年佯撤，主力正迂回我军侧翼
+    chiefStaff: {
+      judgment: '区寿年有撤退迹象。可能是得知我军意图围歼后主动撤离以保存实力，也可能是调动部队准备在其他方向发动反击。',
+      intent: 'scout',
+      explain: '建议派出快速侦察部队确认撤退是真撤退还是战术转移。同时我军应保持现有部署不急于追击——如果是佯退，追击可能中伏。'
+    },
+    actions: [
+      { id: 'pursue', label: '🚩 下令追击', intent: 'defend', desc: '敌退我追，命令前锋部队沿敌军撤退方向追击' },
+      { id: 'verify', label: '🔍 快速侦察', intent: 'scout', desc: '派遣骑兵侦察连确认敌军撤退真伪' },
+      { id: 'hold', label: '🛡️ 原地待命', intent: 'defend', desc: '不轻动，保持当前部署，等确认敌情后再定' },
+      { id: 'flank', label: '⬅️ 侧翼警戒', intent: 'protect', desc: '加强侧翼侦察和警戒，防备敌军迂回包抄' }
+    ],
+    afterIntel: '快速侦察证实：区寿年并未撤退。主力部队已隐蔽机动至我军右翼，正在展开迂回包围阵形。',
+    afterAge: '刚刚',
+    afterCred: '高'
+  },
+  contradict: {
+    id: 'contradict',
+    name: '帝丘店·矛盾',
+    description: '两份情报互相矛盾 · 矛盾场景',
+    tag: 'contradict',
+    tagLabel: '矛盾',
+    turn: 1,
+    intel: [
+      { text: '邱清泉兵团先头部队第5军200师已抵达帝丘店以北 20 里，正在展开进攻队形。', age: '1 小时前', cred: '高', credLabel: '高' },
+      { text: '豫东地下党最新消息：邱清泉兵团主力尚在商丘集结，先头部队仅为一个侦察营。', age: '3 小时前', cred: '中', credLabel: '中' }
+    ],
+    // 实际两路都有：邱清泉分兵，主力尚远但先头确实到了
+    chiefStaff: {
+      judgment: '两份情报互相矛盾。正规军报告称敌军已至，地下党称敌人尚远。这种矛盾通常意味着：要么敌军分兵——先头快速推进、主力在后，要么我们被误导了。',
+      intent: 'scout',
+      explain: '建议立即向帝丘店以北派出精锐侦察力量，同时做好两面准备——既不能因为地下党的消息就放松北面防御，也不能因为先头部队的报告就认为敌军主力已全面展开。'
+    },
+    actions: [
+      { id: 'dual', label: '🛡️ 两面准备', intent: 'defend', desc: '北面加强防御同时派侦察确认敌主力位置' },
+      { id: 'trust_army', label: '⚔️ 信正规军', intent: 'defend', desc: '相信军队侦察报告，敌军大部队已至，全力迎击' },
+      { id: 'trust_party', label: '📡 信地下党', intent: 'scout', desc: '相信地下党消息，敌军主力尚远，伺机先解决黄百韬' },
+      { id: 'pause', label: '⬅️ 暂停行动', intent: 'scout', desc: '矛盾情报时不宜行动，先核实再定' }
+    ],
+    afterIntel: '两路消息均为真：邱清泉第5军200师先头团已至，主力尚在商丘至考城一线。敌军采用"先头突进、主力跟进"的分进合击战术。',
+    afterAge: '刚刚',
+    afterCred: '高'
+  }
+};
+
+const INTENT_MAP = {
+  defend: { label: '⚡ 积极防御', desc: '抢时间、主动出击、在有利条件下打' },
+  protect: { label: '🛡️ 保护平民', desc: '避免附带损伤，优先保障平民安全' },
+  scout: { label: '🕵️ 收集情报', desc: '敌情不明，优先摸清状况再做决策' }
+};
+
+// 当前状态
+let currentId = null;
+let currentTurn = 1;
+let decisionCount = 0;
+let previousIntent = null;
+let decisionLog = [];
+
+const campaignSelector = document.getElementById('campaignSelector');
+const campaignTitle = document.getElementById('campaignTitle');
+const campaignDesc = document.getElementById('campaignDesc');
+const intelBody = document.getElementById('intelBody');
+const intelMeta = document.getElementById('intelMeta');
+const intelPhase = document.getElementById('intelPhase');
+const csJudgment = document.getElementById('csJudgment');
+const csSuggest = document.getElementById('csSuggest');
+const intentFeedback = document.getElementById('intentFeedback');
+const switchCost = document.getElementById('switchCost');
+const actionButtons = document.getElementById('actionButtons');
+const decisionLogEl = document.getElementById('decisionLog');
+const decisionLogList = document.getElementById('decisionLogList');
+const resetBtn = document.getElementById('resetBtn');
+
+function updateSteps(active) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < active) el.classList.add('done');
+    else if (i === active) el.classList.add('active');
+  });
+}
+
+function renderIntel(scenario, turn) {
+  const sc = SCENARIOS[scenario];
+  if (!sc) return;
+
+  // 第一回合显示原始情报，之后展示 afterIntel
+  if (turn === 1) {
+    intelBody.innerHTML = sc.intel.map(i => `<p style="margin-bottom:4px;">${i.text}</p>`).join('');
+    intelMeta.innerHTML = sc.intel.map(i => {
+      const credClass = 'tag-cred-' + (i.credLabel === '高' ? 'high' : i.credLabel === '低' ? 'low' : 'mid');
+      const ageClass = i.age.includes('小时') ? (parseInt(i.age) <= 3 ? 'tag-age-fresh' : 'tag-age-stale') : 'tag-age-stale';
+      return `<span>最后确认：<span class="${ageClass}">${i.age}</span></span>
+              <span>可信度：<span class="tag ${credClass}">${i.credLabel}</span></span>`;
+    }).join(' | ');
+  } else {
+    intelBody.innerHTML = `<p>${sc.afterIntel || sc.intel[0].text}</p>`;
+    const cred = sc.afterCred || sc.intel[0].credLabel;
+    const age = sc.afterAge || sc.intel[0].age;
+    const credClass = 'tag-cred-' + (cred === '高' ? 'high' : cred === '低' ? 'low' : 'mid');
+    intelMeta.innerHTML = `<span>最后确认：${age}</span>
+                            <span>可信度：<span class="tag ${credClass}">${cred}</span></span>`;
+  }
+  intelPhase.textContent = '第 ' + turn + ' 回合';
+}
+
+function renderChiefStaff(scenario) {
+  const sc = SCENARIOS[scenario];
+  csJudgment.textContent = sc.chiefStaff.judgment;
+  csSuggest.innerHTML = `<strong>建议意图：${INTENT_MAP[sc.chiefStaff.intent].label}</strong> — ${sc.chiefStaff.explain}`;
+}
+
+function renderActions(scenario) {
+  const sc = SCENARIOS[scenario];
+  actionButtons.innerHTML = sc.actions.map((a, i) =>
+    `<button class="btn-action" data-action="${a.id}" data-intent="${a.intent}" data-desc="${a.desc}">${a.label}</button>`
+  ).join('');
+}
+
+function loadScenario(id) {
+  const sc = SCENARIOS[id];
+  if (!sc) return;
+
+  currentId = id;
+  currentTurn = 1;
+  decisionCount = 0;
+  previousIntent = null;
+  decisionLog = [];
+
+  // 标签页高亮
+  document.querySelectorAll('.btn-campaign').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scenario === id);
+  });
+
+  // 战役信息
+  const tagClass = 'scenario-' + sc.tag;
+  campaignTitle.textContent = sc.name + ` <span class="scenario-tag ${tagClass}">${sc.tagLabel}</span>`;
+  campaignDesc.textContent = sc.description;
+
+  // 渲染情报、参谋长、行动
+  updateSteps(1);
+  renderIntel(id, 1);
+  renderChiefStaff(id);
+  renderActions(id);
+
+  // 隐藏反馈和代价
+  intentFeedback.classList.remove('visible');
+  switchCost.classList.remove('visible');
+  decisionLogEl.style.display = 'none';
+}
+
+function handleDecision(actionId) {
+  const sc = SCENARIOS[currentId];
+  const action = sc.actions.find(a => a.id === actionId);
+  if (!action) return;
+
+  decisionCount++;
+
+  // 1. 锁定按钮
+  document.querySelectorAll('.btn-action').forEach(btn => {
+    btn.disabled = true;
+  });
+
+  // 2. 判断意图是否切换
+  const newIntent = action.intent;
+  const isSwitch = previousIntent && newIntent !== previousIntent;
+
+  // 3. 显示意图反馈
+  const intentLabel = INTENT_MAP[newIntent].label;
+  intentFeedback.innerHTML = `🎯 系统分析：你的决策"${action.label}"表明你的指挥意图为 <strong>${intentLabel}</strong>（${INTENT_MAP[newIntent].desc}）`;
+  intentFeedback.classList.add('visible');
+
+  // 4. 显示切换代价
+  if (decisionCount === 1) {
+    // 第一次决策：显示代价
+    switchCost.innerHTML = `
+      <div class="cost-item"><span class="cost-label">⏱</span> 时间推进——决策消耗 1 个回合</div>
+      <div class="cost-item"><span class="cost-label">📡</span> 通信队列——命令正在传达到各部队</div>
+    `;
+    switchCost.classList.add('visible');
+  } else if (isSwitch) {
+    // 意图切换：显示更多代价
+    switchCost.innerHTML = `
+      <div class="cost-item"><span class="cost-label">⏱</span> 时间推进 +1 回合（当前第 ${decisionCount + 1} 回合）</div>
+      <div class="cost-item"><span class="cost-label">🔄</span> 意图切换——部队刚准备执行前一计划，又收到新命令</div>
+      <div class="cost-item"><span class="cost-label">📡</span> 情报时效磨损——旧情报的可信度在下降</div>
+    `;
+    switchCost.classList.add('visible');
+  } else {
+    switchCost.innerHTML = `
+      <div class="cost-item"><span class="cost-label">⏱</span> 时间推进 +1 回合（当前第 ${decisionCount + 1} 回合）</div>
+      <div class="cost-item"><span class="cost-label">📡</span> 持续执行——部队按当前意图继续行动</div>
+    `;
+    switchCost.classList.add('visible');
+  }
+
+  // 5. 记录决策
+  decisionLog.push({
+    turn: currentTurn,
+    decision: action.label,
+    intent: INTENT_MAP[newIntent].label,
+    isSwitch: isSwitch
+  });
+  decisionLogEl.style.display = 'block';
+  decisionLogList.innerHTML = decisionLog.map((log, i) =>
+    `<div class="decision-log-item">回合 ${log.turn}：${log.decision} → ${log.intent}${log.isSwitch ? ' 🔄 意图切换' : ''}</div>`
+  ).join('');
+
+  // 6. 更新情报（第二回合情报）
+  currentTurn++;
+  previousIntent = newIntent;
+  updateSteps(1);
+  renderIntel(currentId, currentTurn);
+  renderChiefStaff(currentId);
+
+  // 7. 更新参谋长分析框添加"后续提示"
+  csJudgment.textContent = sc.chiefStaff.judgment + ' 你的决策已下达，部队正在执行。';
+
+  // 8. 恢复按钮——但提供新的决策选项（简化，仍用原行动集）
+  setTimeout(() => {
+    document.querySelectorAll('.btn-action').forEach(btn => {
+      btn.disabled = false;
+    });
+    // 同步更新步进显示
+    updateSteps(3);
+  }, 400);
+}
+
+function resetScenario() {
+  loadScenario(currentId);
+}
+
+// 渲染选择器
+const scenarioKeys = Object.keys(SCENARIOS);
+campaignSelector.innerHTML = scenarioKeys.map(id => {
+  const sc = SCENARIOS[id];
+  return `<button class="btn-campaign" data-scenario="${id}">${sc.name}</button>`;
+}).join('');
+
+// 默认加载第一个
+loadScenario(scenarioKeys[0]);
+
+// 事件
+campaignSelector.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-campaign');
+  if (!btn) return;
+  loadScenario(btn.dataset.scenario);
+});
+
+actionButtons.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-action');
+  if (!btn || btn.disabled) return;
+  handleDecision(btn.dataset.action);
+});
+
+resetBtn.addEventListener('click', resetScenario);
+</script>
+
+</body>
+</html>

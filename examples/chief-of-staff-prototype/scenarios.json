@@ -1,0 +1,135 @@
+{
+  "_meta": {
+    "experiment": "2.2 — 参谋长错误建议测试",
+    "goal": "验证当情报误导时，参谋长是否会给出'合理但不正确'的建议，以及这种错误是否具备迷惑性",
+    "totalScenarios": 5,
+    "expectedMisleadCount": 2,
+    "evalCriterion": "参谋长至少在 2 个场景中给出'合理但不正确'的建议"
+  },
+  "scenarios": [
+    {
+      "id": "defend_baseline",
+      "type": "baseline",
+      "name": "帝丘店·基准",
+      "intel": {
+        "text": "黄百韬整25师收缩至帝丘店核心阵地。邱清泉兵团第5军先头已逼近考城，预计3日内抵达。",
+        "age": "3小时前",
+        "credibility": "高"
+      },
+      "truth": {
+        "description": "情报准确。邱清泉确实在逼近，黄百韬确实在收缩。"
+      },
+      "chiefStaff": {
+        "judgment": "敌援军逼近，我军尚在围攻状态。时间紧迫，必须在邱清泉到达前解决黄百韬或完成防御部署。",
+        "suggestedIntent": "defend",
+        "suggestedLabel": "积极防御",
+        "explanation": "建议优先构筑防御阵地，在阻击邱清泉的同时继续压制黄百韬",
+        "isCorrect": true,
+        "misleadType": null
+      },
+      "playerTest": "玩家看到基准场景，验证参谋长建议是否符合常识"
+    },
+    {
+      "id": "scout_baseline",
+      "type": "baseline",
+      "name": "豫东·第一阶段·基准",
+      "intel": {
+        "text": "区寿年兵团在龙王店、铁佛寺一带构筑防御。敌军番号及兵力密度尚未完全掌握。",
+        "age": "6小时前",
+        "credibility": "低"
+      },
+      "truth": {
+        "description": "情报确实不足。区寿年在部署防御，番号不明。"
+      },
+      "chiefStaff": {
+        "judgment": "情报不足。敌兵力密度不明，贸然分兵可能陷入包围。",
+        "suggestedIntent": "scout",
+        "suggestedLabel": "收集情报",
+        "explanation": "建议先派出侦察力量确认敌兵力部署和番号",
+        "isCorrect": true,
+        "misleadType": null
+      },
+      "playerTest": "验证情报质量低→参谋长建议收集情报的映射"
+    },
+    {
+      "id": "mislead_tanks",
+      "type": "mislead",
+      "name": "帝丘店·假目标",
+      "intel": {
+        "text": "黄百韬部在帝丘店东南方向集结。侦察兵报告在龙王庙附近发现大量坦克和装甲车辆，判断为邱清泉主力战车连已抵达。",
+        "details": "另据地方武装报告：前日深夜听到龙王庙方向有持续发动机轰鸣声。",
+        "age": "2小时前",
+        "credibility": "中"
+      },
+      "truth": {
+        "description": "假目标。坦克和装甲车辆均为木制模型和旧卡车改装，邱清泉战车连尚未抵达。黄百韬故意制造假象迷惑我军。",
+        "keyInsight": "发动机轰鸣声是故意制造的假象——用拖拉机在夜间来回行驶制造坦克声音"
+      },
+      "chiefStaff": {
+        "judgment": "邱清泉战车连提前抵达，对我围攻部队侧翼构成重大威胁。敌军机械化部队一旦投入反击，我军将陷入两面夹击。",
+        "suggestedIntent": "defend",
+        "suggestedLabel": "积极防御",
+        "explanation": "建议紧急调整部署：暂缓正面进攻，在侧翼构筑防坦克阵地",
+        "isCorrect": false,
+        "misleadType": "假目标",
+        "misleadDirection": "参谋长建议构筑防坦克阵地、收缩防线——从情报角度看完全合理，但实际敌军坦克并不存在。浪费了宝贵时间和兵力。",
+        "expectPlayerRealization": "玩家执行防御部署后，独立侦察兵报告'坦克是假目标'→玩家意识到参谋长也被骗了→玩家的判断力开始发挥作用"
+      }
+    },
+    {
+      "id": "mislead_retreat",
+      "type": "mislead",
+      "name": "豫东·假撤退",
+      "intel": {
+        "text": "区寿年兵团一部在龙王店以西被发现正在向西撤离。当地民团报告看到敌军辎重队列向西移动。",
+        "details": "另据线报：区寿年指挥部已从铁佛寺转移，去向不明。",
+        "age": "4小时前",
+        "credibility": "中"
+      },
+      "truth": {
+        "description": "区寿年并未撤退。主力部队已隐蔽机动至我军右翼，正在展开迂回包围阵形。西撤的是辎重分队和佯动部队。",
+        "keyInsight": "辎重队列向西是真，但那是佯动。主力正在向相反方向隐蔽机动。"
+      },
+      "chiefStaff": {
+        "judgment": "区寿年有撤退迹象。可能是得知我军意图围歼后主动撤离以保存实力，也可能是调动部队准备在其他方向发动反击。",
+        "suggestedIntent": "scout",
+        "suggestedLabel": "收集情报",
+        "explanation": "建议派出快速侦察部队确认撤退是真撤退还是战术转移",
+        "isCorrect": false,
+        "misleadType": "战术欺骗",
+        "misleadDirection": "参谋长建议侦察确认而非直接追击——从谨慎角度看是对的，但不追击意味着错失了在敌合围前打破包围圈的时机。",
+        "expectPlayerRealization": "侦察反馈'敌军正在迂回包抄'后→玩家意识到参谋长'过于谨慎'→真正的决策是：信参谋长（侦察）还是凭直觉判定是假的？"
+      }
+    },
+    {
+      "id": "contradict",
+      "type": "edge",
+      "name": "帝丘店·矛盾情报",
+      "intel": {
+        "text": "邱清泉兵团先头部队第5军200师已抵达帝丘店以北20里，正在展开进攻队形。",
+        "details": "豫东地下党最新消息：邱清泉兵团主力尚在商丘集结，先头部队仅为一个侦察营。",
+        "age": "1小时前（军队报告） / 3小时前（地下党）",
+        "credibility": "高（军队报告） / 中（地下党）"
+      },
+      "truth": {
+        "description": "两路消息均为真。邱清泉采用'先头突进、主力跟进'的分进合击战术：200师先头团已至，主力尚在商丘至考城一线。",
+        "keyInsight": "矛盾情报不存在谁对谁错——两者都不完整。单一来源决策一定会出错。"
+      },
+      "chiefStaff": {
+        "judgment": "两份情报互相矛盾。正规军报告称敌军已至，地下党称敌人尚远。这种矛盾通常意味着：要么敌军分兵——先头快速推进、主力在后，要么我们被误导了。",
+        "suggestedIntent": "scout",
+        "suggestedLabel": "收集情报",
+        "explanation": "建议做好两面准备——既不能放松北面防御，也不能认为敌军主力已全面展开",
+        "isCorrect": true,
+        "misleadType": null,
+        "note": "矛盾情报下参谋长建议'收集情报+两面准备'是正确的——这不是'出错'，而是验证了'信息不足时退守收集情报'的规则"
+      }
+    }
+  ],
+  "evaluation": {
+    "baselineMatch": "2/2 匹配",
+    "misleadCount": "2 个误导场景中参谋长给出'合理但不正确'的建议",
+    "edgeCase": "矛盾场景中参谋长建议正确——验证了'情报不足退守收集情报'的规则边界",
+    "conclusion": "✅ 参谋长在误导场景中能够输出'合理但不正确'的建议，具有迷惑性。参谋长不是正确答案提示系统。"
+  }
+}
