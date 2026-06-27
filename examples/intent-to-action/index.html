@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intent→Action 示例</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #1a1410;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #d4c8b8;
+}
+.prototype {
+  width: 640px;
+  background: #2a2218;
+  border: 1px solid #4a3a28;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+h1 {
+  font-size: 16px;
+  color: #c8a878;
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: normal;
+  letter-spacing: 3px;
+}
+.subtitle {
+  text-align: center;
+  font-size: 11px;
+  color: #6a5a4a;
+  margin-bottom: 20px;
+}
+.scenario-selector {
+  display: flex; gap: 8px; margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 1px solid #3a2a1a;
+}
+.btn-scenario {
+  flex: 1; padding: 6px; border: 1px solid #3a2a1a;
+  background: #221a12; color: #8a7a6a; border-radius: 4px;
+  cursor: pointer; font-size: 11px; transition: all 0.2s;
+}
+.btn-scenario:hover { border-color: #5a4a38; color: #c8a878; }
+.btn-scenario.active { border-color: #c8a878; color: #c8a878; }
+.scenario-info {
+  background: #221a12; border: 1px solid #3a2a1a; border-radius: 4px;
+  padding: 12px; margin-bottom: 16px;
+}
+.scenario-name { color: #c8a878; font-size: 14px; margin-bottom: 4px; }
+.scenario-brief { font-size: 12px; color: #8a7a6a; line-height: 1.6; }
+.intent-section { margin-bottom: 16px; }
+.intent-label {
+  font-size: 12px; color: #8a7a6a; margin-bottom: 8px; letter-spacing: 1px;
+}
+.intent-buttons { display: flex; gap: 8px; }
+.btn-intent {
+  flex: 1; padding: 10px 12px; border: 1px solid #5a4a38;
+  background: #3a3024; color: #d4c8b8; border-radius: 4px;
+  cursor: pointer; font-size: 13px; transition: all 0.2s;
+}
+.btn-intent:hover { background: #4a3a28; border-color: #c8a878; }
+.btn-intent.active { border-color: #c8a878; background: #4a3a28; color: #e8d8c8; }
+.translation-panel {
+  display: none; background: #1e1810;
+  border: 1px dashed #5a4a38; border-radius: 4px;
+  padding: 12px; margin-bottom: 16px;
+}
+.translation-panel.visible { display: block; }
+.translation-header {
+  font-size: 11px; color: #6a5a4a; margin-bottom: 8px; letter-spacing: 1px;
+}
+.translation-header .highlight { color: #c8a878; }
+.translation-think {
+  font-size: 12px; color: #8a7a6a; line-height: 1.6; margin-bottom: 10px;
+  padding: 8px; background: #221a12; border-radius: 4px;
+  border-left: 2px solid #5a4a38;
+}
+.action-label {
+  font-size: 12px; color: #8a7a6a; margin-bottom: 8px; letter-spacing: 1px;
+}
+.action-options { display: flex; flex-direction: column; gap: 8px; }
+.btn-action {
+  display: block; width: 100%; padding: 10px 14px;
+  border: 1px solid #4a3a28; background: #2a2218; color: #d4c8b8;
+  border-radius: 4px; font-size: 13px; text-align: left; cursor: default;
+}
+.btn-action .action-name { color: #c8a878; }
+.btn-action .action-desc {
+  display: block; font-size: 11px; color: #7a6a5a; margin-top: 2px;
+}
+.feedback {
+  display: none; padding: 8px 12px; margin-bottom: 12px;
+  font-size: 12px; border-radius: 4px;
+}
+.feedback.visible { display: block; }
+.feedback-switch { background: #3a2820; border-left: 3px solid #aa6a4a; color: #aa8a6a; }
+.feedback-execute { background: #283a28; border-left: 3px solid #6aaa6a; color: #8aaa7a; }
+</style>
+</head>
+<body>
+
+<div class="prototype" id="app">
+  <h1>意 图 → 行 动</h1>
+  <div class="subtitle">参谋长将指挥意图翻译为具体作战选项</div>
+
+  <div class="scenario-selector" id="scenarioSelector"></div>
+
+  <div class="scenario-info">
+    <div class="scenario-name" id="scenarioName"></div>
+    <div class="scenario-brief" id="scenarioBrief"></div>
+  </div>
+
+  <div class="intent-section">
+    <div class="intent-label">指 挥 意 图</div>
+    <div class="intent-buttons" id="intentButtons">
+      <button class="btn-intent" data-intent="defend">积极防御</button>
+      <button class="btn-intent" data-intent="strike">主动出击</button>
+      <button class="btn-intent" data-intent="scout">收集情报</button>
+    </div>
+  </div>
+
+  <div class="translation-panel" id="translationPanel">
+    <div class="translation-header">
+      参谋部 · 翻译 <span class="highlight" id="transIntentLabel">意图</span> 为行动方案
+    </div>
+    <div class="translation-think" id="translationThink"></div>
+    <div class="action-section">
+      <div class="action-label">可 行 动</div>
+      <div class="action-options" id="actionOptions"></div>
+    </div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<script>
+const SCENARIOS = [
+  {
+    id: 'diqiudian', name: '帝丘店',
+    brief: '黄百韬整25师收缩至帝丘店核心阵地。邱清泉兵团第5军先头已逼近考城，预计3日内抵达。我军围攻正面约8公里，与敌接触中。',
+    intents: {
+      defend: {
+        label: '积极防御',
+        think: '意图为积极防御：在阻击邱清泉的同时继续压制黄百韬。当前态势下，我军正面暴露于邱清泉援军方向，侧翼薄弱。需要紧急调整部署，构筑纵深防御。',
+        actions: [
+          { name: '构筑防坦克阵地', desc: '在考城方向部署反坦克火力点，挖掘反坦克壕，设置雷区。预计消耗2个工兵连，6小时内完成。' },
+          { name: '调整阻击线', desc: '将预备队第3纵队调至考城公路两侧，构筑两道阻击阵地。主力继续监视黄百韬。' },
+          { name: '请求炮火支援', desc: '向野司申请远程炮火支援，在考城方向预设炮击区域。可在邱清泉进入范围后实施拦阻射击。' }
+        ]
+      },
+      strike: {
+        label: '主动出击',
+        think: '意图为主动出击：在邱清泉到达前解决黄百韬。计算敌我兵力对比——黄百韬收缩未稳，我军尚有兵力优势。需快速突破核心阵地。',
+        actions: [
+          { name: '集中炮火轰击', desc: '集中全军火炮对帝丘店核心阵地实施30分钟火力准备。优先摧毁敌指挥所和通信节点。' },
+          { name: '两翼突击', desc: '以第1、2纵队从东西两翼同时发起突击，中间留缺口诱敌反冲击。企图分割敌防御体系。' },
+          { name: '预备队投入纵深', desc: '第4纵队待两翼突破后从中央投入，直插黄百韬指挥部。限3小时内完成突破。' }
+        ]
+      },
+      scout: {
+        label: '收集情报',
+        think: '意图为收集情报：邱清泉先头位置和黄百韬防御部署均有不确定性。贸然行动可能落入陷阱。需先摸清战场态势再定下决心。',
+        actions: [
+          { name: '派出侦察分队', desc: '向考城方向派出3个侦察组，确认邱清泉先头部队实际位置、兵力和行进速度。限12小时内回报。' },
+          { name: '技侦监听', desc: '命令技侦部队截获黄百韬和邱清泉部无线电通信，判断敌军指挥意图和协同信号。' },
+          { name: '审讯俘虏', desc: '将昨日俘获的黄百韬部军官押送司令部，由作战科直接审讯，获取防御部署和兵力配置。' }
+        ]
+      }
+    }
+  },
+  {
+    id: 'kaifeng', name: '开封',
+    brief: '开封守敌约3万余人，城防工事坚固。居民约40万人未疏散。中央要求"坚决攻下开封"，但巷战不可避免会造成平民伤亡。',
+    intents: {
+      strike: {
+        label: '主动出击',
+        think: '意图为主动出击：中央要求坚决攻下开封。城区守敌3万，我军兵力5倍于敌。但城市攻坚战中，敌军依托坚固工事和居民区防御，强攻将付出重大代价。',
+        actions: [
+          { name: '重点突破城墙', desc: '集中炮火轰击城西北角城墙，打开2个突破口。突击部队从缺口突入，沿主干道向市中心推进。' },
+          { name: '分割包围', desc: '突入后兵分三路：一路向北肃清龙亭守敌，一路向南控制南关车站，主力向省政府核心工事推进。' },
+          { name: '逐巷清剿', desc: '每占领一个街区即转入清剿，不留后方隐患。工兵跟进排除街垒。预计3-5天完成全城占领。' }
+        ]
+      },
+      scout: {
+        label: '收集情报',
+        think: '意图为收集情报：开封城防工事分布、守军指挥体系、平民疏散情况均有大量未知。首长强调政治影响——需要全面掌握情况再定攻城方案。',
+        actions: [
+          { name: '侦察城防工事', desc: '派出侦察组对城墙各段工事强度、火力点分布进行详细侦察，标记薄弱段作为突破口候选。' },
+          { name: '联系地下党', desc: '通过豫东地下党获取城内守军部署、指挥部位置、弹药库和物资囤积点情报。' },
+          { name: '评估平民分布', desc: '确认各城区平民密度，标记学校、医院、教堂等敏感目标。制定最小伤亡的进攻路线。' }
+        ]
+      }
+    }
+  },
+  {
+    id: 'yudong', name: '豫东',
+    brief: '区寿年兵团在龙王店、铁佛寺一带构筑防御。敌军番号及兵力密度尚未完全掌握。战场覆盖约15平方公里，多村庄和丘陵地形。',
+    intents: {
+      defend: {
+        label: '积极防御',
+        think: '意图为积极防御：区寿年兵团态势不明，贸然进攻风险高。需先稳固现有阵地，诱使敌军暴露部署后再寻机歼敌。',
+        actions: [
+          { name: '构筑假阵地', desc: '在正面构筑假炮兵阵地和假集结地域，诱使区寿年暴露火力点和预备队位置。' },
+          { name: '组织反冲击预备队', desc: '将第2纵队作为反冲击预备队，配置在敌可能突破方向的侧翼。随时准备封堵突破口。' },
+          { name: '控制制高点', desc: '抢占龙王店以西的几处制高点，建立观察哨和炮兵前进观测所，掌控战场视野。' }
+        ]
+      },
+      strike: {
+        label: '主动出击',
+        think: '意图为主动出击：趁区寿年立足未稳，以优势兵力发起突击。当前敌防御体系尚不完整，快速突击可打乱其部署。',
+        actions: [
+          { name: '钳形攻势', desc: '以第1纵队从北向南、第3纵队从南向北对龙王店实施钳形突击。意图东西对进，合围区寿年主力。' },
+          { name: '穿插分割', desc: '以第4纵队从中央薄弱地段穿插，将区寿年兵团分割为南北两块。分割后逐块围歼。' },
+          { name: '炮火阻断', desc: '在突击发起前，以远程炮火封锁铁佛寺通往龙王店的公路，切断区寿年退路和增援通道。' }
+        ]
+      }
+    }
+  }
+];
+
+let currentScenario = null;
+let currentIntent = null;
+
+const scenarioSelector = document.getElementById('scenarioSelector');
+const scenarioName = document.getElementById('scenarioName');
+const scenarioBrief = document.getElementById('scenarioBrief');
+const intentButtons = document.getElementById('intentButtons');
+const translationPanel = document.getElementById('translationPanel');
+const transIntentLabel = document.getElementById('transIntentLabel');
+const translationThink = document.getElementById('translationThink');
+const actionOptions = document.getElementById('actionOptions');
+const feedback = document.getElementById('feedback');
+
+function renderSelector() {
+  scenarioSelector.innerHTML = SCENARIOS.map(s =>
+    `<button class="btn-scenario" data-scenario="${s.id}">${s.name}</button>`
+  ).join('');
+}
+
+function loadScenario(id) {
+  const sc = SCENARIOS.find(s => s.id === id);
+  if (!sc) return;
+  currentScenario = sc;
+  scenarioName.textContent = sc.name;
+  scenarioBrief.textContent = sc.brief;
+  document.querySelectorAll('.btn-scenario').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scenario === id);
+  });
+  document.querySelectorAll('.btn-intent').forEach(btn => {
+    const avail = sc.intents[btn.dataset.intent] !== undefined;
+    btn.disabled = !avail;
+    btn.style.opacity = avail ? '1' : '0.3';
+    btn.style.cursor = avail ? 'pointer' : 'not-allowed';
+  });
+  currentIntent = null;
+  translationPanel.classList.remove('visible');
+  feedback.classList.remove('visible');
+}
+
+function selectIntent(value) {
+  const sc = currentScenario;
+  if (!sc) return;
+  const data = sc.intents[value];
+  if (!data) return;
+  const isSwitch = currentIntent !== null && currentIntent !== value;
+  currentIntent = value;
+
+  document.querySelectorAll('.btn-intent').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.intent === value);
+  });
+
+  transIntentLabel.textContent = data.label;
+  translationThink.textContent = data.think;
+  actionOptions.innerHTML = data.actions.map(a =>
+    `<div class="btn-action"><span class="action-name">${a.name}</span><span class="action-desc">${a.desc}</span></div>`
+  ).join('');
+  translationPanel.classList.add('visible');
+
+  feedback.className = 'feedback visible ' + (isSwitch ? 'feedback-switch' : 'feedback-execute');
+  feedback.textContent = isSwitch
+    ? '意图切换，参谋长重新评估并生成新的行动方案。'
+    : '参谋长已理解意图，行动方案已就绪，请指挥官定夺。';
+}
+
+renderSelector();
+loadScenario('diqiudian');
+
+scenarioSelector.addEventListener('click', e => {
+  const btn = e.target.closest('.btn-scenario');
+  if (btn) loadScenario(btn.dataset.scenario);
+});
+
+intentButtons.addEventListener('click', e => {
+  const btn = e.target.closest('.btn-intent');
+  if (btn && !btn.disabled) selectIntent(btn.dataset.intent);
+});
+</script>
+
+</body>
+</html>
