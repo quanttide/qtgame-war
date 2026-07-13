@@ -36,7 +36,7 @@ GameController _createController() {
     ],
     reinforcementWaves: [],
     maxTurns: 12,
-    initialHuayePower: 85,
+    initialPlayerPower: 85,
     initialFortStrength: 3,
   );
   return GameController(Game(config));

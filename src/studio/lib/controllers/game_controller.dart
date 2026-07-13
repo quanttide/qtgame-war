@@ -15,7 +15,7 @@ class GameController extends ChangeNotifier {
       : _state = GameState(
           units: engine.createInitialUnits(),
           campaign: Campaign(
-            huayePower: engine.config.initialHuayePower,
+            playerPower: engine.config.initialPlayerPower,
             fortStrength: engine.config.initialFortStrength,
           ),
           logMessages: [
@@ -48,7 +48,7 @@ class GameController extends ChangeNotifier {
 
     _state.selectedUnitId = unitId;
     _state.moveCandidates =
-        engine.getMoveRange(unit, _state.units).keys.toSet();
+        engine.getMoveRange(unit, _state.units, _state.campaign).keys.toSet();
     _state.attackCandidates = engine.getAttackTargets(unit, _state.units);
     notifyListeners();
   }
@@ -103,8 +103,8 @@ class GameController extends ChangeNotifier {
     if (!_state.moveCandidates.contains(key)) return;
 
     unit.moveTo(tc, tr);
-    _state.campaign.huayePower =
-        (_state.campaign.huayePower - 1).clamp(5, 100);
+    _state.campaign.playerPower =
+        (_state.campaign.playerPower - 1).clamp(5, 100);
     _state.logMessages = [
       ..._state.logMessages,
       Dispatch('${unit.type.name} 向 ($tc,$tr) 推进', 'info', _state.currentTurn),
@@ -120,8 +120,8 @@ class GameController extends ChangeNotifier {
     final result =
         resolveCombat(attacker, defender, _state.campaign, engine.mapTerrain);
 
-    _state.campaign.huayePower =
-        (_state.campaign.huayePower - 3).clamp(5, 100);
+    _state.campaign.playerPower =
+        (_state.campaign.playerPower - 3).clamp(5, 100);
 
     _state.logMessages = [
       ..._state.logMessages,
@@ -221,8 +221,8 @@ class GameController extends ChangeNotifier {
     }
 
     var newTurn = _state.currentTurn + 1;
-    _state.campaign.huayePower =
-        (_state.campaign.huayePower - 1).clamp(5, 100);
+    _state.campaign.playerPower =
+        (_state.campaign.playerPower - 1).clamp(5, 100);
 
     engine.checkVictory(_state.units, _state.campaign, newTurn);
 
@@ -258,7 +258,7 @@ class GameController extends ChangeNotifier {
   void reset() {
     _state.units = engine.createInitialUnits();
     _state.campaign = Campaign(
-      huayePower: engine.config.initialHuayePower,
+      playerPower: engine.config.initialPlayerPower,
       fortStrength: engine.config.initialFortStrength,
     );
     _state.selectedUnitId = null;

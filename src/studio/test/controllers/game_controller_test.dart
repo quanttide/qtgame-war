@@ -28,7 +28,7 @@ void main() {
         ],
         reinforcementWaves: [],
         maxTurns: 12,
-        initialHuayePower: 85,
+        initialPlayerPower: 85,
         initialFortStrength: 3,
       );
       game = Game(config);

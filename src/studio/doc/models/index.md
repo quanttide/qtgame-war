@@ -2,22 +2,20 @@
 
 | 模块 | 评分 | 状态 | 关键问题 |
 |------|------|------|----------|
-| Battlefield | ★★★★☆ | 干净 | 地图数据硬编码，不可扩展 |
-| Unit | ★★☆☆☆ | 可变 | 字段可变、字符串枚举、无类型安全 |
-| Campaign | ★★☆☆☆ | 被动 | 配置/状态混杂、拼音命名、无自我更新能力 |
-| Game | ★★☆☆☆ | 大杂烩 | 无回合管理、直接修改对象、职责过重 |
+| Battlefield | ★★★★☆ | 干净 | 网格尺寸常量绑定特定战役 |
+| Unit | ★★★☆☆ | 较干净 | effectiveMoveRange 已接入 Campaign |
+| Campaign | ★★★☆☆ | 已重构 | 字段名通用化，fromJson 移除 |
+| Game | ★★☆☆☆ | 大杂烩 | 规则和 JSON 加载混在同一文件 |
 
 ## 核心缺失
 
-没有"回合游戏机"——模型定义了棋子、棋盘、规则，但缺：
+模型定义了棋子、棋盘、规则，但缺：
 - 当前回合数、行动方、单位行动序列
 - 驱动"选择→移动→攻击→结束回合→AI"的状态机
 
-## 与代码对应关系
+## 对应文件
 
-- `lib/models/unit.dart` — Unit 类（可变）
-- `lib/models/campaign.dart` — Campaign 类（被动状态篮）
-- `lib/models/game.dart` — Game 类（规则工具箱）
-- `lib/models/battlefield.dart` — Battlefield 类（六边形几何+地形）
-
-详细分析见各模块文档。
+- `lib/models/unit.dart` — Unit 类
+- `lib/models/campaign.dart` — Campaign 类（被动状态容器）
+- `lib/models/game.dart` — Game 类（规则工具箱 + CampaignConfig）
+- `lib/models/battlefield.dart` — Battlefield 类（六边形几何 + 地形）

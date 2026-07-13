@@ -1,74 +1,53 @@
-# Campaign 模块现状
+# Campaign 模块
 
-## 当前状态
+## 职责
 
-战役状态容器，可变对象，跟踪华野战力、帝丘店防御、援军状态和胜负判定。提供战力描述和相关修正的计算方法。
+战役运行时状态容器。记录当前战役的全局动态数值，字段名保持战役无关（不包含 "huaye""diqiudian" 等专名）。
 
 ## 字段说明
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| huayePower | int | 华野战力值（0-100+），影响命中修正和移动修正，默认 85 |
-| fortStrength | int | 帝丘店防御强度，默认 3，影响攻城战斗 |
-| arrived | `Map<String, bool>` | 援军到达标记，key 为 `arrived_flag`，如 `{'qiu_arrived': false, 'hu_arrived': false}` |
-| gameOver | bool | 游戏是否结束，默认 false |
-| victory | bool? | 胜负状态：null=进行中，true=玩家胜利，false=玩家失败 |
-| victoryDetail | String | 胜利/失败的详细描述，默认空字符串 |
+| playerPower | int | 己方综合战力（0-100），影响命中修正和移动消耗，默认 85 |
+| fortStrength | int | 目标防御工事强度，降为 0 且核心格被占则胜利 |
+| arrived | `Map<String, bool>` | 援军到达标记，key 为 arrived_flag |
+| gameOver | bool | 战役是否结束 |
+| victory | bool? | null=进行中，true=胜，false=败 |
+| victoryDetail | String | 胜负详情文本 |
 
 ## 计算方法
 
-- `String get powerDesc` — 根据 huayePower 返回战力描述：
+- `String get powerDesc` — 根据 playerPower 返回战力描述：
   - ≥70 → '充沛'
   - ≥45 → '尚可'
   - ≥25 → '吃紧'
   - <25 → '濒临极限'
 
-- `int get hitMod` — 命中修正值，根据 huayePower：
+- `int get hitMod` — 命中修正值，根据 playerPower：
   - ≥70 → +5
   - ≥45 → 0
   - ≥25 → -5
   - <25 → -12
 
-- `int get moveMod` — 移动修正值（敌方移动范围加成），根据 huayePower：
+- `int get moveMod` — 移动消耗修正（越大移动力越少），根据 playerPower：
   - ≥70 → 0
   - ≥45 → 0
   - ≥25 → +1
   - <25 → +2
 
 ## 构造方法
-- `Campaign({int huayePower = 85, int fortStrength = 3, bool gameOver = false, bool? victory, String victoryDetail = ''})`
-  - `arrived` 初始化为空 map `{}`，由 `fromJson` 工厂预填充各援军标记
-- `Campaign.fromJson(Map<String, dynamic> json)` — 从 `campaign.json` 构造，自动初始化 `arrived` 键
-
-## 使用示例
 
 ```dart
-// 创建默认战役
-final campaign = Campaign();
-
-// 创建自定义战役
-final custom = Campaign(
-  huayePower: 60,
-  fortStrength: 4,
-  qiuReinforceTurn: 10,
-  huReinforceTurn: 9,
-);
-
-// 直接修改字段
-campaign.huayePower -= 10;
-
-// 查询战力状态
-print(campaign.powerDesc); // '尚可'（当 huayePower=60）
-print(campaign.hitMod);    // 0
-print(campaign.moveMod);   // 0
+Campaign({
+  int playerPower = 85,
+  int fortStrength = 3,
+  bool gameOver = false,
+  bool? victory,
+  String victoryDetail = '',
+})
 ```
 
-## 问题与技术债
+## 变更记录
 
-| 问题 | 状态 | 说明 |
-|------|------|------|
-| 命名污染 | ❌ 待解决 | huayePower、qiuReinforceTurn 等拼音+英文混用 |
-| 配置/状态混杂 | ✅ 已解决 | qiuReinforceTurn/huReinforceTurn（配置）已移至 CampaignConfig，arrived（状态）保留在 Campaign |
-| 硬编码阈值 | ❌ 待解决 | hitMod/moveMod 的 if-else 链数值写死，无配置化 |
-| victory 语义模糊 | ❌ 待解决 | bool? 字段，失败分支在 UI 中未完整实现 |
-| 被动无逻辑 | ❌ 待解决 | 只提供数据，不驱动战役推进（援军到达、战力衰减等） |
+- `huayePower` → `playerPower`：通用化命名，不绑定"华野"上下文
+- 移除 `Campaign.fromJson` 工厂：未被调用，改由 `CampaignConfig` 加载后直接构造

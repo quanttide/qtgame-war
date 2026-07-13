@@ -45,7 +45,7 @@ void main() {
           ]),
         ],
         maxTurns: 12,
-        initialHuayePower: 85,
+        initialPlayerPower: 85,
         initialFortStrength: 3,
       );
       game = Game(config);
@@ -60,19 +60,20 @@ void main() {
 
     test('getMoveRange excludes own position', () {
       final unit = initialUnits.first;
-      final range = game.getMoveRange(unit, initialUnits);
+      final range = game.getMoveRange(unit, initialUnits, Campaign(playerPower: 85, fortStrength: 3));
       expect(range.containsKey('${unit.col},${unit.row}'), false);
     });
 
     test('getMoveRange returns reachable hexes within move range', () {
       final unit = initialUnits.first;
-      final range = game.getMoveRange(unit, initialUnits);
+      final camp = Campaign(playerPower: 85, fortStrength: 3);
+      final range = game.getMoveRange(unit, initialUnits, camp);
       for (final key in range.keys) {
         final parts = key.split(',');
         final c = int.parse(parts[0]);
         final r = int.parse(parts[1]);
         final dist = Battlefield.hexDistance(unit.col, unit.row, c, r);
-        expect(dist, lessThanOrEqualTo(unit.effectiveMoveRange));
+        expect(dist, lessThanOrEqualTo(unit.effectiveMoveRange(camp)));
       }
     });
 
@@ -109,14 +110,14 @@ void main() {
     });
 
     test('spawnReinforcements does not spawn before wave turn', () {
-      final campaign = Campaign(huayePower: 85, fortStrength: 3);
+      final campaign = Campaign(playerPower: 85, fortStrength: 3);
       final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 1);
       expect(newUnits, isEmpty);
       expect(logs, isEmpty);
     });
 
     test('spawnReinforcements spawns at wave turn', () {
-      final campaign = Campaign(huayePower: 85, fortStrength: 3);
+      final campaign = Campaign(playerPower: 85, fortStrength: 3);
       final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 7);
       expect(newUnits, hasLength(1));
       expect(logs, hasLength(1));
@@ -124,7 +125,7 @@ void main() {
     });
 
     test('spawnReinforcements does not re-spawn already arrived wave', () {
-      final campaign = Campaign(huayePower: 85, fortStrength: 3);
+      final campaign = Campaign(playerPower: 85, fortStrength: 3);
       game.spawnReinforcements(initialUnits, campaign, 7); // hu arrives
       game.spawnReinforcements(initialUnits, campaign, 8); // qiu arrives
       final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 10);

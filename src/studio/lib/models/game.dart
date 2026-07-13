@@ -18,7 +18,7 @@ class CampaignConfig {
   final List<UnitSpec> initialUnits;
   final List<ReinforcementWave> reinforcementWaves;
   final int maxTurns;
-  final int initialHuayePower;
+  final int initialPlayerPower;
   final int initialFortStrength;
 
   CampaignConfig({
@@ -35,7 +35,7 @@ class CampaignConfig {
     required this.initialUnits,
     required this.reinforcementWaves,
     required this.maxTurns,
-    required this.initialHuayePower,
+    required this.initialPlayerPower,
     required this.initialFortStrength,
   });
 
@@ -91,7 +91,7 @@ class CampaignConfig {
       initialUnits: units,
       reinforcementWaves: waves,
       maxTurns: c['max_turns'],
-      initialHuayePower: c['initial_huaye_power'],
+      initialPlayerPower: c['initial_huaye_power'],
       initialFortStrength: c['initial_fort_strength'],
     );
   }
@@ -152,11 +152,11 @@ class Game {
   static bool inCore(Unit unit, List<List<TerrainType>> map) =>
       terrainProps[map[unit.row][unit.col]]!.isCore;
 
-  Map<String, int> getMoveRange(Unit unit, List<Unit> allUnits) {
+  Map<String, int> getMoveRange(Unit unit, List<Unit> allUnits, Campaign campaign) {
     final reachable = <String, int>{};
     final key = '${unit.col},${unit.row}';
-    final queue = <(int, int, int)>[(unit.col, unit.row, unit.effectiveMoveRange)];
-    reachable[key] = unit.effectiveMoveRange;
+    final queue = <(int, int, int)>[(unit.col, unit.row, unit.effectiveMoveRange(campaign))];
+    reachable[key] = unit.effectiveMoveRange(campaign);
 
     while (queue.isNotEmpty) {
       final (c, r, remaining) = queue.removeAt(0);

@@ -1,3 +1,5 @@
+import 'campaign.dart';
+
 enum Side { blue, red }
 
 class UnitType {
@@ -81,7 +83,8 @@ class Unit {
     this.isReinforcement = false,
   }) : hp = hp ?? type.maxHp;
 
-  int get effectiveMoveRange => type.baseMoveRange;
+  /// 有效移动范围 = 基础移动范围 - 战力消耗修正（moveMod 越大移动力越少）
+  int effectiveMoveRange(Campaign campaign) => (type.baseMoveRange - campaign.moveMod).clamp(1, 99);
   int get maxHp => type.maxHp;
 
   void moveTo(int newCol, int newRow) { col = newCol; row = newRow; }
@@ -95,5 +98,4 @@ class Unit {
 
   void reveal() { revealed = true; }
 
-  void markReinforcement() { isReinforcement = true; }
 }
