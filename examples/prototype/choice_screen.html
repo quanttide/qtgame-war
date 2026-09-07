@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豫东战役 · 反事实推演</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    background: #14161a; color: #d8d5cc;
+    max-width: 720px; margin: 0 auto; padding: 24px 16px; line-height: 1.8;
+  }
+  h1 { font-size: 1.3rem; letter-spacing: 2px; text-align: center; margin-bottom: 4px; }
+  .sub { text-align: center; font-size: .8rem; color: #7a786e; margin-bottom: 16px; }
+  :root {
+    --us: #4a9edb; --us-bg: rgba(74,158,219,.18);
+    --foe: #c1554d; --foe-bg: rgba(193,85,77,.18);
+    --amber: #e8b04b; --amber-bg: rgba(232,176,75,.12);
+    --grey: #7a786e; --ink: #d8d5cc;
+    --river: #2a5070; --rail: #4a4f58; --green: #7fb069; --green-bg: rgba(127,176,105,.15);
+  }
+  .map-wrap { margin-bottom: 14px; }
+  .map {
+    position: relative; width: 100%; aspect-ratio: 1.6 / 1;
+    background: #1a1e24; border: 1px solid #2e343e; border-radius: 4px; overflow: hidden;
+  }
+  .map svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+  .map-units { position: absolute; inset: 0; z-index: 2; }
+  .m-unit {
+    position: absolute; transform: translate(-50%, -50%);
+    padding: 4px 8px; border-radius: 3px; font-size: .72rem; white-space: nowrap;
+    line-height: 1.4; text-align: center;
+  }
+  .m-us   { background: var(--us-bg); border: 1px solid var(--us); color: #9ecfef; }
+  .m-foe  { background: var(--foe-bg); border: 1px solid var(--foe); color: #e0a49e; }
+  .m-amber{ background: var(--amber-bg); border: 1px dashed var(--amber); color: var(--amber); }
+  .m-city { background: rgba(0,0,0,.4); border: 1px solid #6a6560; color: #b8b4a8; font-weight: bold; }
+  .m-note { background: rgba(0,0,0,.3); color: var(--grey); font-size: .66rem; border: 1px dashed #3a3f48; font-style: italic; }
+  .m-unit .v { display: block; font-size: .66rem; opacity: .85; font-weight: bold; }
+  .m-unit .st { display: block; font-size: .62rem; padding: 1px 5px; border-radius: 2px; margin-top: 2px; }
+  .st.danger { background: var(--foe-bg); color: #e0a49e; }
+  .st.warn   { background: var(--amber-bg); color: var(--amber); }
+  .st.good   { background: var(--green-bg); color: var(--green); }
+  .st.neutral{ background: rgba(0,0,0,.3); color: var(--grey); }
+  .m-arrow {
+    position: absolute; z-index: 4; font-size: 1.2rem; color: var(--us);
+    transform: translate(-50%, -50%); display: none; text-shadow: 0 0 6px rgba(0,0,0,.9);
+  }
+  .m-arrow.show { display: block; animation: fadein .4s; }
+  @keyframes fadein { from { opacity: 0; transform: translate(-50%,-50%) scale(.5); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  .map-legend { display: flex; gap: 14px; font-size: .68rem; color: var(--grey); margin-top: 6px; flex-wrap: wrap; }
+  .map-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+  .meters { display: flex; gap: 20px; margin-bottom: 14px; }
+  .meter { flex: 1; }
+  .meter .m-label { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: 3px; }
+  .m-track { height: 10px; background: #23262c; border-radius: 5px; overflow: hidden; }
+  .m-fill { height: 100%; border-radius: 5px; transition: width .5s, background .5s; }
+  .m-fill.us { background: var(--us); }
+  .m-fill.us.mid { background: var(--amber); }
+  .m-fill.us.low { background: var(--foe); }
+  .m-fill.init { background: var(--amber); }
+  .echo { background: #23201a; border-left: 3px solid var(--green); padding: 10px 14px; margin-bottom: 12px; font-size: .85rem; color: #c9c2ae; }
+  .brief { background: #1c1f25; border-left: 3px solid var(--amber); padding: 12px 14px; margin-bottom: 12px; font-size: .92rem; }
+  .brief .date { color: var(--grey); font-size: .78rem; display: block; margin-bottom: 4px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .options button {
+    text-align: left; padding: 12px 14px; width: 100%;
+    background: #22262d; color: var(--ink); border: 1px solid #3a3f48;
+    cursor: pointer; font-family: inherit; transition: border-color .15s; line-height: 1.6;
+  }
+  .options button:hover:not(:disabled) { border-color: var(--amber); background: #2a2f37; }
+  .options button:disabled { cursor: default; opacity: .45; }
+  .options button.chosen { border-color: var(--amber); opacity: 1; }
+  .options button.rejected { display: none; }
+  .opt-main { font-size: .95rem; }
+  .opt-icons { display: block; font-size: .8rem; margin-top: 4px; color: #8f8c80; }
+  .skulls { letter-spacing: 2px; }
+  .opt-more { display: none; font-size: .8rem; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #3a3f48; }
+  button.chosen .opt-more { display: block; }
+  .prob { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 6px; max-width: 260px; }
+  .prob .pg { background: var(--green); } .prob .pn { background: #6b7280; } .prob .pb { background: var(--foe); }
+  .prob-legend { font-size: .7rem; color: var(--grey); margin-top: 3px; }
+  .dice { text-align: center; padding: 10px; margin: 12px 0; background: #1a1d22; border: 1px dashed #4a5160; font-size: .95rem; display: none; }
+  .dice .good { color: var(--green); } .dice .mid { color: #c9c2ae; } .dice .bad { color: var(--foe); }
+  .consequence { padding: 12px 14px; font-size: .9rem; background: #1c1f25; border-left: 3px solid var(--grey); display: none; }
+  .next-btn, .restart { display: block; margin: 20px auto 0; padding: 10px 32px; background: none; color: var(--amber); border: 1px solid var(--amber); font-family: inherit; font-size: .95rem; cursor: pointer; }
+  .next-btn:hover, .restart:hover { background: var(--amber); color: #14161a; }
+  .ending h2 { text-align: center; margin: 24px 0 8px; color: var(--amber); letter-spacing: 3px; }
+  .ending .verdict { text-align: center; font-size: 1.05rem; margin-bottom: 20px; }
+  .ending .chain { background: #1c1f25; padding: 14px 16px; margin-bottom: 12px; font-size: .9rem; }
+  .reveal { font-size: .85rem; color: var(--grey); margin-top: 16px; }
+  .reveal em { color: var(--green); font-style: normal; }
+  .hidden { display: none; }
+  footer { text-align: center; font-size: .75rem; color: #55534b; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<h1>豫东战役 · 推演</h1>
+<p class="sub">1948.6.17 – 7.6 · 三个决策节点 · 沙盘即情报</p>
+
+<div id="game">
+  <div class="meters">
+    <div class="meter">
+      <div class="m-label"><span style="color:var(--us)">■ 我军兵力</span><span id="wForce">充足</span></div>
+      <div class="m-track"><div class="m-fill us" id="barForce" style="width:100%"></div></div>
+    </div>
+    <div class="meter">
+      <div class="m-label"><span style="color:var(--amber)">■ 战场主动权</span><span id="wInit">均势</span></div>
+      <div class="m-track"><div class="m-fill init" id="barInit" style="width:50%"></div></div>
+    </div>
+  </div>
+
+  <div class="map-wrap">
+    <div class="map" id="map">
+      <svg id="mapSvg" viewBox="0 0 600 375" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="map-units" id="mapUnits"></div>
+      <div class="m-arrow" id="mapArrow">➤</div>
+    </div>
+    <div class="map-legend">
+      <span><i style="background:var(--us)"></i>我军</span>
+      <span><i style="background:var(--foe)"></i>敌军</span>
+      <span><i style="border:1px dashed var(--amber);background:none"></i>未证实</span>
+      <span><i style="background:var(--river)"></i>黄河</span>
+      <span><i style="background:var(--rail);height:2px"></i>陇海铁路</span>
+      <span><i style="background:var(--green)"></i>有利</span>
+    </div>
+  </div>
+
+  <div class="echo hidden" id="echoBox"></div>
+  <div class="brief">
+    <span class="date" id="nDate"></span>
+    <span id="nText"></span>
+  </div>
+  <div class="dice" id="diceBox"></div>
+  <div class="options" id="nOptions"></div>
+  <div class="consequence" id="nConsequence"></div>
+  <button class="next-btn hidden" id="btnNext" onclick="nextNode()">继续 →</button>
+</div>
+
+<div id="ending" class="ending hidden">
+  <h2>战 役 结 局</h2>
+  <p class="verdict" id="eVerdict"></p>
+  <div class="chain" id="eJinan"></div>
+  <div class="chain" id="eHuaihai"></div>
+  <button class="restart" onclick="restart()">重新推演</button>
+  <p class="reveal" id="eReveal"></p>
+</div>
+
+<footer>看沙盘，掂风险，下决心。剩下的交给天意。</footer>
+
+<script>
+/* ================================================================
+   沙盘地理骨架（viewBox 600 x 375）
+   坐标系：x=0~600（西→东），y=0~375（北→南）
+   真实地理方位标定：
+   洛阳(x=50)  开封(x=200)  商丘(x=400)  徐州(x=550)  帝丘店(x=440,y=250)
+   黄河：从西北入境，经郑州北后折向东北方向流往山东
+   陇海铁路：与黄河平行，贴南侧，东西走向
+   ================================================================ */
+
+const BASE_SVG = `
+  <defs>
+    <radialGradient id="t1" cx="50%" cy="75%" r="60%">
+      <stop offset="0%" stop-color="#2a2520" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="#2a2520" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="t2" cx="60%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#1a2820" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#1a2820" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6">
+      <path d="M0,6 L6,0" stroke="#2e343e" stroke-width=".5" opacity=".3"/>
+    </pattern>
+    <marker id="ah" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+      <polygon points="0 0, 6 2.5, 0 5" fill="#c1554d" opacity=".6"/>
+    </marker>
+  </defs>
+
+  <!-- 底纹 -->
+  <rect width="600" height="375" fill="url(#hatch)"/>
+  <rect width="600" height="375" fill="url(#t1)"/>
+  <rect width="600" height="375" fill="url(#t2)"/>
+
+  <!-- 黄河：西北入境→经开封北→折向东北流往山东 -->
+  <!-- 开封以北经度约114.3，黄河在此处偏北；往东至山东方向转向东北 -->
+  <path d="M 0 60 Q 80 75, 150 80 Q 220 85, 280 75 Q 350 65, 420 55 Q 480 50, 540 40 L 600 20"
+        fill="none" stroke="#2a5070" stroke-width="16" stroke-linecap="round" opacity=".85"/>
+  <path d="M 0 60 Q 80 75, 150 80 Q 220 85, 280 75 Q 350 65, 420 55 Q 480 50, 540 40 L 600 20"
+        fill="none" stroke="#4a7090" stroke-width="2" opacity=".5" stroke-dasharray="4 3"/>
+  <text x="20" y="48" fill="#5a7a90" font-size="10" font-family="serif" opacity=".7">黄 河</text>
+
+  <!-- 陇海铁路：贴黄河南侧，东西走向 -->
+  <!-- 洛阳→郑州→开封→商丘→徐州，微弯 -->
+  <path d="M 20 145 Q 100 148, 200 150 Q 300 152, 400 150 Q 480 148, 560 145"
+        fill="none" stroke="#3a3f48" stroke-width="6"/>
+  <path d="M 20 141 Q 100 144, 200 146 Q 300 148, 400 146 Q 480 144, 560 141"
+        fill="none" stroke="#4a4f58" stroke-width="1.5"/>
+  <path d="M 20 149 Q 100 152, 200 154 Q 300 156, 400 154 Q 480 152, 560 149"
+        fill="none" stroke="#4a4f58" stroke-width="1.5"/>
+
+  <!-- 枕木 -->
+  <g stroke="#3a3f48" stroke-width="3" opacity=".5">
+    <line x1="40" y1="138" x2="40" y2="158"/><line x1="70" y1="138" x2="70" y2="158"/>
+    <line x1="100" y1="139" x2="100" y2="159"/><line x1="130" y1="140" x2="130" y2="160"/>
+    <line x1="160" y1="141" x2="160" y2="161"/><line x1="190" y1="142" x2="190" y2="162"/>
+    <line x1="220" y1="143" x2="220" y2="163"/><line x1="250" y1="144" x2="250" y2="164"/>
+    <line x1="280" y1="145" x2="280" y2="165"/><line x1="310" y1="146" x2="310" y2="166"/>
+    <line x1="340" y1="146" x2="340" y2="166"/><line x1="370" y1="146" x2="370" y2="166"/>
+    <line x1="400" y1="146" x2="400" y2="166"/><line x1="430" y1="146" x2="430" y2="166"/>
+    <line x1="460" y1="146" x2="460" y2="166"/><line x1="490" y1="145" x2="490" y2="165"/>
+    <line x1="520" y1="144" x2="520" y2="164"/><line x1="550" y1="143" x2="550" y2="163"/>
+  </g>
+  <text x="8" y="134" fill="#5a5850" font-size="9" font-family="serif" opacity=".6">陇 海 铁 路</text>
+
+  <!-- 省城：洛阳、开封、商丘、徐州 -->
+  <g font-family="serif" font-size="11" text-anchor="middle">
+    <!-- 洛阳（西端） -->
+    <rect x="42" y="136" width="16" height="16" fill="none" stroke="#6a6560" stroke-width="1"/>
+    <rect x="45" y="139" width="10" height="10" fill="#2a2a28" stroke="#8a857e" stroke-width=".6"/>
+    <text x="50" y="134" fill="#8a857e">洛阳</text>
+
+    <!-- 开封（省会，较大标记） -->
+    <rect x="192" y="134" width="18" height="18" fill="none" stroke="#6a6560" stroke-width="1.2"/>
+    <rect x="196" y="138" width="10" height="10" fill="#2a2a28" stroke="#8a857e" stroke-width=".8"/>
+    <text x="201" y="132" fill="#b8b4a8" font-weight="bold">开封</text>
+
+    <!-- 商丘 -->
+    <rect x="392" y="136" width="16" height="16" fill="none" stroke="#6a6560" stroke-width="1"/>
+    <rect x="395" y="139" width="10" height="10" fill="#2a2a28" stroke="#8a857e" stroke-width=".6"/>
+    <text x="400" y="134" fill="#8a857e">商丘</text>
+
+    <!-- 徐州（东端） -->
+    <rect x="542" y="136" width="16" height="16" fill="none" stroke="#6a6560" stroke-width="1"/>
+    <rect x="545" y="139" width="10" height="10" fill="#2a2a28" stroke="#8a857e" stroke-width=".6"/>
+    <text x="550" y="134" fill="#8a857e">徐州</text>
+  </g>
+
+  <!-- 帝丘店（小地标） -->
+  <g font-family="serif" font-size="9" text-anchor="middle">
+    <circle cx="440" cy="255" r="4" fill="none" stroke="#6a6560" stroke-width="1"/>
+    <text x="440" y="272" fill="#8a857e" opacity=".8">帝丘店</text>
+  </g>
+
+  <!-- 睢县、杞县标注 -->
+  <g font-family="serif" font-size="8" text-anchor="middle" opacity=".5">
+    <circle cx="340" cy="220" r="3" fill="none" stroke="#6a6560" stroke-width=".8"/>
+    <text x="340" y="212" fill="#8a857e">杞县</text>
+    <circle cx="370" cy="235" r="3" fill="none" stroke="#6a6560" stroke-width=".8"/>
+    <text x="370" y="227" fill="#8a857e">睢县</text>
+  </g>
+`;
+
+/* 节点数据：坐标严格按史实方位
+   x: 50(洛阳) 200(开封) 340(杞县) 370(睢县) 400(商丘) 440(帝丘店) 550(徐州)
+   y: 60(黄河) 145(铁路) 220(睢杞) 255(帝丘店) */
+
+const NODE1 = {
+  date: "1948年6月17日 · 开封城下",
+  text: "华野主力已包围开封。攻城的窗口只有几天，邱清泉兵团从西面沿铁路来援。",
+  map: {
+    gaps: [],
+    routes: [{ d: "M 540 145 Q 400 130, 250 148", label: "邱清泉西援" }],
+    items: [
+      { t: "us", x: 24, y: 46, label: "华野攻城集团", v: "10万", st: "齐装满员", stCls: "good" },
+      { t: "us", x: 36, y: 52, label: "阻援集团", v: "15万", st: "就位", stCls: "good" },
+      { t: "foe", x: 33, y: 40, label: "开封守军", v: "3万", st: "被围", stCls: "danger" },
+      { t: "foe", x: 70, y: 38, label: "邱清泉兵团", v: "12万", st: "西援中", stCls: "danger" },
+      { t: "amber", x: 52, y: 34, label: "邱·前锋", v: "≈2日", st: "兼程", stCls: "warn" },
+      { t: "note", x: 70, y: 20, label: "胡琏被中野阻于南（未证实）" }
+    ]
+  },
+  options: [
+    { id: "siege", hist: true, danger: 2,
+      text: "按原案强攻，三日拿下开封，随后转兵打援",
+      short: "伤亡中等 · 关键看巷战是否顺利",
+      ifWin: "拿下省会，掌握战役枢纽", ifLose: "巷战拖延，被援军粘住",
+      arrow: { x: 27, y: 42, deg: -90 },
+      outcomes: [
+        { p: 65, grade: "normal", force: -8, init: +10,
+          result: "第三日黄昏突入城内，抢在邱兵团合围前腾出了手，但攻坚消耗不小。",
+          echo: "开封三日而下，主力基本完整，但攻坚的窟窿需要补。" },
+        { p: 15, grade: "great", force: -4, init: +16,
+          result: "守军一部阵前倒戈，城防从内部瓦解，两日即克开封，几乎毫发无损。",
+          echo: "两日下开封，比史实还顺。统帅部对你的胃口变得更大了。" },
+        { p: 20, grade: "bad", force: -16, init: -4,
+          result: "城内巷战远超预期，第五天才得手，邱清泉前锋已抵城下，撤离时后卫苦战。",
+          echo: "五日方下，伤亡远超预期。你是在刺刀尖上收的兵。" }
+      ] },
+    { id: "intercept", hist: false, danger: 3,
+      text: "留一部围城，主力西移，野战截击邱清泉兵团",
+      short: "伤亡很大 · 野战硬碰，两头都可能落空",
+      ifWin: "重创援军，开封唾手可得", ifLose: "攻城野战两头落空",
+      arrow: { x: 55, y: 40, deg: 180 },
+      outcomes: [
+        { p: 30, grade: "normal", force: -14, init: -5,
+          result: "邱兵团行军队形完整、火力密集，截击打成消耗战，攻城也因兵力不足拖延。",
+          echo: "野战受挫，邱兵团被顶住却未被击溃，攻城拖了五天。" },
+        { p: 15, grade: "great", force: -8, init: +12,
+          result: "邱兵团一部冒进脱离队形，被你狠咬一口，仓皇后撤。开封守军闻讯动摇。",
+          echo: "意外的野战胜利。但你的部队折损不小，且开封仍未下。" },
+        { p: 55, grade: "bad", force: -20, init: -12,
+          result: "消耗战打成失血战：攻坚无果、野战不利，两头落空，被迫后撤重整。",
+          echo: "两头落空，这是最坏的开局----伤亡惨重，战机全失。" }
+      ] },
+    { id: "withdraw", hist: false, danger: 1,
+      text: "放弃攻城，全军撤回陇海路北休整",
+      short: "几乎无伤亡 · 但战役就此落空",
+      ifWin: "保存实力，另寻战机", ifLose: "统帅部信任受损",
+      arrow: { x: 30, y: 22, deg: -45 },
+      outcomes: [
+        { p: 85, grade: "normal", force: 0, init: -18,
+          result: "全军安全脱离，但战役意图落空，统帅部对华野的信心出现动摇。",
+          echo: "意图落空，各兵团完整，但统帅部来电措辞严厉。" },
+        { p: 15, grade: "bad", force: -6, init: -22,
+          result: "撤退被敌机咬住，后卫遭空袭追击，撤退变成小溃退。",
+          echo: "撤退途中被咬了一口，军中开始有怨言。" }
+      ] }
+  ]
+};
+
+const NODE2_VARIANTS = {
+  siege: {
+    date: "1948年6月末 · 睢杞地区",
+    text: "开封已克。区寿年兵团在睢杞一带与邱清泉兵团拉开了约40公里的间隙----战机稍纵即逝。",
+    map: {
+      gaps: [{ x: 53, y: 50, w: 14, h: 20, label: "40公里间隙" }],
+      routes: [{ d: "M 550 155 Q 500 200, 480 220", label: "黄百韬东援" }],
+      items: [
+        { t: "us", x: 30, y: 56, label: "华野主力", v: "9.2万", st: "士气高涨", stCls: "good" },
+        { t: "foe", x: 42, y: 42, label: "邱清泉", v: "11万", st: "踌躇", stCls: "neutral" },
+        { t: "foe", x: 66, y: 48, label: "区寿年", v: "8万", st: "分散·软柿子", stCls: "good" },
+        { t: "amber", x: 82, y: 62, label: "黄百韬", v: "10万", st: "≈3-4日·未证实", stCls: "warn" },
+        { t: "note", x: 25, y: 38, label: "开封✔（省会）" }
+      ]
+    },
+    options: [
+      { id: "split", hist: true, danger: 2,
+        text: "抓住间隙，立即楔入分割区寿年兵团",
+        short: "伤亡中等 · 一夜定成败的穿插豪赌",
+        ifWin: "割裂敌军，可望全歼一个兵团", ifLose: "楔入部队反被夹击",
+        arrow: { x: 53, y: 50, deg: 0 },
+        outcomes: [
+          { p: 70, grade: "normal", force: -6, init: +12,
+            result: "一夜穿插成功，区兵团指挥部与主力被切断。但东面黄百韬的威胁就此埋下。",
+            echo: "区兵团被割裂围困，但穿插过深，黄百韬距你只有一日行程。" },
+          { p: 12, grade: "great", force: -3, init: +18,
+            result: "区兵团部在行军纵队中直接被端，司令区寿年被活捉。敌军全线震动。",
+            echo: "活捉了区寿年本人。但黄百韬因此更疯狂地向你扑来。" },
+          { p: 18, grade: "bad", force: -14, init: -2,
+            result: "穿插被提前察觉，先头部队撞进预伏阵地，楔入部队反遭三面夹击。",
+            echo: "穿插失败，楔入的部队被夹住了。得想法把他们捞出来。" }
+        ] },
+      { id: "wait", hist: false, danger: 1,
+        text: "等黄百韬动向明确后再定",
+        short: "几乎无伤亡 · 但战机以日计流失",
+        ifWin: "黄部若滞留，间隙反而扩大", ifLose: "敌两兵团靠拢，战机永久失去",
+        outcomes: [
+          { p: 80, grade: "normal", force: 0, init: -12,
+            result: "两日延误，邱、区两兵团重新靠拢，间隙闭合。",
+            echo: "你捏着完整的开封，但战机没有了。" },
+          { p: 20, grade: "great", force: +4, init: +4,
+            result: "黄百韬因渡河困难滞留，国军统帅部争执不下，间隙反而扩大了。",
+            echo: "黄百韬被河水和扯皮拖住了。现在出手比两天前更有把握。" }
+        ] },
+      { id: "rest", hist: false, danger: 1,
+        text: "部队已疲，就势占开封休整，不打这一仗",
+        short: "几乎无伤亡 · 兵力回升 · 战役提前结束",
+        ifWin: "保存实力，稳固省会", ifLose: "国军稳住阵脚，本季度再无战机",
+        arrow: { x: 25, y: 42, deg: 180 },
+        outcomes: [
+          { p: 90, grade: "normal", force: +8, init: -15,
+            result: "保存了实力，但区兵团收拢后撤，华东国军稳住了阵脚。",
+            echo: "全军在开封安然休整。但中原国军也喘过了气。" },
+          { p: 10, grade: "bad", force: -2, init: -18,
+            result: "休整期间邱兵团不断炮袭外围，休整变成值守。",
+            echo: "休整并未如愿安生，人没歇好，账面还难看。" }
+        ] }
+    ]
+  },
+  intercept: {
+    date: "1948年6月末 · 消耗战之后",
+    text: "截击打成消耗战，开封拖了五天才勉强得手。残局还要不要再赌一把？",
+    map: {
+      gaps: [{ x: 53, y: 50, w: 8, h: 20, label: "间隙缩至25公里" }],
+      routes: [{ d: "M 550 155 Q 500 200, 490 220", label: "黄百韬东援" }],
+      items: [
+        { t: "us", x: 28, y: 56, label: "华野（疲惫）", v: "8万", st: "伤亡偏重", stCls: "danger" },
+        { t: "foe", x: 44, y: 42, label: "邱清泉", v: "11万", st: "谨慎", stCls: "neutral" },
+        { t: "foe", x: 60, y: 48, label: "区寿年", v: "8万", st: "分散", stCls: "neutral" },
+        { t: "amber", x: 80, y: 60, label: "黄百韬", v: "10万", st: "2-3日", stCls: "warn" },
+        { t: "note", x: 25, y: 38, label: "开封✔" },
+        { t: "note", x: 30, y: 68, label: "弹药告急·野战医院后送" }
+      ]
+    },
+    options: [
+      { id: "split", hist: false, danger: 3,
+        text: "勉力再战：以疲惫之师仍去穿插分割",
+        short: "伤亡极大 · 强弩之末，凶多吉少",
+        ifWin: "突然性或可奏效", ifLose: "穿插部队损失惨重",
+        arrow: { x: 53, y: 50, deg: 0 },
+        outcomes: [
+          { p: 30, grade: "normal", force: -12, init: +8,
+            result: "穿插勉强成功，但攻击力不足，割裂了敌军却吞不下。",
+            echo: "穿插虽成，部队已是强弩之末。" },
+          { p: 5, grade: "great", force: -6, init: +15,
+            result: "敌军没料到疲惫的华野还敢进攻，区兵团猝不及防，分割彻底成功。",
+            echo: "出其不意的大胜。但你的部队只剩最后一口气了。" },
+          { p: 65, grade: "bad", force: -22, init: -10,
+            result: "穿插失败，突击部队损失惨重，被迫在敌军夹缝中且战且退。",
+            echo: "穿插惨败，部队的怨气几乎压不住了。" }
+        ] },
+      { id: "rest", hist: false, danger: 1,
+        text: "就此收手：巩固开封战果，主力后撤休整",
+        short: "伤亡很小 · 保住省会战果",
+        ifWin: "账面说得过去", ifLose: "撤离遭追击，收兵不体面",
+        arrow: { x: 25, y: 42, deg: 180 },
+        outcomes: [
+          { p: 88, grade: "normal", force: +4, init: -10,
+            result: "华野带着开封的战果脱离接触，不致重伤。",
+            echo: "带着省会收兵，账面说得过去。但区兵团完完整整撤走了。" },
+          { p: 12, grade: "bad", force: -6, init: -14,
+            result: "撤离组织不周，敌军衔尾追击，后卫损失一部。",
+            echo: "收兵收得不算体面，士气再受打击。" }
+        ] }
+    ]
+  },
+  withdraw: {
+    date: "1948年6月末 · 陇海路北",
+    text: "全军已撤至陇海路北。统帅部只问一句：战机仍在，敢不敢打？",
+    map: {
+      gaps: [{ x: 52, y: 50, w: 10, h: 18, label: "30公里间隙" }],
+      routes: [],
+      items: [
+        { t: "us", x: 38, y: 28, label: "华野主力", v: "10万", st: "路北休整", stCls: "good" },
+        { t: "foe", x: 44, y: 48, label: "邱清泉", v: "12万", st: "东进", stCls: "danger" },
+        { t: "foe", x: 60, y: 48, label: "区寿年", v: "8万", st: "东进", stCls: "danger" },
+        { t: "note", x: 55, y: 70, label: "南渡出击＝背对黄河" }
+      ]
+    },
+    options: [
+      { id: "split", hist: false, danger: 3,
+        text: "背水一战：南渡陇海路，扑向两兵团之间的间隙",
+        short: "伤亡很大 · 胜则出奇，败则难撤",
+        ifWin: "出其不意，一举割裂敌军", ifLose: "被大河拴住，进退失据",
+        arrow: { x: 52, y: 42, deg: 75 },
+        outcomes: [
+          { p: 40, grade: "normal", force: -10, init: +14,
+            result: "回师南下打了国军一个措手不及，穿插意外顺利。但退路单薄很快会显出分量。",
+            echo: "回马枪得手了。但你依然站在悬崖边上。" },
+          { p: 15, grade: "great", force: -5, init: +20,
+            result: "国军断定华野绝不会背水求战，警戒松懈。区兵团部一夜被端。",
+            echo: "教科书级别的出其不意。" },
+          { p: 45, grade: "bad", force: -18, init: -8,
+            result: "回师行动被空中侦察发现，敌军抢先收缩。前卫强渡时损失重大。",
+            echo: "背水不成，反被水困。" }
+        ] },
+      { id: "rest", hist: false, danger: 1,
+        text: "继续休整，本战役就此结束",
+        short: "几乎无伤亡 · 战役提前结束",
+        ifWin: "完整主力仍是国军心腹之患", ifLose: "仅可能疫病减员",
+        outcomes: [
+          { p: 95, grade: "normal", force: +4, init: -4,
+            result: "豫东战役以未竟全功告终。但完整的华野，仍是国军头上的一把刀。",
+            echo: "" },
+          { p: 5, grade: "bad", force: -2, init: -8,
+            result: "休整期间疫病流行，非战斗减员超出预期。",
+            echo: "" }
+        ] }
+    ]
+  }
+};
+
+const NODE3_VARIANTS = {
+  split: {
+    date: "1948年7月初 · 帝丘店",
+    text: "区兵团部已被围歼，残部龟缩帝丘店。但外线的网正在收紧----这是最后一夜的抉择。",
+    map: {
+      gaps: [],
+      routes: [{ d: "M 550 155 Q 500 200, 470 240", label: "黄百韬急进" }],
+      items: [
+        { t: "us", x: 65, y: 62, label: "华野主力", v: "8.6万", st: "穿插后", stCls: "warn" },
+        { t: "foe", x: 72, y: 70, label: "帝丘店残敌", v: "2万", st: "弹药将尽", stCls: "danger" },
+        { t: "foe", x: 82, y: 52, label: "黄百韬", v: "10万", st: "已抵达", stCls: "danger" },
+        { t: "foe", x: 50, y: 60, label: "邱清泉", v: "11万", st: "侧后", stCls: "danger" },
+        { t: "note", x: 35, y: 30, label: "⚠ 内线受夹·撤退窗口仅剩2日" }
+      ]
+    },
+    options: [
+      { id: "assault", hist: false, danger: 3,
+        text: "对帝丘店残敌发起总攻，再歼一部后撤离",
+        short: "伤亡极大 · 赌残敌崩溃，赌外线合拢之前",
+        ifWin: "携双份战果从容撤离", ifLose: "被迫血战突围、弃置重装备",
+        arrow: { x: 70, y: 66, deg: 90 },
+        outcomes: [
+          { p: 30, grade: "normal", force: -16, init: +8,
+            result: "总攻胶着，外线援军步步紧逼。虽重创敌军，撤出时颇为狼狈。",
+            echo: "" },
+          { p: 10, grade: "great", force: -8, init: +20,
+            result: "残敌已断粮两日，攻势刚起防线即告崩溃。你在外线合拢前从容撤出。",
+            echo: "" },
+          { p: 60, grade: "bad", force: -26, init: -6,
+            result: "总攻被顶住，外线完成合拢。血战撕开缺口突围，重装备几乎全部丢弃。",
+            echo: "" }
+        ] },
+      { id: "leave", hist: true, danger: 1,
+        text: "见好就收：留一部监视残敌，主力立即北撤",
+        short: "伤亡很小 · 战役完美收官的机会",
+        ifWin: "带俘虏缴获从容北渡", ifLose: "撤退暴露遭空袭",
+        arrow: { x: 60, y: 40, deg: -60 },
+        outcomes: [
+          { p: 80, grade: "normal", force: -4, init: +14,
+            result: "主力干净利落地脱离战场，带俘虏与缴获从容北渡。",
+            echo: "" },
+          { p: 8, grade: "great", force: 0, init: +18,
+            result: "敌军迟了两日才发觉华野已去。追击扑空时，你已在北岸布防完毕。",
+            echo: "" },
+          { p: 12, grade: "bad", force: -12, init: +2,
+            result: "撤退被敌机昼夜袭扰，渡河点暴露，后卫与辎重损失一部。",
+            echo: "" }
+        ] },
+      { id: "flank", hist: false, danger: 3,
+        text: "反手先打黄百韬侧翼，撕开一条路",
+        short: "伤亡极大 · 逆势进攻，孤注一掷",
+        ifWin: "反获主动，撕开撤退通道", ifLose: "建制打散，最黑暗的一天",
+        arrow: { x: 78, y: 56, deg: 0 },
+        outcomes: [
+          { p: 25, grade: "normal", force: -20, init: -10,
+            result: "黄部以逸待劳，侧击未成反被咬住，缴获大半弃于途中。",
+            echo: "" },
+          { p: 8, grade: "great", force: -10, init: +12,
+            result: "黄部快速纵队恰在换防，侧击得手，反而撕开了撤退通道。",
+            echo: "" },
+          { p: 67, grade: "bad", force: -28, init: -15,
+            result: "侧击撞进黄百韬预备队的反击，部队被打散，建制混乱。",
+            echo: "" }
+        ] }
+    ]
+  },
+  wait: {
+    date: "1948年7月初 · 睢杞对峙线",
+    text: "战机已过，正面绵密。但你的部队完整----现在是全师而退的最好窗口。",
+    map: {
+      gaps: [],
+      routes: [{ d: "M 550 155 Q 520 200, 510 225", label: "黄百韬跟进" }],
+      items: [
+        { t: "us", x: 40, y: 55, label: "华野（完整）", v: "9.4万", st: "未损", stCls: "good" },
+        { t: "foe", x: 60, y: 50, label: "邱+区合拢", v: "20万", st: "正面绵密", stCls: "danger" },
+        { t: "amber", x: 82, y: 58, label: "黄百韬", v: "10万", st: "一个行程", stCls: "warn" },
+        { t: "note", x: 55, y: 30, label: "强攻无隙" }
+      ]
+    },
+    options: [
+      { id: "leave", hist: true, danger: 1,
+        text: "趁窗口尚在，全军有序北撤，结束战役",
+        short: "几乎无伤亡 · 全师而退",
+        ifWin: "完整的华野退出战场", ifLose: "暴雨空袭致撤退迟缓",
+        arrow: { x: 40, y: 30, deg: -75 },
+        outcomes: [
+          { p: 88, grade: "normal", force: 0, init: +8,
+            result: "各兵团从容脱离接触。国军上下都松了口气----没人知道他们躲过了什么。",
+            echo: "" },
+          { p: 12, grade: "bad", force: -8, init: +2,
+            result: "撤退途中连日暴雨，道路泥泞，全师而退变成狼狈而退。",
+            echo: "" }
+        ] },
+      { id: "assault", hist: false, danger: 3,
+        text: "不甘心：从正面强攻敌军结合部",
+        short: "伤亡极大 · 情报已示'强攻无隙'",
+        ifWin: "或可捣毁敌后方囤积点", ifLose: "攻坚被碾碎，撤退变突围",
+        arrow: { x: 52, y: 52, deg: 0 },
+        outcomes: [
+          { p: 20, grade: "normal", force: -10, init: -6,
+            result: "强攻变成攻坚战，徒增伤亡后被迫放弃。",
+            echo: "" },
+          { p: 10, grade: "great", force: -4, init: +10,
+            result: "结合部竟是一层薄纸：突入部队直捣敌弹药囤积点，趁乱全身而退。",
+            echo: "" },
+          { p: 70, grade: "bad", force: -20, init: -12,
+            result: "强攻被碾碎，突入部队损失过半，撤退变仓皇突围。",
+            echo: "" }
+        ] },
+      { id: "flank", hist: false, danger: 3,
+        text: "长途奔袭东面的黄百韬",
+        short: "伤亡很大 · 奔袭极度依赖保密",
+        ifWin: "端掉敌前进指挥部", ifLose: "扑空后被截断归路",
+        arrow: { x: 72, y: 56, deg: 15 },
+        outcomes: [
+          { p: 30, grade: "normal", force: -14, init: -12,
+            result: "奔袭被敌机发现，黄部收缩固守。扑空后回程后卫受损。",
+            echo: "" },
+          { p: 15, grade: "great", force: -6, init: +14,
+            result: "黄部前进指挥部被端，停滞两天。你从容回师北撤。",
+            echo: "" },
+          { p: 55, grade: "bad", force: -22, init: -16,
+            result: "奔袭扑空，回程被截断，血战一天才撕开归路。",
+            echo: "" }
+        ] }
+    ]
+  },
+  rest: {
+    date: "1948年7月初 · 后方休整地",
+    text: "本战役在你手里提前结束了。下一场作战已在酝酿。",
+    map: {
+      gaps: [], routes: [],
+      items: [
+        { t: "us", x: 30, y: 30, label: "华野（休整）", v: "10.4万", st: "逐日恢复", stCls: "good" },
+        { t: "foe", x: 70, y: 42, label: "华东国军", v: "完整", st: "济南加强", stCls: "danger" },
+        { t: "note", x: 70, y: 60, label: "敌济南方向得到加强" }
+      ]
+    },
+    options: [
+      { id: "leave", hist: false, danger: 1,
+        text: "保持休整，为下一战役积蓄力量",
+        short: "几乎无伤亡",
+        ifWin: "蓄力待机", ifLose: "恢复低于预期",
+        outcomes: [
+          { p: 95, grade: "normal", force: 0, init: 0,
+            result: "豫东战役至此落幕。你没有输掉这一仗，但也没有赢下它。",
+            echo: "" },
+          { p: 5, grade: "bad", force: -4, init: -4,
+            result: "休整期间补训出岔子，战斗力恢复低于预期。",
+            echo: "" }
+        ] },
+      { id: "assault", hist: false, danger: 3,
+        text: "临时改变主意：一线部队南返再战",
+        short: "伤亡很大 · 疲兵往返，劳师袭远",
+        ifWin: "顺手咬掉敌一部", ifLose: "遭伏击，未战先乱",
+        arrow: { x: 55, y: 36, deg: 0 },
+        outcomes: [
+          { p: 25, grade: "normal", force: -8, init: -8,
+            result: "刚归建又出征，抵达时敌已完成调整，无功而返。",
+            echo: "" },
+          { p: 10, grade: "great", force: -2, init: +8,
+            result: "敌以为华野早已收兵，警戒虚设。顺手吃掉一个后撤中的整编旅。",
+            echo: "" },
+          { p: 65, grade: "bad", force: -14, init: -12,
+            result: "南返途中遭伏击，伤亡与逃亡远超预期。",
+            echo: "" }
+        ] }
+    ]
+  }
+};
+
+/* ============ 沙盘渲染 ============ */
+function renderMap(mapData) {
+  const svg = document.getElementById('mapSvg');
+  const unitsBox = document.getElementById('mapUnits');
+  const arrow = document.getElementById('mapArrow');
+  arrow.classList.remove('show');
+
+  // SVG 坐标系：600x375，百分比坐标需转换
+  const toX = px => px * 6;   // 0~100% → 0~600
+  const toY = py => py * 3.75; // 0~100% → 0~375
+
+  let dynSvg = '';
+  (mapData.gaps || []).forEach(g => {
+    const x = toX(g.x), y = toY(g.y), w = toX(g.w), h = toY(g.h);
+    dynSvg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(232,176,75,.1)" stroke="#e8b04b" stroke-width="1.5" stroke-dasharray="4 3" rx="2"/>`;
+    if (g.label) dynSvg += `<text x="${x + w/2}" y="${y + h/2 + 3}" fill="#e8b04b" font-size="9" text-anchor="middle" opacity=".8">${g.label}</text>`;
+  });
+  (mapData.routes || []).forEach(r => {
+    dynSvg += `<path id="rp" d="${r.d}" fill="none"/>`;
+    dynSvg += `<path d="${r.d}" fill="none" stroke="#c1554d" stroke-width="1.5" stroke-dasharray="5 4" opacity=".6" marker-end="url(#ah)"/>`;
+    dynSvg += `<text fill="#c1554d" font-size="8" opacity=".7"><textPath href="#rp" startOffset="20%" text-anchor="middle">${r.label}</textPath></text>`;
+  });
+  svg.innerHTML = BASE_SVG + dynSvg;
+
+  let html = '';
+  (mapData.items || []).forEach(it => {
+    if (it.t === 'note') {
+      html += `<div class="m-unit m-note" style="left:${it.x}%;top:${it.y}%">${it.label}</div>`;
+    } else {
+      const cls = { us:'m-us', foe:'m-foe', amber:'m-amber', city:'m-city' }[it.t];
+      html += `<div class="m-unit ${cls}" style="left:${it.x}%;top:${it.y}%">${it.label}` +
+        (it.v ? `<span class="v">${it.v}</span>` : '') +
+        (it.st ? `<span class="st ${it.stCls || 'neutral'}">${it.st}</span>` : '') +
+        `</div>`;
+    }
+  });
+  unitsBox.innerHTML = html;
+}
+
+function showArrow(a) {
+  if (!a) return;
+  const arrow = document.getElementById('mapArrow');
+  arrow.style.left = a.x + '%';
+  arrow.style.top = a.y + '%';
+  arrow.style.transform = `translate(-50%,-50%) rotate(${a.deg}deg)`;
+  arrow.classList.add('show');
+}
+
+/* ============ 游戏逻辑 ============ */
+function rollOutcome(opt) {
+  const total = opt.outcomes.reduce((s, o) => s + o.p, 0);
+  let r = Math.random() * total;
+  for (const o of opt.outcomes) { r -= o.p; if (r <= 0) return o; }
+  return opt.outcomes[opt.outcomes.length - 1];
+}
+const GRADE = {
+  great:  { label: "★ 大成功 ---- 运气站在你这边", cls: "good" },
+  normal: { label: "-- 如常", cls: "mid" },
+  bad:    { label: "✕ 意外失利 ---- 命运翻出了底牌", cls: "bad" }
+};
+const FORCE_WORDS = v => v >= 90 ? ['充足','color:#4a9edb'] : v >= 75 ? ['尚可','color:#4a9edb']
+  : v >= 60 ? ['受损','color:#e8b04b'] : v >= 40 ? ['告急','color:#c1554d'] : ['濒临极限','color:#c1554d'];
+const INIT_WORDS = v => v >= 70 ? ['我方掌握','color:#e8b04b'] : v >= 55 ? ['偏向我方','color:#e8b04b']
+  : v >= 40 ? ['均势','color:#a09c8e'] : v >= 25 ? ['偏向敌方','color:#c1554d'] : ['敌方掌握','color:#c1554d'];
+const skulls = d => '☠'.repeat(d) + '<span style="opacity:.2">' + '☠'.repeat(3-d) + '</span>';
+
+let state, step, lastOutcome, path, history;
+
+function restart() {
+  state = { force: 100, init: 50 };
+  step = 0; lastOutcome = null; path = []; history = [];
+  document.getElementById('ending').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+  showNode();
+}
+function getNode() {
+  if (step === 0) return NODE1;
+  if (step === 1) return NODE2_VARIANTS[path[0]];
+  return NODE3_VARIANTS[path[1]];
+}
+
+function showNode() {
+  const node = getNode();
+  document.getElementById('nDate').textContent = node.date;
+  document.getElementById('nText').textContent = node.text;
+  renderMap(node.map);
+
+  const echoBox = document.getElementById('echoBox');
+  if (lastOutcome && lastOutcome.echo) {
+    echoBox.innerHTML = `<b style="color:#7fb069">因为上一节点：</b>${lastOutcome.echo}`;
+    echoBox.classList.remove('hidden');
+  } else echoBox.classList.add('hidden');
+  renderMeters();
+
+  const box = document.getElementById('nOptions');
+  box.innerHTML = '';
+  node.options.forEach((opt, i) => {
+    const pg = opt.outcomes.find(o=>o.grade==='great')?.p || 0;
+    const pb = opt.outcomes.find(o=>o.grade==='bad')?.p || 0;
+    const pn = 100 - pg - pb;
+    const b = document.createElement('button');
+    b.innerHTML = `
+      <span class="opt-main">${opt.text}</span>
+      <span class="opt-icons"><span class="skulls">${skulls(opt.danger)}</span> ${opt.short}</span>
+      <span class="opt-more">
+        <span style="color:#7fb069">若成：${opt.ifWin}</span><br>
+        <span style="color:#c1554d">若败：${opt.ifLose}</span>
+        <div class="prob">
+          <div class="pg" style="width:${pg}%"></div>
+          <div class="pn" style="width:${pn}%"></div>
+          <div class="pb" style="width:${pb}%"></div>
+        </div>
+        <div class="prob-legend">结果概率：大成功 ${pg}% ｜ 如常 ${pn}% ｜ 失利 ${pb}%</div>
+      </span>`;
+    b.onclick = () => choose(i);
+    box.appendChild(b);
+  });
+
+  document.getElementById('diceBox').style.display = 'none';
+  document.getElementById('nConsequence').style.display = 'none';
+  document.getElementById('btnNext').classList.add('hidden');
+}
+
+function renderMeters() {
+  const bf = document.getElementById('barForce'), bi = document.getElementById('barInit');
+  const [fw, fc] = FORCE_WORDS(state.force), [iw, ic] = INIT_WORDS(state.init);
+  bf.style.width = state.force + '%';
+  bf.className = 'm-fill us ' + (state.force < 60 ? 'low' : state.force < 80 ? 'mid' : '');
+  bi.style.width = state.init + '%';
+  const wf = document.getElementById('wForce'), wi = document.getElementById('wInit');
+  wf.textContent = fw; wf.style = fc;
+  wi.textContent = iw; wi.style = ic;
+}
+
+function choose(i) {
+  const node = getNode();
+  const opt = node.options[i];
+  showArrow(opt.arrow);
+  const outcome = rollOutcome(opt);
+  state.force = Math.min(120, Math.max(10, state.force + outcome.force));
+  state.init  = Math.min(100, Math.max(0, state.init + outcome.init));
+  lastOutcome = outcome; path.push(opt.id);
+  history.push({ opt, outcome });
+
+  [...document.getElementById('nOptions').children].forEach((b, j) => {
+    b.disabled = true;
+    if (j === i) b.classList.add('chosen'); else b.classList.add('rejected');
+  });
+
+  const dice = document.getElementById('diceBox');
+  const g = GRADE[outcome.grade];
+  dice.innerHTML = `<div class="${g.cls}">${g.label}</div>`;
+  dice.style.display = 'block';
+
+  const c = document.getElementById('nConsequence');
+  c.textContent = outcome.result;
+  c.style.display = 'block';
+  renderMeters();
+  document.getElementById('btnNext').classList.remove('hidden');
+}
+
+function nextNode() {
+  step++;
+  if (step < 3) showNode(); else showEnding();
+}
+
+function showEnding() {
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('ending').classList.remove('hidden');
+
+  let verdict;
+  if (state.init >= 70 && state.force >= 80) {
+    verdict = "完胜 ---- 歼敌9万余人，华野首次攻克省会并歼灭一个兵团部，中原战局自此易手。";
+  } else if (state.init >= 55) {
+    verdict = "胜利 ---- 达成主要战役目的，全身而退，但战果未能进一步扩大。";
+  } else if (state.init >= 40) {
+    verdict = "消耗战 ---- 双方互有得失，中原战场进入数月对峙。";
+  } else {
+    verdict = "受挫 ---- 兵力折损过重，未达战役目的。国民党军宣称'中原大捷'。";
+  }
+  document.getElementById('eVerdict').textContent = verdict;
+
+  document.getElementById('eJinan').innerHTML = "<b>→ 济南：</b>" + (state.force >= 75
+    ? "兵力充足，攻城打援两手布置，14天攻克济南，全歼守军10万。"
+    : "因豫东损耗，攻城集团被迫临时抽兵，攻城时间延长，但最终仍告克复。");
+  document.getElementById('eHuaihai').innerHTML = "<b>→ 淮海：</b>" + (state.init >= 55
+    ? "中原主动权在握，华野敢于在徐东张开决战架势。"
+    : "中原形势胶着，统帅部对决战时机意见分歧，计划一再推迟。");
+
+  const nodeAt = i => i === 0 ? NODE1 : (i === 1 ? NODE2_VARIANTS[path[i-1]] : NODE3_VARIANTS[path[i-1]]);
+  const lines = history.map((h, i) => {
+    const node = nodeAt(i);
+    const hIdx = node.options.findIndex(o => o.hist);
+    const tag = node.options.indexOf(h.opt) === hIdx ? '<em>史实选择</em>' : '<b>推演选择</b>';
+    const fate = h.outcome.grade === 'great' ? '<em>命运偏爱</em>'
+               : h.outcome.grade === 'bad' ? '<em>命运翻脸</em>' : '命运如常';
+    return `节点${i+1}：${tag} · ${fate}`;
+  }).join('<br>');
+  const n = history.filter(h => h.outcome.grade !== 'normal').length;
+  const note = n === 0 ? '三次掷骰皆如常----你复刻了史实的脉搏。'
+    : `这一局有 ${n} 次命运的偏转。同样的选择，历史未必如此发生。`;
+
+  document.getElementById('eReveal').innerHTML = `<b>史实对照</b><br>${lines}<br><br>${note}`;
+}
+
+restart();
+</script>
+</body>
+</html>
