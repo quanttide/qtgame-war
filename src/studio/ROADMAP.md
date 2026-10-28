@@ -30,14 +30,35 @@
 
 **验收**：核心代码检索不到剧本专名；Task/Command/translator/执行原语全部落在核心层；一个虚构最小剧本可驱动核心跑通一回合。
 
+### 0. 核心 / 剧本边界清单（后续剥离以此为准）
+
+不再逐项现场判断「这个算核心还是算帝丘店」，以此表为准：
+
+| 归核心 | 归剧本 |
+|--------|--------|
+| 战场状态、移动/攻击原语、战斗结算框架、胜负判断框架 | 具体地图尺寸与坐标、地形 catalog、地名文案 |
+| 命令执行与守卫（已亡/不归我方/不在场/空令） | 决心卡内容与触发时机 |
+| AI 重部署的机制（轮换、找掩体、占领） | 哪个单位蹲教堂、哪个守桥头（帝丘店坐标） |
+| 疲劳/混乱/伏击/意图等状态转移 | 兵力表文案（"4纵 11旅"） |
+| 战报事件类型 | 剧本注入的特殊规则（爆破、炮兵、纵火） |
+
 ### 待做（顺序即依赖）
 
-- [ ] **模型签名去 Campaign 化**：`Unit.effectiveMoveRange` 收注入修正标量而非 `Campaign`；`resolveCombat` 同理（解绑 `playerPower`/`hitMod`/`moveMod`）。这是通用核心的前提，先于 CommandExecutor
-- [ ] 战场状态模型：地形为数据（props per id，非硬编码枚举名）；回合状态
-- [ ] 战斗结算：纯函数 + 可注入修正（依赖上一项，签名已干净）
-- [ ] 胜负：可注入策略（核心只调用，不预设规则）
-- [ ] CommandExecutor：命令序列 → 通用原语 → 战报，建在已去 Campaign 化的签名上，不读剧本字段
-- [ ] 把 `applyMove`/`applyAttack` 拆为「通用原语（进核心）」+「帝丘店修正（降为注入）」
+- [x] 1. **模型签名去 Campaign 化**：`Unit.effectiveMoveRange` / `resolveCombat` 收注入修正标量，解绑 `Campaign`
+- [ ] 2. **CommandExecutor** — 命令序列 → 通用原语 → 战报。守卫逻辑（已亡/不归我方/不在场/空令）收进执行器，**停止在每个新入口内联复制**。建在已去 Campaign 化的签名上，立即可做
+- [ ] 3. **帝丘店数据剥离**（一并处理，不再拆项）：
+  - 地形数据化：`TerrainType` enum + 全局 `terrainProps` → 剧本注入的 terrain catalog（props per id）
+  - `Battlefield` 静态 10×7 尺寸 → 剧本提供
+  - `createMapTerrain()` 硬编码帝丘店坐标 → 剧本地图数据
+  - `checkVictory` 硬编码「帝丘店核心」文案 → 剧本注入
+  - terrain id 的 `name` 字段（`帝丘店核心` / `惠济河`）→ 剧本地名
+  - 测试数据跟随：直接用 `createMapTerrain()` 的测试同步改造
+- [ ] 4. 可注入战斗结算（依赖 3）：纯函数 + 可注入修正，核心只调用
+- [ ] 5. 可注入胜负策略（依赖 3）：核心只调用，不预设规则
+- [ ] 6. `applyMove` / `applyAttack` 拆为「通用原语（进核心）」+「帝丘店修正（降为注入）」（依赖 2 的原语）；同批把 `GameController` 中剩余帝丘店专属逻辑注入化：
+  - `_recomputeExhaustion` 敌军自动重部署的帝丘店坐标 → 剧本注入部署表
+  - `initialPlanViewData` 兵力表文案 → 剧本数据
+  - `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
 
 ### 已交付（本就通用，归位核心层）
 
