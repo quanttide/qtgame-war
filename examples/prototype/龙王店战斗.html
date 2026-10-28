@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>龙王店之夜 · 指挥版</title>
+<style>
+  :root{--paper:#efe7d6;--ink:#232019;--line:#b9ac91;--red:#b03028;--blue:#28496e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;font-size:13px;line-height:1.5}
+  header{background:#3a3630;color:#f0e8d8;padding:9px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.5px}
+  header .when{color:#ffd98a;font-size:13px}
+  header .dots{color:#c8b78f;font-size:12px;letter-spacing:2px}
+  .spacer{flex:1}
+  button{font-family:inherit;font-size:12px;background:#f0e8d8;color:#333;border:1px solid #b9ac91;
+         border-radius:4px;padding:5px 10px;cursor:pointer}
+  button:hover{background:#fff8ea}
+  button.primary{background:#6b5b3e;color:#fff8ea;border-color:#6b5b3e;width:100%;padding:10px;font-size:14px}
+  main{display:flex;flex-direction:column;gap:10px;padding:12px;align-items:center}
+  #mapwrap{background:#fff;border:1px solid var(--line);border-radius:4px;padding:4px;overflow:auto;max-width:100%}
+  canvas{display:block}
+  #bar{width:100%;max-width:840px}
+  #dilemma{font-size:13px;font-weight:600;color:#3a3630;min-height:18px;margin-top:2px}
+  #cards{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}
+  .opt{flex:1;min-width:96px;padding:9px 6px;font-size:12.5px;font-weight:600;border:1px solid #b9ac91;
+       background:#f0e8d8;border-radius:4px;cursor:pointer;text-align:center;color:#3a3630}
+  .opt:hover{background:#fff8ea}
+  .opt.sel{background:#6b5b3e;color:#fff8ea;border-color:#6b5b3e}
+  #optline{font-size:11.5px;color:#7a7060;min-height:16px;margin-top:5px}
+  #last{font-size:11.5px;color:#7a7060;min-height:17px;margin-top:6px;cursor:pointer}
+  .btns{display:flex;gap:8px;margin-top:9px}
+  .btns .primary{flex:1}
+  .btns #btnAuto{opacity:.5;transition:opacity .4s}
+  #modal{position:fixed;inset:0;background:rgba(30,26,20,.55);display:none;align-items:center;justify-content:center;z-index:50}
+  #modal .box{background:var(--paper);border:1px solid #8a7f6c;border-radius:6px;max-width:640px;width:92%;
+              max-height:86vh;overflow:auto;padding:14px 18px}
+  #banner{position:fixed;left:50%;top:34%;transform:translateX(-50%);z-index:60;pointer-events:none;opacity:0;
+          transition:opacity .3s;text-align:center}
+  #banner.on{pointer-events:auto}
+  #banner .t{font-size:32px;font-weight:700;color:#fff8ea;text-shadow:0 3px 12px rgba(0,0,0,.65)}
+  #banner .s{font-size:13px;color:#ffe6a8;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+  #banner.on{cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>龙王店之夜</h1>
+  <span class="dots" id="hDots">●○○○○</span>
+  <span class="when" id="hWhen">20:00</span>
+  <span class="spacer"></span>
+  <button id="btnRules">？</button>
+</header>
+
+<main>
+  <div id="mapwrap"><canvas id="map" width="820" height="580"></canvas></div>
+  <div id="bar">
+    <div id="dilemma"></div>
+    <div id="cards"></div>
+    <div id="optline"></div>
+    <div id="last"></div>
+    <div class="btns">
+      <button id="btnAuto">建议</button>
+      <button class="primary" id="btnEnd">下令 →</button>
+    </div>
+  </div>
+</main>
+
+<div id="banner"><div class="t"></div><div class="s"></div></div>
+<div id="modal"><div class="box"><button style="float:right" id="btnClose">关闭</button><div id="mbody"></div></div></div>
+
+<script>
+'use strict';
+/* 龙王店之夜 · 指挥决胜版（v2.1 · 表现层优化：设计令牌 / 自适应布局 / 信息预算 / 战报渐进披露）
+   史料：7.1 20时华野三面总攻龙王店（1纵南、4纵西、6纵18师东），11纵监视铁佛寺兼预备；
+   7.1 整25师抵帝丘店距十里，1纵1师两面作战；7.2 凌晨3时突入俘区寿年，随即转兵东移打黄百韬。
+   玩法：每回合面对真实作战矛盾，从 2–3 个互斥的作战决心里择一（集中破城／分兵阻援／留预备；
+   强攻／围困／佯攻；正面／侧翼／诱敌）。点方案即下定决心；也可点算子微调命令。然后结算。 */
+
+/* 设计令牌：CSS 与 Canvas 统一引用，改一处即换全局风格 */
+const TOK={
+  paper:'#efe7d6', ink:'#232019', line:'#b9ac91',
+  red:'#b03028', blue:'#28496e', blueAlt:'#5b86b5',
+  fort:'#c8bd93', village:'#ddd6b8', plain:'#e9e2cd',
+  hi:'#ffcc33', danger:'#ff4444', success:'#2f6b30',
+  textOnRed:'#fff8ea', textOnBlue:'#fff',
+  orange:'#a8632a', orange2:'#c2693f', teal:'#2f7a7a', purple:'#7a4f9a', grey:'#857a66',
+  villageName:'#5a5543'
+};
+
+const cv=document.getElementById('map'),ctx=cv.getContext('2d');
+
+/* 自适应布局：按容器宽高反算六边形尺寸（参数化布局） */
+const COLS=8, ROWS=7, SQ3=Math.sqrt(3);
+let SIZE=52, OX=60, OY=56, CW=820, CH=580;
+function calcLayout(){
+  const wrap=document.getElementById('mapwrap');
+  const availW=Math.max(260,Math.min(wrap.clientWidth||820,900))-16;
+  const availH=Math.max(360,Math.min(window.innerHeight*0.62,640))-8;
+  const m=availW<420?8:14;
+  const s=Math.min((availW-2*m)/(SQ3*(COLS+1)),(availH-2*m)/(1.5*(ROWS+1)));
+  SIZE=Math.max(30,Math.min(54,Math.floor(s)));
+  OX=m+SIZE*SQ3/2; OY=m+SIZE;
+  CW=Math.ceil(2*m+SIZE*SQ3*(COLS+1)); CH=Math.ceil(2*m+SIZE*1.5*(ROWS+1));
+  cv.width=CW; cv.height=CH;
+  if(cv.width>wrap.clientWidth)wrap.scrollLeft=(cv.width-wrap.clientWidth)/2;
+}
+
+const ax=(c,r)=>({q:c-((r-(r&1))/2), r});
+const ofs=(q,r)=>({col:q+((r-(r&1))/2), row:r});
+const inMap=(c,r)=>c>=0&&c<COLS&&r>=0&&r<ROWS;
+const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+function nb(c,r){const A=ax(c,r),o=[];for(const d of DIRS){const p=ofs(A.q+d[0],A.r+d[1]);if(inMap(p.col,p.row))o.push(p);}return o;}
+function hd(a,b){const A=ax(a.col,a.row),B=ax(b.col,b.row),dq=A.q-B.q,dr=A.r-B.r;
+  return Math.max(Math.abs(dq),Math.abs(dr),Math.abs(dq+dr));}
+function hc(c,r){const A=ax(c,r);return{x:SIZE*SQ3*(A.q+A.r/2)+OX, y:SIZE*1.5*A.r+OY};}
+function p2h(x,y){const px=x-OX,py=y-OY,q=(SQ3/3*px-py/3)/SIZE,r=(2/3*py)/SIZE;
+  let X=q,Z=r,Y=-X-Z,rx=Math.round(X),ry=Math.round(Y),rz=Math.round(Z);
+  const dx=Math.abs(rx-X),dy=Math.abs(ry-Y),dz=Math.abs(rz-Z);
+  if(dx>dy&&dx>dz)rx=-ry-rz;else if(dy>dz)ry=-rx-rz;else rz=-rx-ry;
+  return ofs(rx,rz);}
+
+const ter=[];for(let r=0;r<ROWS;r++){ter[r]=[];for(let c=0;c<COLS;c++)ter[r][c]={t:'plain',n:''};}
+[{c:4,r:3,n:'龙王店',t:'fort'},{c:1,r:5,n:'铁佛寺',t:'village'},
+ {c:6,r:1,n:'帝丘店',t:'village'},{c:5,r:2,n:'田花园',t:'village'},{c:3,r:2,n:'杨拐',t:'village'}]
+ .forEach(p=>{ter[p.r][p.c].t=p.t;ter[p.r][p.c].n=p.n;});
+const TCOL={plain:TOK.plain,village:TOK.village,fort:TOK.fort};
+const LW={col:4,row:3}, DQ={col:6,row:1};
+
+const OOB=[
+  {id:'r1',name:'1纵', atk:8,def:4,st:5,col:4,row:4,role:'assault'},
+  {id:'r4',name:'4纵', atk:8,def:4,st:5,col:3,row:3,role:'assault'},
+  {id:'r6',name:'6纵18师',atk:7,def:4,st:4,col:5,row:3,role:'assault'},
+  {id:'r11',name:'11纵',atk:5,def:6,st:4,col:5,row:4,role:'reserve'}
+];
+const HOURS=['20:00','22:00','24:00','02:00','03:00'];
+const FACTS=['20时 三面总攻：1纵南、4纵西、6纵18师东',
+ '南门日式小坦克上城墙压制，攻势受阻',
+ '整25师抵帝丘店，距龙王店十里，炮声相闻',
+ '1纵1师两面作战：西抗整72师，东挡整25师',
+ '凌晨3时突入----随后粟裕转兵东移打黄百韬'];
+
+/* 命令档位：每个纵队有多项真实命令，点击算子在其可用档位间循环 */
+const TASK={
+  assault:{label:'强攻',col:TOK.red,atkMod:0,fat:2},
+  siege:{label:'围困',col:TOK.orange,atkMod:0,fat:0},
+  feint:{label:'佯攻',col:TOK.orange2,atkMod:-2,fat:1},
+  block:{label:'正面',col:TOK.blue,atkMod:0,fat:1},
+  flank:{label:'侧翼',col:TOK.teal,atkMod:0,fat:1},
+  lure:{label:'诱敌',col:TOK.purple,atkMod:0,fat:0},
+  standby:{label:'待命',col:TOK.grey,atkMod:0,fat:0}
+};
+function slots(u){
+  if(u.role==='reserve') return ['block','flank','lure','standby','assault'];
+  return ['assault','siege','feint'];
+}
+
+let S;
+function reset(){
+  S={turn:1,log:[],ended:false,result:'',dead:0,choice:'',
+     units:OOB.map(o=>({...o,max:o.st,task:o.role==='reserve'?'standby':'assault',fat:0})),
+     fort:{hp:14,max:14},
+     b25:{alive:false,col:DQ.col,row:DQ.row,st:2,dist:hd(DQ,LW),held:0,_boost:false,_lured:false,_feint:false},
+     b72:{alive:true}};
+  S.units.forEach(u=>{u.px=hc(u.col,u.row).x;u.py=hc(u.col,u.row).y;u.hit=0;});
+  log('四个纵队就位，选择本回合决心');
+}
+function log(t){S.log.push(t);}
+const alive=u=>u.st>0;
+const set=(ids,t)=>ids.forEach(id=>{const u=S.units.find(x=>x.id===id);if(u&&alive(u))u.task=t;});
+function rotate(){const reds=S.units.filter(u=>alive(u)&&u.role==='assault');reds.sort((a,b)=>b.fat-a.fat);
+  const t=reds.find(u=>u.fat>=4);if(t)t.task='siege';}
+function suggest(){
+  set(['r1','r4','r6'],'assault');
+  if(S.b25.alive&&S.b25.dist<=3)set(['r11'],'block');else set(['r11'],'standby');
+  S.choice='';
+}
+
+/* 每回合的作战决心卡：2–3 个互斥的真实方案 */
+function cardFor(){
+  const reds=S.units.filter(alive);
+  const opts=[];
+  if(S.turn===1){
+    opts.push({k:'A',t:'全力强攻',d:'1/4/6纵与11纵三面猛攻----快，但无预备，敌援至则被动',
+      apply:()=>set(['r1','r4','r6','r11'],'assault')});
+    opts.push({k:'B',t:'主力攻城·留预备',d:'1/4/6纵攻，11纵待命监视铁佛寺----稳',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'standby');}});
+    opts.push({k:'C',t:'夜摸试探',d:'小部佯攻、主力围困养精蓄锐----缓但扎实',
+      apply:()=>{set(['r1','r4','r6'],'siege');set(['r11'],'standby');}});
+  } else if(S.turn===2){
+    opts.push({k:'A',t:'乘势猛攻',d:'继续全线压上，趁夜破城',
+      apply:()=>set(['r1','r4','r6'],'assault')});
+    opts.push({k:'B',t:'轮换休整',d:'抽最疲劳一部转围困，保后劲',
+      apply:()=>{set(['r1','r4','r6'],'assault');rotate();}});
+    opts.push({k:'C',t:'佯动惑敌',d:'一部佯攻牵制，主力待机设伏',
+      apply:()=>{set(['r1'],'feint');set(['r4','r6'],'siege');set(['r11'],'standby');}});
+  } else if(S.turn===3){
+    opts.push({k:'A',t:'抽11纵堵黄百韬',d:'11纵东去卡整25师，其余集中破城',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'block');}});
+    opts.push({k:'B',t:'两线并举',d:'一面强攻一面留11纵堵口----双线，疲劳剧增',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'block');S.units.forEach(u=>{if(u.role==='assault'&&alive(u))u.fat+=1;});}});
+    opts.push({k:'C',t:'围点打援',d:'放整25师近一步，集中围歼其冒进一部----高风险',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'lure');}});
+  } else if(S.turn===4){
+    opts.push({k:'A',t:'攻城·11纵堵口',d:'1/4/6纵强攻，11纵卡敌援',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'block');}});
+    if(S.fort.hp<=6)opts.push({k:'B',t:'全力破城',d:'倾力一击，抢在敌援合围前',
+      apply:()=>set(['r1','r4','r6','r11'],'assault')});
+    if(reds.some(u=>u.fat>=4))opts.push({k:'C',t:'轮换保劲',d:'抽疲劳部转围困',
+      apply:()=>rotate()});
+    if(opts.length===1)opts.push({k:'B',t:'稳步强攻',d:'全线压上',apply:()=>set(['r1','r4','r6'],'assault')});
+  } else {
+    opts.push({k:'A',t:'总攻破城',d:'全部强攻，天亮前拿下（史实）',
+      apply:()=>set(['r1','r4','r6','r11'],'assault')});
+    opts.push({k:'B',t:'先稳后打援',d:'11纵堵口，其余攻城；敌近则围点打援',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'block');}});
+    opts.push({k:'C',t:'围点打援',d:'放敌近，集中歼其一部',
+      apply:()=>{set(['r1','r4','r6'],'assault');set(['r11'],'lure');}});
+  }
+  return opts;
+}
+function dilemma(){
+  if(S.b25.alive&&S.b25.dist<=2)return `整25师距 ${S.b25.dist} 步，必须分兵阻援`;
+  if(S.units.some(u=>alive(u)&&u.fat>=4))return '有部队过度疲劳，应轮换或留预备';
+  if(S.fort.hp<=6)return '工事将破，倾力一击可克';
+  return '集中破城，抢在敌援合围前';
+}
+
+/* 音效 */
+let AC=null; window.sndOn=true;
+function snd(k){ if(!window.sndOn)return;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const t=AC.currentTime,P={dice:[520,.09,'square',.05],hit:[170,.2,'square',.08],
+      kill:[320,.55,'sine',.12],turn:[430,.14,'triangle',.05],alert:[700,.3,'sine',.07]}[k];
+    if(!P)return;const o=AC.createOscillator(),g=AC.createGain();o.type=P[2];
+    o.frequency.setValueAtTime(P[0],t);
+    if(k==='kill')o.frequency.exponentialRampToValueAtTime(60,t+P[1]);
+    g.gain.setValueAtTime(P[3],t);g.gain.exponentialRampToValueAtTime(.0001,t+P[1]);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+P[1]+.02);}catch(e){}
+}
+let bt=null;
+function banner(t,s,ms){const el=document.getElementById('banner');
+  el.querySelector('.t').textContent=t;el.querySelector('.s').textContent=s;
+  el.classList.add('on');clearTimeout(bt);bt=setTimeout(()=>el.classList.remove('on'),ms||2000);}
+
+/* 绘制 */
+function hexPath(x,y,s){ctx.beginPath();for(let i=0;i<6;i++){const a=Math.PI/180*(60*i-30);
+  const px=x+s*Math.cos(a),py=y+s*Math.sin(a);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+let T=0;
+function draw(){
+  const FS=SIZE/52;
+  ctx.clearRect(0,0,cv.width,cv.height);ctx.fillStyle='#f6f1e4';ctx.fillRect(0,0,cv.width,cv.height);
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const p=hc(c,r),t=ter[r][c];hexPath(p.x,p.y,SIZE-2);
+    ctx.fillStyle=TCOL[t.t];ctx.fill();ctx.strokeStyle=TOK.line;ctx.lineWidth=1;ctx.stroke();
+    if(t.n){ctx.fillStyle=t.t==='fort'?'#4a3018':TOK.villageName;ctx.textAlign='center';
+      ctx.font=(t.t==='fort'?'bold ':'bold ')+(t.t==='fort'?14:11)*FS+'px sans-serif';
+      ctx.fillText(t.n,p.x,p.y-22*FS);}
+  }
+  const lp=hc(LW.col,LW.row);
+  ctx.save();ctx.strokeStyle='rgba(140,60,30,'+(0.5+0.35*Math.sin(T))+')';ctx.lineWidth=3;
+  ctx.setLineDash([5,3]);hexPath(lp.x,lp.y,SIZE-6);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(lp.x-44*FS,lp.y+16*FS,88*FS,7*FS);
+  ctx.fillStyle=TOK.hi;ctx.fillRect(lp.x-44*FS,lp.y+16*FS,88*FS*S.fort.hp/S.fort.max,7*FS);
+  ctx.restore();
+  if(S.b25.alive){
+    const a=hc(S.b25.col,S.b25.row);
+    ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle='rgba(40,73,110,.75)';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(lp.x,lp.y);ctx.stroke();ctx.setLineDash([]);
+    rr(a.x-30*FS,a.y-11*FS,60*FS,22*FS,4*FS);ctx.fillStyle=TOK.blue;ctx.fill();
+    ctx.fillStyle=TOK.textOnBlue;ctx.font='bold '+(11*FS).toFixed(1)+'px sans-serif';ctx.textAlign='center';
+    ctx.fillText('整25师',a.x,a.y+1*FS);
+    for(let i=0;i<2;i++){ctx.fillStyle=i<S.b25.st?'#fff':'rgba(255,255,255,.28)';
+      ctx.fillRect(a.x-26*FS+i*8*FS,a.y+7*FS,6*FS,3*FS);}
+    ctx.fillStyle=TOK.blue;ctx.font='bold '+(10*FS).toFixed(1)+'px sans-serif';ctx.textAlign='center';
+    ctx.fillText(S.b25.dist+' 步',(a.x+lp.x)/2,(a.y+lp.y)/2-6*FS);
+    ctx.restore();
+  }
+  if(S.b72.alive){
+    const b=hc(1,5);
+    rr(b.x-30*FS,b.y-11*FS,60*FS,22*FS,4*FS);ctx.fillStyle=TOK.blueAlt;ctx.fill();
+    ctx.fillStyle=TOK.textOnBlue;ctx.font='bold '+(11*FS).toFixed(1)+'px sans-serif';ctx.textAlign='center';
+    ctx.fillText('整72师',b.x,b.y+1*FS);
+  }
+  for(const u of S.units){
+    if(!alive(u))continue;
+    const c=hc(u.col,u.row);u.px+=(c.x-u.px)*.3;u.py+=(c.y-u.py)*.3;
+    const x=u.px,y=u.py,w=86*FS,h=24*FS;const m=TASK[u.task]||TASK.assault;const col=m.col;
+    rr(x-w/2,y-h/2,w,h,4*FS);ctx.fillStyle=col;ctx.fill();
+    if(u.fat>=4){ctx.strokeStyle=TOK.hi;ctx.lineWidth=2*FS;rr(x-w/2,y-h/2,w,h,4*FS);ctx.stroke();}
+    ctx.fillStyle=TOK.textOnRed;ctx.font='bold '+(11*FS).toFixed(1)+'px sans-serif';ctx.textAlign='left';
+    ctx.fillText(u.name,x-w/2+5*FS,y+4*FS);
+    ctx.textAlign='right';ctx.font='bold '+(12*FS).toFixed(1)+'px sans-serif';
+    ctx.fillText(m.label,x+w/2-5*FS,y+4*FS);
+    for(let i=0;i<u.max;i++){ctx.fillStyle=i<u.st?TOK.textOnRed:'rgba(255,255,255,.3)';
+      ctx.fillRect(x-w/2+5*FS+i*8*FS,y+h/2-6*FS,6*FS,3.5*FS);}
+    if(u.hit>0){ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,u.hit));ctx.strokeStyle=TOK.danger;ctx.lineWidth=3*FS;
+      rr(x-w/2,y-h/2,w,h,4*FS);ctx.stroke();ctx.restore();}
+  }
+}
+
+/* 结算 */
+function d6(){return 1+Math.floor(Math.random()*6);}
+function advanceB25(){
+  const path=nb(S.b25.col,S.b25.row).map(n=>({...n,d:hd(n,LW)})).sort((a,b)=>a.d-b.d)[0];
+  if(path&&path.d<S.b25.dist){S.b25.col=path.col;S.b25.row=path.row;S.b25.dist=path.d;}
+}
+function resolve(){
+  if(S.ended)return;
+  const reds=S.units.filter(alive);
+  S.b25._boost=false;S.b25._lured=false;S.b25._feint=false;
+  let dmg=0,heldOK=false,feinted=false;
+  for(const u of reds.filter(x=>['assault','siege','feint'].includes(x.task))){
+    const m=TASK[u.task];u.fat+=m.fat;const pen=u.fat>=4?1:0;
+    if(u.task==='siege'){
+      const roll=d6(),diff=roll+u.atk-12,d=diff>=2?2:diff>=0?1:0;
+      if(d){S.fort.hp-=d;dmg+=d;u.hit=1;} log(`${u.name} 围困 ${d?('−'+d):'相持'} D6=${roll}`);
+    } else if(u.task==='feint'){
+      feinted=true;const roll=d6(),diff=roll+u.atk+1+m.atkMod-pen-10,d=diff>=3?2:diff>=0?1:0;
+      if(d){S.fort.hp-=d;dmg+=d;u.hit=1;} log(`${u.name} 佯攻牵制 ${d?('−'+d):'虚晃'} D6=${roll}`);
+      if(roll===1){u.st-=1;log(`${u.name} 佯攻失手 −1`);if(u.st<=0){S.dead++;log(`${u.name} 失去战斗力`);}}
+    } else {
+      const roll=d6(),diff=roll+u.atk+1+m.atkMod-pen-10,d=diff>=3?2:diff>=0?1:0;
+      if(d){S.fort.hp-=d;dmg+=d;u.hit=1;} log(`${u.name} 强攻 ${d?('−'+d):'受阻'} D6=${roll}${pen?'（疲劳−1）':''}`);
+      if(roll===1&&!d){u.st-=1;log(`${u.name} 反挫 −1`);if(u.st<=0){S.dead++;log(`${u.name} 失去战斗力`);}}
+    }
+  }
+  for(const u of reds.filter(x=>['block','flank','lure'].includes(x.task))){
+    if(!S.b25.alive)continue;
+    if(u.task==='block'){const roll=d6();if(roll+u.atk-6>=0){heldOK=true;S.b25.st-=1;S.b25.held++;log(`${u.name} 正面阻击 整25师 −1 D6=${roll}`);}else log(`${u.name} 阻击未果 D6=${roll}`);}
+    else if(u.task==='flank'){const roll=d6();if(roll+u.atk-5>=2){heldOK=true;S.b25.st-=2;S.b25.held++;log(`${u.name} 侧翼包抄 整25师 −2 D6=${roll}`);}else{S.b25._boost=true;log(`${u.name} 迂回失利，敌冒进 D6=${roll}`);}}
+    else if(u.task==='lure'){S.b25._lured=true;log(`${u.name} 诱敌：放整25师近一步`);}
+  }
+  if(feinted)S.b25._feint=true;
+  for(const u of reds.filter(x=>x.task==='standby')){u.fat=Math.max(0,u.fat-2);log(`${u.name} 待命，恢复战力`);}
+  const atk=reds.filter(x=>['assault','siege','feint'].includes(x.task)&&x.st>0);
+  if(atk.length){const tg=atk.slice().sort((a,b)=>a.st-b.st)[0];const roll=d6();
+    if(roll+2-tg.def>=0){const d=1;tg.st-=d;tg.hit=1;log(`守军反击 ${tg.name} −${d}`);
+      if(tg.st<=0){S.dead++;log(`${tg.name} 失去战斗力`);}}else log('守军反击落空');}
+  if(S.b25.alive){
+    let step=1;if(S.b25._boost)step+=1;if(S.b25._lured)step+=1;if(S.b25._feint)step=0;if(heldOK)step=0;
+    for(let i=0;i<step;i++)advanceB25();
+    if(step>0){log(`整25师推进（距 ${S.b25.dist} 步）`);
+      if(S.b25.dist<=2&&S.b25._lured){S.b25.st-=1;log('整25师冒进，遭伏击 −1');if(S.b25.st<=0){S.b25.alive=false;log('整25师被围歼（史实：第三快速纵队大部被歼）');}}}
+    else if(heldOK)log('整25师被阻于原地');
+    if(S.b25.dist<=1){const tg=reds.filter(x=>['assault','siege','feint'].includes(x.task))[0]||reds[0];
+      if(tg){tg.st-=2;tg.hit=1;log(`整25师冲到 ${tg.name} −2`);if(tg.st<=0){S.dead++;log(`${tg.name} 失去战斗力`);}}}
+  }
+  snd(dmg?'hit':'dice');
+  if(S.fort.hp<=0){end('胜');return;}
+  if(S.dead>=2){end('败 · 两部失去战斗力');return;}
+  if(S.turn>=5){end('败 · 天亮未克');return;}
+  S.turn++;S.choice='';
+  if(S.turn===3){S.b25.alive=true;S.b25.held=0;
+    log('整25师抵帝丘店（史实：距龙王店十里，炮声相闻）');
+    banner('整25师','距龙王店十里',1800);snd('alert');}
+  render();
+  banner(HOURS[S.turn-1],FACTS[S.turn-1],1600);
+}
+function end(t){
+  S.ended=true;S.result=t;
+  const win=t==='胜';
+  banner(win?'攻克':'天亮',win?'俘 区寿年':'援军云集，未克',2400);
+  snd(win?'kill':'alert');
+  log(win?'胜':'败');render();
+}
+
+/* 交互 */
+const $=id=>document.getElementById(id);
+let logOpen=false;
+let idleT=null;
+function poke(){ if(idleT)clearTimeout(idleT); $('btnAuto').style.opacity='.5';
+  idleT=setTimeout(()=>{$('btnAuto').style.opacity='1';},4000); }
+cv.addEventListener('click',e=>{
+  if(S.ended)return;
+  poke();
+  const rect=cv.getBoundingClientRect();
+  const h=p2h(e.clientX-rect.left,e.clientY-rect.top);
+  const u=S.units.find(x=>alive(x)&&Math.abs(h.col-x.col)<1&&Math.abs(h.row-x.row)<1);
+  if(!u)return;
+  const sl=slots(u);u.task=sl[(sl.indexOf(u.task)+1)%sl.length];
+  snd('dice');render();
+});
+function renderCards(){
+  const wrap=$('cards');wrap.innerHTML='';
+  const opts=cardFor();
+  opts.forEach(o=>{
+    const b=document.createElement('button');b.textContent=o.t;b.className='opt'+(S.choice===o.k?' sel':'');
+    b.onclick=()=>{poke();o.apply();S.choice=o.k;render();};
+    wrap.appendChild(b);
+  });
+  const sel=opts.find(o=>o.k===S.choice);
+  $('optline').textContent=sel?sel.d:'';
+}
+function render(){
+  $('hWhen').textContent=HOURS[S.turn-1];
+  $('hDots').textContent=[...Array(5)].map((_,i)=>i<S.turn?'●':'○').join('');
+  $('dilemma').textContent=S.ended?(S.result==='胜'?'胜 · 俘区寿年':'败 · '+S.result.replace('败 · ','')):dilemma();
+  renderCards();
+  $('last').textContent=logOpen?S.log.join('　'):(S.log[S.log.length-1]||'');
+  $('btnEnd').textContent=S.ended?'再来':'下令 →';
+  draw();
+}
+function frame(){T+=.12;
+  for(const u of S.units){if(u.hit>0)u.hit-=.05;}
+  draw();requestAnimationFrame(frame);}
+
+$('btnEnd').onclick=()=>{ poke(); if(S.ended){reset();render();banner('20:00','选择本回合决心',2200);return;} resolve(); };
+$('btnAuto').onclick=()=>{ if(!S.ended){suggest();render();} poke(); };
+$('btnClose').onclick=()=>$('modal').style.display='none';
+$('last').title='点击展开 / 收起完整战报';
+$('last').addEventListener('click',()=>{logOpen=!logOpen;
+  $('last').style.whiteSpace=logOpen?'pre-wrap':'nowrap';
+  $('last').textContent=logOpen?S.log.join('　'):(S.log[S.log.length-1]||'');});
+$('btnRules').onclick=()=>{
+  $('mbody').innerHTML=`<h2>龙王店之夜 · 指挥决胜</h2>
+  <p><b>你是指挥员。</b>每回合面对真实作战矛盾，从 2–3 个互斥决心里择一：集中破城，还是分兵阻援，还是留预备？点方案即下定决心；也可点算子微调命令。</p>
+  <p style="margin-top:9px"><b>命令</b>　强攻：快但疲劳高、反挫狠；围困：稳、不疲劳、慢；佯攻：弱、牵制敌援。
+  正面阻击：稳；侧翼包抄：赌成则重创敌援、败则敌冒进；诱敌：放敌近、赌伏击；待命：恢复战力。</p>
+  <p style="margin-top:9px"><b>算</b>　强攻 D6＋攻＋3（夜战＋强攻）−10（工事）≥0减1、≥3减2，掷1且未破则反挫−1。
+  阻援 D6＋攻−6 成；侧翼需 ≥7 方包抄得手。佯攻使敌援当回合不敢动。</p>
+  <p style="margin-top:9px"><b>史</b>　7.1 20时三面总攻；整25师抵帝丘店距十里、炮声相闻；1纵1师两面作战；7.2 凌晨3时突入俘区寿年，随即转兵东移打黄百韬。</p>
+  <p style="margin-top:9px">五回合内打光龙王店工事即胜；两部失去战斗力、或天亮（第5回合）未克则败。</p>
+  <button style="margin-top:12px" onclick="document.getElementById('modal').style.display='none'">明白</button>
+  <button style="margin-left:6px" onclick="window.sndOn=!window.sndOn;this.textContent=window.sndOn?'♪ 开':'♪ 关'">♪ 开</button>`;
+  $('modal').style.display='flex';
+};
+$('banner').addEventListener('click',()=>{clearTimeout(bt);$('banner').classList.remove('on');});
+
+calcLayout();reset();render();requestAnimationFrame(frame);
+banner('20:00','选择本回合决心：攻 / 阻 / 备',2200);
+if(window.ResizeObserver){const ro=new ResizeObserver(()=>{calcLayout();draw();});ro.observe($('mapwrap'));}
+poke();
+</script>
+</body>
+</html>

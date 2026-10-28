@@ -1,0 +1,39 @@
+{
+  "templates": [
+    { "id": "zi_shi_er",   "name": "四纵十二师",     "max_hp": 2, "attack": 2, "defense": 1, "move": 5, "range": 1, "assault": true },
+    { "id": "zi_shi",      "name": "四纵十师",       "max_hp": 2, "attack": 2, "defense": 1, "move": 5, "range": 1 },
+    { "id": "zi_yi",       "name": "四纵十一师",     "max_hp": 2, "attack": 2, "defense": 1, "move": 5, "range": 1 },
+    { "id": "yi_yi",       "name": "一纵一师",       "max_hp": 2, "attack": 2, "defense": 1, "move": 5, "range": 1 },
+    { "id": "yi_er",       "name": "一纵二师",       "max_hp": 2, "attack": 2, "defense": 0, "move": 4, "range": 1 },
+    { "id": "liu_shi_liu", "name": "六纵十六师",     "max_hp": 3, "attack": 2, "defense": 1, "move": 5, "range": 1 },
+    { "id": "liu_shi_qi",  "name": "六纵十七师",     "max_hp": 2, "attack": 1, "defense": 1, "move": 4, "range": 2 },
+    { "id": "te_art",      "name": "特纵炮兵群",     "max_hp": 2, "attack": 3, "defense": 0, "move": 3, "range": 3 },
+    { "id": "zheng_40",    "name": "整25师40旅(核心)", "max_hp": 3, "attack": 2, "defense": 2, "move": 2, "range": 1 },
+    { "id": "zheng_108",   "name": "整25师108旅",    "max_hp": 2, "attack": 2, "defense": 1, "move": 3, "range": 1 },
+    { "id": "kuai_su",     "name": "快速纵队",       "max_hp": 2, "attack": 2, "defense": 1, "move": 5, "range": 1 },
+    { "id": "tian",        "name": "田花园守备团",   "max_hp": 1, "attack": 1, "defense": 1, "move": 1, "range": 1 },
+    { "id": "ma_kou",      "name": "马口守备队",     "max_hp": 1, "attack": 1, "defense": 1, "move": 1, "range": 1 },
+    { "id": "liu_lou",     "name": "刘楼守备队",     "max_hp": 1, "attack": 1, "defense": 1, "move": 1, "range": 1 },
+    { "id": "qiu_van",     "name": "邱清泉·第5军先头", "max_hp": 2, "attack": 3, "defense": 1, "move": 5, "range": 1 },
+    { "id": "qiu_div",     "name": "邱清泉·第70师",   "max_hp": 2, "attack": 2, "defense": 1, "move": 4, "range": 2 },
+    { "id": "hu_van",      "name": "胡琏·整11师先头",  "max_hp": 2, "attack": 3, "defense": 1, "move": 5, "range": 1 },
+    { "id": "hu_main",     "name": "胡琏·整11师主力",  "max_hp": 3, "attack": 2, "defense": 1, "move": 4, "range": 1 }
+  ],
+
+  "units": [
+    { "id": 1,  "template": "zi_shi_er",   "side": "blue", "col": 1, "row": 2, "revealed": true },
+    { "id": 2,  "template": "zi_shi",      "side": "blue", "col": 0, "row": 1, "revealed": true },
+    { "id": 3,  "template": "zi_yi",       "side": "blue", "col": 2, "row": 3, "revealed": true },
+    { "id": 4,  "template": "yi_yi",       "side": "blue", "col": 1, "row": 4, "revealed": true },
+    { "id": 5,  "template": "yi_er",       "side": "blue", "col": 3, "row": 5, "revealed": true },
+    { "id": 6,  "template": "liu_shi_liu", "side": "blue", "col": 5, "row": 5, "revealed": true },
+    { "id": 7,  "template": "liu_shi_qi",  "side": "blue", "col": 6, "row": 5, "revealed": true },
+    { "id": 8,  "template": "te_art",      "side": "blue", "col": 0, "row": 3, "revealed": true },
+    { "id": 20, "template": "zheng_40",    "side": "red",  "col": 5, "row": 4 },
+    { "id": 21, "template": "zheng_108",   "side": "red",  "col": 4, "row": 4 },
+    { "id": 22, "template": "kuai_su",     "side": "red",  "col": 6, "row": 4 },
+    { "id": 23, "template": "tian",        "side": "red",  "col": 3, "row": 2, "revealed": true },
+    { "id": 24, "template": "ma_kou",      "side": "red",  "col": 2, "row": 5, "revealed": true },
+    { "id": 25, "template": "liu_lou",     "side": "red",  "col": 7, "row": 1, "revealed": true }
+  ]
+}
