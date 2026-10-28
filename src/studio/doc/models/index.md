@@ -5,6 +5,7 @@
 | Battlefield | ★★★★☆ | 干净 | 网格尺寸常量绑定特定战役 |
 | Unit | ★★★☆☆ | 较干净 | effectiveMoveRange 已接入 Campaign |
 | Campaign | ★★★☆☆ | 已重构 | 字段名通用化，fromJson 移除 |
+| Task | 新增 | v0.1.0 | 命令档位与疲劳规则，待接线到 Unit 与结算 |
 | Game | ★★☆☆☆ | 大杂烩 | 规则和 JSON 加载混在同一文件 |
 
 ## 核心缺失
@@ -19,3 +20,4 @@
 - `lib/models/campaign.dart` — Campaign 类（被动状态容器）
 - `lib/models/game.dart` — Game 类（规则工具箱 + CampaignConfig）
 - `lib/models/battlefield.dart` — Battlefield 类（六边形几何 + 地形）
+- `lib/models/task.dart` — TaskType/TaskRole（命令档位 + 疲劳规则，见 [task.md](task.md)）
