@@ -46,7 +46,7 @@
 
 - [x] 1. **模型签名去 Campaign 化**：`Unit.effectiveMoveRange` / `resolveCombat` 收注入修正标量，解绑 `Campaign`
 - [x] 2. **CommandExecutor** — 命令序列 → 通用原语 → 战报。守卫逻辑（已亡/不归我方/不在场/空令）收进执行器，**停止在每个新入口内联复制**。建在已去 Campaign 化的签名上，立即可做
-- [ ] 3. **帝丘店数据剥离**（一并处理，不再拆项）：
+- [x] 3. **帝丘店数据剥离**（一并处理，不再拆项）：
   - 地形数据化：`TerrainType` enum + 全局 `terrainProps` → 剧本注入的 terrain catalog（props per id）
   - `Battlefield` 静态 10×7 尺寸 → 剧本提供
   - `createMapTerrain()` 硬编码帝丘店坐标 → 剧本地图数据
@@ -60,6 +60,10 @@
   - `_recomputeExhaustion` 敌军自动重部署的帝丘店坐标 → 剧本注入部署表
   - `initialPlanViewData` 兵力表文案 → 剧本数据
   - `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
+- [ ] 7. **剧本资产收尾**（做完 3 才暴露的问题；在 4–6 大改 config 之前做，减小返工）：
+  - `CampaignConfig.load` 拆为纯函数 `fromJson(campaignJson, mapJson, unitsJson)` + 薄 IO 壳；新增测试解析**真实帝丘店 JSON 资产**——目前真实资产零测试，map.json 写错（非法转义/字段缺失/键不匹配）只能在启动 App 时发现；item 5 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔
+  - JSON key `initial_huaye_power` 含「华野」专名 → 改通用名并同步 campaign.json——「核心检索不到剧本专名」的验收要覆盖 JSON schema，不只 Dart 代码
+  - `hexSize` 双源归一：`config.hexSize` 与 `Battlefield.hexSize`（static 27）并存但几何只读后者，config 那份是死的——item 3 的「尺寸归剧本」只走了 cols/rows，此项补完：几何改收注入值，或删 config 字段并明记为跨剧本常量
 
 ### 已交付（本就通用，归位核心层）
 
@@ -67,6 +71,7 @@
 - **Command + 翻译层**（`lib/models/command.dart` + `lib/controllers/command_translator.dart` + 测试 + `doc/models/command.md`）：Task + 战场态势 → 带坐标指令。纯函数，不掷骰不改状态。
 - **Unit task/fat**（`lib/models/unit.dart` + 测试 + `doc/models/unit.md`）：指挥官层姿态与疲劳已归到 Unit，只持有状态，消费留给可注入结算层。
 - **CommandExecutor**（`lib/controllers/command_executor.dart` + 测试 + `doc/models/command.md` 执行规则节）：命令序列 → 引擎原语（applyMove/applyAttack）→ 战报。守卫（过期/不在场/已亡/不归我方/已行动/空令）集中一处，逐条独立，批量汇总战报。
+- **帝丘店数据剥离**（`battlefield.dart`/`combat.dart`/`game.dart` 重写 + `map.json` catalog 段 + `test/fixtures.dart`，见 `doc/models/battlefield.md`）：`TerrainType` 枚举 + 全局 `terrainProps` → 字符串 id + 剧本注入 `TerrainBook`；网格尺寸/画布随 config 自适应；地名（惠济河/帝丘店核心）、胜负文案归剧本；图例由 catalog 生成；`TerrainProps.assaultOnly` 取代 coreFort 硬编码分支。龙王店剧本自此可纯 JSON 注入。
 
 ## v0.1.1 — 龙王店剧本（第一个场景，竖切）
 
