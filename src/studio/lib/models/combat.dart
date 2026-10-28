@@ -2,18 +2,20 @@ import 'dart:math';
 import 'unit.dart';
 import 'battlefield.dart';
 
-/// 战斗结算。纯函数，收注入命中修正标量 [hitMod]（由调用方从剧本状态取出），
-/// 不收整个剧本状态对象——保持签名剧本无关。
+/// 战斗结算。纯函数，收注入命中修正标量 [hitMod]（由调用方从剧本状态取出）
+/// 与注入的 [book] 地形容器，不收整个剧本状态对象——保持签名剧本无关。
 CombatResult resolveCombat(
   Unit attacker,
   Unit defender,
-  List<List<TerrainType>> mapTerrain, {
+  TerrainBook book, {
   int hitMod = 0,
 }) {
+  final defProps = book.propsAt(defender.col, defender.row);
+
   int hitChance = 55;
   hitChance += attacker.type.baseAttack * 6;
   hitChance += hitMod;
-  hitChance -= _terrainDefense(defender, mapTerrain) * 8;
+  hitChance -= defProps.defenseBonus * 8;
   final dist = Battlefield.hexDistance(
     attacker.col,
     attacker.row,
@@ -29,7 +31,7 @@ CombatResult resolveCombat(
   String text;
 
   if (hit) {
-    if (attacker.type.isAssault && _inFullCover(defender, mapTerrain)) {
+    if (attacker.type.isAssault && defProps.fullCover) {
       damage = min(2, defender.hp);
       text = '\u{1F4A5}突击成功！重创核心守军！';
     } else {
@@ -67,9 +69,3 @@ class CombatResult {
     required this.killed,
   });
 }
-
-int _terrainDefense(Unit unit, List<List<TerrainType>> map) =>
-    terrainProps[map[unit.row][unit.col]]!.defenseBonus;
-
-bool _inFullCover(Unit unit, List<List<TerrainType>> map) =>
-    terrainProps[map[unit.row][unit.col]]!.fullCover;

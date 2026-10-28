@@ -158,7 +158,7 @@ class GameController extends ChangeNotifier {
     final result = resolveCombat(
       attacker,
       defender,
-      engine.mapTerrain,
+      engine.terrain,
       hitMod: _state.campaign.hitMod,
     );
     _state.campaign.playerPower = (_state.campaign.playerPower - 3).clamp(
@@ -175,15 +175,14 @@ class GameController extends ChangeNotifier {
     ];
 
     if (result.killed) {
-      final defTerrain = engine.mapTerrain[defender.row][defender.col];
-      if (terrainProps[defTerrain]!.isCore) {
+      if (engine.terrain.propsAt(defender.col, defender.row).isCore) {
         _state.campaign.fortStrength = (_state.campaign.fortStrength - 1).clamp(
           0,
           5,
         );
         dispatches.add(
           Dispatch(
-            '\u{1F3F0}帝丘店核心防御被削弱！（剩余强度${_state.campaign.fortStrength}）',
+            '\u{1F3F0}${engine.config.name}核心防御被削弱！（剩余强度${_state.campaign.fortStrength}）',
             'urgent',
             _state.currentTurn,
           ),
@@ -261,7 +260,9 @@ class GameController extends ChangeNotifier {
       final targets = _state.playerUnits.where((pu) {
         final d = Battlefield.hexDistance(nu.col, nu.row, pu.col, pu.row);
         if (d > nu.type.attackRange) return false;
-        if (Game.inFullCover(pu, engine.mapTerrain) && d > 1) return false;
+        if (engine.terrain.propsAt(pu.col, pu.row).fullCover && d > 1) {
+          return false;
+        }
         return true;
       }).toList();
 
@@ -274,7 +275,7 @@ class GameController extends ChangeNotifier {
         final result = resolveCombat(
           nu,
           targets.first,
-          engine.mapTerrain,
+          engine.terrain,
           hitMod: _state.campaign.hitMod,
         );
         _state.logMessages = [

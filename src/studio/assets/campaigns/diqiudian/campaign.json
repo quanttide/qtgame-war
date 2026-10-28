@@ -13,6 +13,9 @@
   "initial_huaye_power": 85,
   "initial_fort_strength": 3,
 
+  "victory_cleared_text": "帝丘店地区国军全部肃清！",
+  "victory_core_text": "帝丘店核心阵地已被攻占！",
+
   "reinforcements": [
     {
       "label": "qiu",

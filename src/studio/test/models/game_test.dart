@@ -3,6 +3,7 @@ import 'package:studio/models/unit.dart';
 import 'package:studio/models/campaign.dart';
 import 'package:studio/models/game.dart';
 import 'package:studio/models/battlefield.dart';
+import '../fixtures.dart';
 
 void main() {
   group('Game', () {
@@ -20,7 +21,8 @@ void main() {
         gridCols: 10,
         gridRows: 7,
         hexSize: 27,
-        mapTerrain: Battlefield.createMapTerrain(),
+        mapGrid: testMapGrid(),
+        terrainCatalog: testTerrainCatalog,
         templates: {
           'inf': UnitLibrary.lightInfantry,
           'hvy': UnitLibrary.heavyInfantry,

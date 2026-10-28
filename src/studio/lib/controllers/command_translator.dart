@@ -73,7 +73,7 @@ List<Command> translateOrders({
     final dest = best ?? (unit.col, unit.row);
 
     // 3. 选攻击：从落位取射程内一个已暴露、非满掩体隔格的敌军
-    final enemy = _pickAttackTarget(dest, unit, units, engine.mapTerrain);
+    final enemy = _pickAttackTarget(dest, unit, units, engine.terrain);
 
     commands.add(
       Command(
@@ -101,7 +101,7 @@ Unit? _pickAttackTarget(
   (int, int) from,
   Unit unit,
   List<Unit> units,
-  List<List<TerrainType>> map,
+  TerrainBook book,
 ) {
   Unit? best;
   var bestDist = 1 << 30;
@@ -109,7 +109,7 @@ Unit? _pickAttackTarget(
     if (!e.alive || e.side != Side.red || !e.revealed) continue;
     final d = Battlefield.hexDistance(from.$1, from.$2, e.col, e.row);
     if (d > unit.type.attackRange) continue;
-    if (terrainProps[map[e.row][e.col]]!.fullCover && d > 1) continue;
+    if (book.propsAt(e.col, e.row).fullCover && d > 1) continue;
     if (d < bestDist) {
       bestDist = d;
       best = e;

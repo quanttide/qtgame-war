@@ -1,14 +1,8 @@
 import 'dart:math';
 import 'package:hex_toolkit/hex_toolkit.dart';
 
-enum TerrainType {
-  plain,
-  village,
-  town,
-  river,
-  coreFort,
-}
-
+/// 地形属性。一条记录 = 一种地形 id 在某剧本下的全部属性。
+/// 字段全部中性，地名（如「惠济河」「帝丘店核心」）由剧本 catalog 取值，核心不写死。
 class TerrainProps {
   final String name;
   final int moveCost;
@@ -18,6 +12,7 @@ class TerrainProps {
   final String icon;
   final bool fullCover;
   final bool isCore;
+  final bool assaultOnly;
 
   const TerrainProps({
     required this.name,
@@ -28,32 +23,47 @@ class TerrainProps {
     required this.icon,
     this.fullCover = false,
     this.isCore = false,
+    this.assaultOnly = false,
   });
+
+  /// 越界/未知 id 的回退默认（中性平原，无地名）。
+  static const plain = TerrainProps(
+    name: '',
+    moveCost: 1,
+    defenseBonus: 0,
+    color: 0xffb8a068,
+    fillColor: 0xffa89458,
+    icon: '',
+  );
 }
 
-final Map<TerrainType, TerrainProps> terrainProps = {
-  TerrainType.plain: TerrainProps(
-    name: '平原', moveCost: 1, defenseBonus: 0,
-    color: 0xffb8a068, fillColor: 0xffa89458, icon: '',
-  ),
-  TerrainType.village: TerrainProps(
-    name: '村庄', moveCost: 1, defenseBonus: 1,
-    color: 0xff7a8a6a, fillColor: 0xff6a7a5a, icon: '\u25a3',
-  ),
-  TerrainType.town: TerrainProps(
-    name: '城镇据点', moveCost: 2, defenseBonus: 2,
-    color: 0xff5a4a3a, fillColor: 0xff4a3a2a, icon: '\u25a3',
-  ),
-  TerrainType.river: TerrainProps(
-    name: '惠济河', moveCost: 4, defenseBonus: 0,
-    color: 0xff3a5a7a, fillColor: 0xff2a4a6a, icon: '\u2248',
-  ),
-  TerrainType.coreFort: TerrainProps(
-    name: '帝丘店核心', moveCost: 3, defenseBonus: 4,
-    color: 0xff3a1a1a, fillColor: 0xff2a0a0a, icon: '\u{1F3F0}',
-    fullCover: true, isCore: true,
-  ),
-};
+/// 地形容器：把「网格 + 地形目录 + 尺寸」绑成一个值对象一起流动。
+/// 核心只读注入的 [catalog]，不持有任何全局地形单例。
+class TerrainBook {
+  /// grid[row][col] = 地形 id（字符串，如 'plain'/'core_fort'）
+  final List<List<String>> grid;
+
+  /// id → 属性（剧本注入）
+  final Map<String, TerrainProps> catalog;
+
+  final int cols;
+  final int rows;
+
+  TerrainBook({
+    required this.grid,
+    required this.catalog,
+    required this.cols,
+    required this.rows,
+  });
+
+  /// 取该格地形属性；越界或未知 id 回退 [TerrainProps.plain]。
+  TerrainProps propsAt(int col, int row) {
+    if (row < 0 || row >= rows || col < 0 || col >= cols) {
+      return TerrainProps.plain;
+    }
+    return catalog[grid[row][col]] ?? TerrainProps.plain;
+  }
+}
 
 class HexPoint {
   final double x, y;
@@ -62,13 +72,10 @@ class HexPoint {
 
 class Battlefield {
   static const double hexSize = 27;
-  static const int cols = 10;
-  static const int rows = 7;
   static const double paddingX = 50;
   static const double paddingY = 40;
 
-  static Hex _hex(int col, int row) =>
-      Hex.fromOffset(GridOffset(col, row));
+  static Hex _hex(int col, int row) => Hex.fromOffset(GridOffset(col, row));
 
   static HexPoint hexCenter(int col, int row) {
     final p = _hex(col, row).centerPoint(hexSize);
@@ -82,9 +89,16 @@ class Battlefield {
     });
   }
 
-  static (int col, int row)? pixelToHex(double mx, double my) {
+  static (int col, int row)? pixelToHex(
+    double mx,
+    double my,
+    int cols,
+    int rows,
+  ) {
     final hex = Hex.fromPixelPoint(
-      PixelPoint(mx - paddingX, my - paddingY), hexSize);
+      PixelPoint(mx - paddingX, my - paddingY),
+      hexSize,
+    );
     final off = hex.toOffset();
     if (off.q >= 0 && off.q < cols && off.r >= 0 && off.r < rows) {
       return (off.q, off.r);
@@ -92,8 +106,9 @@ class Battlefield {
     return null;
   }
 
-  static List<(int, int)> getNeighbors(int col, int row) {
-    return _hex(col, row).neighbors()
+  static List<(int, int)> getNeighbors(int col, int row, int cols, int rows) {
+    return _hex(col, row)
+        .neighbors()
         .map((h) {
           final o = h.toOffset();
           return (o.q, o.r);
@@ -106,69 +121,39 @@ class Battlefield {
     return _hex(c1, r1).distanceTo(_hex(c2, r2));
   }
 
-  // Computed for 10x7 grid, hexSize=27
-  // Pointy-top hex grid: widest at col=9, odd row; tallest at row=6
-  static const double canvasWidth = 572;
-  static const double canvasHeight = 350;
-
-  static List<List<TerrainType>> createMapFromJson(Map<String, dynamic> json) {
-    final grid = List.generate(rows, (_) => List.filled(cols, TerrainType.plain));
-    void st(int c, int r, TerrainType t) {
-      if (r >= 0 && r < rows && c >= 0 && c < cols) grid[r][c] = t;
-    }
-    final terrains = json['terrains'] as Map<String, dynamic>;
-    for (final entry in terrains.entries) {
-      final t = _terrainFromKey(entry.key);
-      for (final cell in (entry.value as List)) {
-        st(cell[0], cell[1], t);
+  /// 由全部格中心推出画布尺寸（任意网格自适应）。返回 (宽, 高)。
+  /// 尖顶六边形：水平半宽 = √3/2·size，垂直半高 = size。
+  static (double, double) canvasSize(int cols, int rows) {
+    double maxX = 0, maxY = 0;
+    for (int r = 0; r < rows; r++) {
+      for (int c = 0; c < cols; c++) {
+        final p = hexCenter(c, r);
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
       }
     }
-    return grid;
+    final halfW = sqrt(3) / 2 * hexSize;
+    return (maxX + halfW + paddingX, maxY + hexSize + paddingY);
   }
 
-  static TerrainType _terrainFromKey(String key) {
-    switch (key) {
-      case 'river': return TerrainType.river;
-      case 'core_fort': return TerrainType.coreFort;
-      case 'town': return TerrainType.town;
-      case 'village': return TerrainType.village;
-      default: return TerrainType.plain;
-    }
-  }
-
-  static List<List<TerrainType>> createMapTerrain() {
-    final grid = List.generate(rows, (_) => List.filled(cols, TerrainType.plain));
-
-    void st(int c, int r, TerrainType t) {
+  /// 从 map.json（`{"terrains": {id: [[c,r],…]}}`）生成地形网格，默认 'plain'。
+  /// 键即地形 id，须在剧本 catalog 中有对应 props。
+  static List<List<String>> createMapGrid(
+    Map<String, dynamic> json,
+    int cols,
+    int rows,
+  ) {
+    final grid = List.generate(rows, (_) => List.filled(cols, 'plain'));
+    void st(int c, int r, String t) {
       if (r >= 0 && r < rows && c >= 0 && c < cols) grid[r][c] = t;
     }
 
-    const riverCells = [
-      (0, 5), (1, 5), (2, 4), (3, 4), (4, 3),
-      (5, 3), (6, 3), (7, 2), (8, 2), (9, 2),
-      (0, 6), (1, 6),
-    ];
-    for (final (c, r) in riverCells) { st(c, r, TerrainType.river); }
-
-    st(5, 4, TerrainType.coreFort);
-    st(6, 4, TerrainType.town);
-    st(4, 4, TerrainType.town);
-    st(5, 5, TerrainType.town);
-
-    st(3, 2, TerrainType.town);
-    st(4, 2, TerrainType.village);
-
-    st(2, 5, TerrainType.village);
-    st(1, 4, TerrainType.village);
-    st(7, 1, TerrainType.village);
-    st(6, 1, TerrainType.village);
-    st(4, 1, TerrainType.village);
-
-    st(1, 2, TerrainType.village);
-    st(8, 5, TerrainType.village);
-    st(0, 3, TerrainType.village);
-    st(9, 4, TerrainType.village);
-
+    final terrains = json['terrains'] as Map<String, dynamic>;
+    for (final entry in terrains.entries) {
+      for (final cell in (entry.value as List)) {
+        st(cell[0], cell[1], entry.key);
+      }
+    }
     return grid;
   }
 }

@@ -3,6 +3,7 @@ import 'package:studio/models/unit.dart';
 import 'package:studio/models/campaign.dart';
 import 'package:studio/models/combat.dart';
 import 'package:studio/models/battlefield.dart';
+import '../fixtures.dart';
 
 void main() {
   group('Combat', () {
@@ -23,12 +24,17 @@ void main() {
         hp: 3,
       );
       final campaign = Campaign();
-      final terrain = Battlefield.createMapTerrain();
+      final book = TerrainBook(
+        grid: testMapGrid(),
+        catalog: testTerrainCatalog,
+        cols: 10,
+        rows: 7,
+      );
 
       final result = resolveCombat(
         attacker,
         defender,
-        terrain,
+        book,
         hitMod: campaign.hitMod,
       );
       expect(result.hit, isA<bool>());

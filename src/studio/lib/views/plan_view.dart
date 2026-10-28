@@ -31,7 +31,13 @@ class PlanView extends StatelessWidget {
         children: [
           _title(),
           const SizedBox(height: 6),
-          _planCard('A', '甲案：集中打区寿年', '风险中', 'medium', '以1、4、6、11纵包围区兵团；3、8、10纵阻援'),
+          _planCard(
+            'A',
+            '甲案：集中打区寿年',
+            '风险中',
+            'medium',
+            '以1、4、6、11纵包围区兵团；3、8、10纵阻援',
+          ),
           const SizedBox(height: 4),
           _planCard('B', '乙案：先打邱清泉', '风险高', 'high', '以主力迎击邱兵团机械化部队'),
           const SizedBox(height: 8),
@@ -48,16 +54,25 @@ class PlanView extends StatelessWidget {
   }
 
   Widget _title() {
-    return const Text('作 战 计 划',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'serif',
-            color: Color(0xff2c2416)));
+    return const Text(
+      '作 战 计 划',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        fontFamily: 'serif',
+        color: Color(0xff2c2416),
+      ),
+    );
   }
 
-  Widget _planCard(String id, String title, String risk, String level, String desc) {
+  Widget _planCard(
+    String id,
+    String title,
+    String risk,
+    String level,
+    String desc,
+  ) {
     final selected = selectedPlanId == id;
     Color riskColor;
     Color riskBg;
@@ -83,7 +98,12 @@ class PlanView extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(3),
           boxShadow: selected
-              ? [BoxShadow(color: const Color.fromRGBO(200, 160, 60, 0.2), blurRadius: 8)]
+              ? [
+                  BoxShadow(
+                    color: const Color.fromRGBO(200, 160, 60, 0.2),
+                    blurRadius: 8,
+                  ),
+                ]
               : null,
         ),
         child: Column(
@@ -92,30 +112,41 @@ class PlanView extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(title,
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'serif',
-                          color: const Color(0xff2c2416))),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'serif',
+                      color: const Color(0xff2c2416),
+                    ),
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: riskBg,
                     borderRadius: BorderRadius.circular(2),
                   ),
-                  child: Text(risk,
-                      style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                          color: riskColor)),
+                  child: Text(
+                    risk,
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: riskColor,
+                    ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 3),
-            Text(desc,
-                style: const TextStyle(fontSize: 8.5, color: Color(0xff6b6050))),
+            Text(
+              desc,
+              style: const TextStyle(fontSize: 8.5, color: Color(0xff6b6050)),
+            ),
           ],
         ),
       ),
@@ -136,13 +167,23 @@ class PlanView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _line('\u{1F3AF}目标：', '攻占帝丘店', const Color(0xffa04030)),
-          ...waves.map((w) => _line(
-            '\u23F3${w.name}：',
-            campaign.arrived[w.arrivedFlag] == true ? '已到达！' : '第${w.turn}回合',
-            const Color(0xff9e7a40),
-          )),
-          _line('\u26A1华野战力：', campaign.powerDesc, _powerColor(campaign.powerDesc)),
-          _line('\u{1F3F0}帝丘店防御：', '坚固(${campaign.fortStrength})', const Color(0xffa04030)),
+          ...waves.map(
+            (w) => _line(
+              '\u23F3${w.name}：',
+              campaign.arrived[w.arrivedFlag] == true ? '已到达！' : '第${w.turn}回合',
+              const Color(0xff9e7a40),
+            ),
+          ),
+          _line(
+            '\u26A1华野战力：',
+            campaign.powerDesc,
+            _powerColor(campaign.powerDesc),
+          ),
+          _line(
+            '\u{1F3F0}帝丘店防御：',
+            '坚固(${campaign.fortStrength})',
+            const Color(0xffa04030),
+          ),
         ],
       ),
     );
@@ -153,11 +194,23 @@ class PlanView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         children: [
-          Text(label,
-              style: const TextStyle(fontSize: 9.5, color: Color(0xff6b6050), fontFamily: 'serif')),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 9.5, fontWeight: FontWeight.w600, color: valueColor, fontFamily: 'serif')),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9.5,
+              color: Color(0xff6b6050),
+              fontFamily: 'serif',
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w600,
+              color: valueColor,
+              fontFamily: 'serif',
+            ),
+          ),
         ],
       ),
     );
@@ -190,15 +243,18 @@ class PlanView extends StatelessWidget {
                   ? const Color.fromRGBO(201, 169, 110, 0.07)
                   : const Color.fromRGBO(0, 0, 0, 0.015),
               border: Border.all(
-                color: selected ? const Color(0xffc9a96e) : const Color(0xffc8bfae),
+                color: selected
+                    ? const Color(0xffc9a96e)
+                    : const Color(0xffc8bfae),
                 width: selected ? 1.5 : 1,
               ),
               borderRadius: BorderRadius.circular(3),
               boxShadow: selected
                   ? [
                       const BoxShadow(
-                          color: Color.fromRGBO(201, 169, 110, 0.3),
-                          blurRadius: 10)
+                        color: Color.fromRGBO(201, 169, 110, 0.3),
+                        blurRadius: 10,
+                      ),
                     ]
                   : null,
             ),
@@ -212,20 +268,23 @@ class PlanView extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: const Color(0xff4a3020),
-                      border:
-                          Border.all(color: const Color(0xffc44b3c), width: 2),
+                      border: Border.all(
+                        color: const Color(0xffc44b3c),
+                        width: 2,
+                      ),
                     ),
                     child: Center(
                       child: Text(
                         u.type.isAssault
                             ? '\u26A1'
                             : u.type.attackRange >= 2
-                                ? '\u25C8'
-                                : '\u25C6',
+                            ? '\u25C8'
+                            : '\u25C6',
                         style: const TextStyle(
-                            color: Color(0xfff0c0a0),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold),
+                          color: Color(0xfff0c0a0),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -235,39 +294,47 @@ class PlanView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                            '${u.type.name}${u.hasActed ? ' (\u2713)' : ''}',
-                            style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'serif',
-                                color: u.hasActed
-                                    ? const Color(0xff6b6050)
-                                    : const Color(0xff2c2416))),
+                          '${u.type.name}${u.hasActed ? ' (\u2713)' : ''}',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'serif',
+                            color: u.hasActed
+                                ? const Color(0xff6b6050)
+                                : const Color(0xff2c2416),
+                          ),
+                        ),
                         Text(
-                            '攻${u.type.baseAttack} 防${u.type.baseDefense} 移${u.type.baseMoveRange} 射${u.type.attackRange}',
-                            style: const TextStyle(
-                                fontSize: 8,
-                                color: Color(0xff6b6050),
-                                fontFamily: 'serif')),
+                          '攻${u.type.baseAttack} 防${u.type.baseDefense} 移${u.type.baseMoveRange} 射${u.type.attackRange}',
+                          style: const TextStyle(
+                            fontSize: 8,
+                            color: Color(0xff6b6050),
+                            fontFamily: 'serif',
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   Row(
-                    children: List.generate(u.type.maxHp, (i) => Container(
-                      width: 6,
-                      height: 6,
-                      margin: const EdgeInsets.only(left: 1),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: i < u.hp
-                            ? const Color(0xffc44b3c)
-                            : const Color(0xffd5cfc5),
-                        border: Border.all(
+                    children: List.generate(
+                      u.type.maxHp,
+                      (i) => Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(left: 1),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i < u.hp
+                              ? const Color(0xffc44b3c)
+                              : const Color(0xffd5cfc5),
+                          border: Border.all(
                             color: i < u.hp
                                 ? const Color(0xff802020)
-                                : const Color(0xffb0a898)),
+                                : const Color(0xffb0a898),
+                          ),
+                        ),
                       ),
-                    )),
+                    ),
                   ),
                 ],
               ),
@@ -280,11 +347,7 @@ class PlanView extends StatelessWidget {
 
   Widget _gameControls(BuildContext context) {
     return Column(
-      children: [
-        _buttons(context),
-        const SizedBox(height: 6),
-        _log(),
-      ],
+      children: [_buttons(context), const SizedBox(height: 6), _log()],
     );
   }
 
@@ -293,23 +356,29 @@ class PlanView extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: _styledButton(
-          '\u23ED 结束回合',
-          canEnd ? () => controller.endTurn() : null,
-          primary: true,
-        )),
+          child: _styledButton(
+            '\u23ED 结束回合',
+            canEnd ? () => controller.endTurn() : null,
+            primary: true,
+          ),
+        ),
         const SizedBox(width: 5),
         Expanded(
-            child: _styledButton(
-          '\u{1F504} 重置',
-          () => controller.reset(),
-          primary: false,
-        )),
+          child: _styledButton(
+            '\u{1F504} 重置',
+            () => controller.reset(),
+            primary: false,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _styledButton(String text, VoidCallback? onPressed, {required bool primary}) {
+  Widget _styledButton(
+    String text,
+    VoidCallback? onPressed, {
+    required bool primary,
+  }) {
     return SizedBox(
       height: 32,
       child: Material(
@@ -324,15 +393,23 @@ class PlanView extends StatelessWidget {
                   ? const Color.fromRGBO(160, 64, 48, 0.1)
                   : const Color.fromRGBO(255, 255, 255, 0.5),
               border: Border.all(
-                  color: primary ? const Color(0xffa04030) : const Color(0xffc8bfae)),
+                color: primary
+                    ? const Color(0xffa04030)
+                    : const Color(0xffc8bfae),
+              ),
               borderRadius: BorderRadius.circular(3),
             ),
-            child: Text(text,
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'serif',
-                    color: primary ? const Color(0xff5a2020) : const Color(0xff2c2416))),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'serif',
+                color: primary
+                    ? const Color(0xff5a2020)
+                    : const Color(0xff2c2416),
+              ),
+            ),
           ),
         ),
       ),
@@ -369,8 +446,15 @@ class PlanView extends StatelessWidget {
           }
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 1),
-            child: Text('[T${l.turn}] ${l.msg}',
-                style: TextStyle(fontSize: 8, color: c, fontFamily: 'serif', height: 1.5)),
+            child: Text(
+              '[T${l.turn}] ${l.msg}',
+              style: TextStyle(
+                fontSize: 8,
+                color: c,
+                fontFamily: 'serif',
+                height: 1.5,
+              ),
+            ),
           );
         }).toList(),
       ),
@@ -378,16 +462,13 @@ class PlanView extends StatelessWidget {
   }
 
   Widget _legend() {
+    final catalog = controller.engine.terrain.catalog;
     return Wrap(
       spacing: 6,
       runSpacing: 2,
-      children: [
-        _legendItem(const Color(0xffb8a068), '平原'),
-        _legendItem(const Color(0xff7a8a6a), '村庄'),
-        _legendItem(const Color(0xff5a4a3a), '城镇'),
-        _legendItem(const Color(0xff3a5a7a), '河流'),
-        _legendItem(const Color(0xff3a1a1a), '核心'),
-      ],
+      children: catalog.values
+          .map((p) => _legendItem(Color(p.color), p.name))
+          .toList(),
     );
   }
 
@@ -396,15 +477,23 @@ class PlanView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-                color: color,
-                border: Border.all(color: const Color(0xff777777)),
-                borderRadius: BorderRadius.circular(1))),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(color: const Color(0xff777777)),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
         const SizedBox(width: 2),
-        Text(label,
-            style: const TextStyle(fontSize: 7.5, color: Color(0xff999999), fontFamily: 'serif')),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 7.5,
+            color: Color(0xff999999),
+            fontFamily: 'serif',
+          ),
+        ),
       ],
     );
   }

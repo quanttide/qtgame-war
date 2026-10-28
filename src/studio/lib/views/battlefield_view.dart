@@ -15,12 +15,19 @@ class BattlefieldView extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final state = controller.state;
+        final book = controller.engine.terrain;
+        final (cw, ch) = Battlefield.canvasSize(book.cols, book.rows);
         return GestureDetector(
           onTapUp: (details) {
             if (state.isGameOver || state.phase != GamePhase.player) return;
             final renderBox = context.findRenderObject() as RenderBox;
             final localPos = renderBox.globalToLocal(details.globalPosition);
-            final hex = Battlefield.pixelToHex(localPos.dx, localPos.dy);
+            final hex = Battlefield.pixelToHex(
+              localPos.dx,
+              localPos.dy,
+              book.cols,
+              book.rows,
+            );
             if (hex != null) {
               final (col, row) = hex;
               controller.clickHex(col, row);
@@ -30,9 +37,8 @@ class BattlefieldView extends StatelessWidget {
             controller.clickHex(-1, -1);
           },
           child: CustomPaint(
-            size: Size(Battlefield.canvasWidth, Battlefield.canvasHeight),
-            painter: _BattlefieldPainter(
-                state: state, mapTerrain: controller.engine.mapTerrain),
+            size: Size(cw, ch),
+            painter: _BattlefieldPainter(state: state, book: book),
           ),
         );
       },
@@ -42,19 +48,18 @@ class BattlefieldView extends StatelessWidget {
 
 class _BattlefieldPainter extends CustomPainter {
   final GameState state;
-  final List<List<TerrainType>> mapTerrain;
+  final TerrainBook book;
   final double hexSize;
 
-  _BattlefieldPainter({required this.state, required this.mapTerrain})
-      : hexSize = 27;
+  _BattlefieldPainter({required this.state, required this.book})
+    : hexSize = Battlefield.hexSize;
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (int r = 0; r < Battlefield.rows; r++) {
-      for (int c = 0; c < Battlefield.cols; c++) {
+    for (int r = 0; r < book.rows; r++) {
+      for (int c = 0; c < book.cols; c++) {
         final center = Battlefield.hexCenter(c, r);
-        final terrain = mapTerrain[r][c];
-        final props = terrainProps[terrain]!;
+        final props = book.propsAt(c, r);
         final key = '$c,$r';
 
         Color fill = Color(props.fillColor);
@@ -80,7 +85,7 @@ class _BattlefieldPainter extends CustomPainter {
         }
 
         _drawHex(canvas, center.x, center.y, hexSize, fill, stroke, lw);
-        _drawTerrainIcon(canvas, center.x, center.y, terrain);
+        _drawTerrainIcon(canvas, center.x, center.y, props);
       }
     }
 
@@ -99,7 +104,14 @@ class _BattlefieldPainter extends CustomPainter {
   }
 
   void _drawHex(
-      Canvas canvas, double cx, double cy, double size, Color fill, Color stroke, double lw) {
+    Canvas canvas,
+    double cx,
+    double cy,
+    double size,
+    Color fill,
+    Color stroke,
+    double lw,
+  ) {
     final path = Path();
     final verts = Battlefield.hexVertices(cx, cy, size);
     path.moveTo(verts[0].x, verts[0].y);
@@ -107,18 +119,35 @@ class _BattlefieldPainter extends CustomPainter {
       path.lineTo(verts[i].x, verts[i].y);
     }
     path.close();
-    canvas.drawPath(path, Paint()..color = fill..style = PaintingStyle.fill);
     canvas.drawPath(
-        path, Paint()..color = stroke..style = PaintingStyle.stroke..strokeWidth = lw);
+      path,
+      Paint()
+        ..color = fill
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = lw,
+    );
   }
 
-  void _drawTerrainIcon(Canvas canvas, double cx, double cy, TerrainType terrain) {
-    final props = terrainProps[terrain]!;
+  void _drawTerrainIcon(
+    Canvas canvas,
+    double cx,
+    double cy,
+    TerrainProps props,
+  ) {
     if (props.icon.isEmpty) return;
     final tp = TextPainter(
       text: TextSpan(
         text: props.icon,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: hexSize * 0.55),
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.65),
+          fontSize: hexSize * 0.55,
+        ),
       ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
@@ -129,23 +158,26 @@ class _BattlefieldPainter extends CustomPainter {
 
   void _drawUnit(Canvas canvas, double cx, double cy, Unit unit, double size) {
     final r = size * 0.48;
-    final path = Path()..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+    final path = Path()
+      ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
 
     canvas.drawPath(
-        path,
-        Paint()
-          ..color = unit.side == Side.blue
-              ? const Color(0xff3a1a10)
-              : const Color(0xff0a1a2a)
-          ..style = PaintingStyle.fill);
+      path,
+      Paint()
+        ..color = unit.side == Side.blue
+            ? const Color(0xff3a1a10)
+            : const Color(0xff0a1a2a)
+        ..style = PaintingStyle.fill,
+    );
     canvas.drawPath(
-        path,
-        Paint()
-          ..color = unit.side == Side.blue
-              ? const Color(0xffc44b3c)
-              : const Color(0xff4a80b4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.2);
+      path,
+      Paint()
+        ..color = unit.side == Side.blue
+            ? const Color(0xffc44b3c)
+            : const Color(0xff4a80b4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
 
     String sym = '\u25A0';
     if (unit.type.isAssault) {
@@ -178,23 +210,35 @@ class _BattlefieldPainter extends CustomPainter {
       final bh = 3.5;
       final by = cy - r - 6;
       canvas.drawRect(
-          Rect.fromLTWH(cx - bw / 2, by, bw, bh),
-          Paint()..color = const Color(0xff333333));
+        Rect.fromLTWH(cx - bw / 2, by, bw, bh),
+        Paint()..color = const Color(0xff333333),
+      );
       final hpRatio = unit.hp / unit.type.maxHp;
       canvas.drawRect(
         Rect.fromLTWH(cx - bw / 2, by, bw * hpRatio, bh),
         Paint()
-          ..color = hpRatio > 0.5 ? const Color(0xff55aa55) : const Color(0xffee5555),
+          ..color = hpRatio > 0.5
+              ? const Color(0xff55aa55)
+              : const Color(0xffee5555),
       );
     }
 
     if (unit.hasActed && unit.side == Side.blue) {
-      canvas.drawPath(path,
-          Paint()..color = const Color.fromRGBO(0, 0, 0, 0.4)..style = PaintingStyle.fill);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = const Color.fromRGBO(0, 0, 0, 0.4)
+          ..style = PaintingStyle.fill,
+      );
       final dot = TextPainter(
         text: const TextSpan(
-            text: '\u2713',
-            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          text: '\u2713',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       );
@@ -222,11 +266,12 @@ class _BattlefieldPainter extends CustomPainter {
     final path = Path()
       ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: size * 0.38));
     canvas.drawPath(
-        path,
-        Paint()
-          ..color = const Color.fromRGBO(200, 70, 40, 0.45)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8);
+      path,
+      Paint()
+        ..color = const Color.fromRGBO(200, 70, 40, 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8,
+    );
   }
 
   @override

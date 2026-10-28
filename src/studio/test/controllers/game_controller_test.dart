@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/models/unit.dart';
 import 'package:studio/models/game.dart';
-import 'package:studio/models/battlefield.dart';
+import '../fixtures.dart';
 import 'package:studio/controllers/game_controller.dart';
 
 void main() {
@@ -10,7 +10,6 @@ void main() {
     late Game game;
 
     setUp(() {
-      final terrain = Battlefield.createMapTerrain();
       final config = CampaignConfig(
         name: '测试战役',
         description: '测试用',
@@ -20,7 +19,8 @@ void main() {
         gridCols: 10,
         gridRows: 7,
         hexSize: 27,
-        mapTerrain: terrain,
+        mapGrid: testMapGrid(),
+        terrainCatalog: testTerrainCatalog,
         templates: {
           'inf': UnitLibrary.lightInfantry,
           'aslt': UnitLibrary.assaultInfantry,

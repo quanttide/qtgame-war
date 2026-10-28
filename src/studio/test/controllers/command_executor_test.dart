@@ -4,6 +4,7 @@ import 'package:studio/models/command.dart';
 import 'package:studio/models/game.dart';
 import 'package:studio/models/task.dart';
 import 'package:studio/models/unit.dart';
+import '../fixtures.dart';
 import 'package:studio/controllers/command_executor.dart';
 import 'package:studio/controllers/game_controller.dart';
 
@@ -14,7 +15,6 @@ void main() {
     late CommandExecutor executor;
 
     setUp(() {
-      final terrain = Battlefield.createMapTerrain();
       final config = CampaignConfig(
         name: '测试战役',
         description: '测试用',
@@ -24,7 +24,8 @@ void main() {
         gridCols: 10,
         gridRows: 7,
         hexSize: 27,
-        mapTerrain: terrain,
+        mapGrid: testMapGrid(),
+        terrainCatalog: testTerrainCatalog,
         templates: {
           'inf': UnitLibrary.lightInfantry,
           'aslt': UnitLibrary.assaultInfantry,
@@ -143,6 +144,8 @@ void main() {
         final dest = Battlefield.getNeighbors(
           4,
           3,
+          10,
+          7,
         ).firstWhere((n) => range.containsKey('${n.$1},${n.$2}'));
         final c = makeCmd(1, move: dest, attack: (4, 3));
         final report = executor.executeOne(c);

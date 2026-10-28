@@ -13,13 +13,23 @@ class CampaignConfig {
   final int gridCols;
   final int gridRows;
   final double hexSize;
-  final List<List<TerrainType>> mapTerrain;
+
+  /// 地形网格：grid[row][col] = 地形 id（字符串）。
+  final List<List<String>> mapGrid;
+
+  /// 地形目录：id → 属性（剧本注入，含地名/消耗/颜色/掩体等）。
+  final Map<String, TerrainProps> terrainCatalog;
+
   final Map<String, UnitType> templates;
   final List<UnitSpec> initialUnits;
   final List<ReinforcementWave> reinforcementWaves;
   final int maxTurns;
   final int initialPlayerPower;
   final int initialFortStrength;
+
+  /// 胜负文案（剧本注入，核心不写死地名）。
+  final String victoryClearedText;
+  final String victoryCoreText;
 
   CampaignConfig({
     required this.name,
@@ -30,13 +40,16 @@ class CampaignConfig {
     required this.gridCols,
     required this.gridRows,
     required this.hexSize,
-    required this.mapTerrain,
+    required this.mapGrid,
+    required this.terrainCatalog,
     required this.templates,
     required this.initialUnits,
     required this.reinforcementWaves,
     required this.maxTurns,
     required this.initialPlayerPower,
     required this.initialFortStrength,
+    this.victoryClearedText = '敌军已全部肃清！',
+    this.victoryCoreText = '核心阵地已被攻占！',
   });
 
   static Future<CampaignConfig> load(String id) async {
@@ -49,6 +62,9 @@ class CampaignConfig {
     final u = jsonDecode(
       await rootBundle.loadString('assets/campaigns/$id/units.json'),
     );
+
+    final gridCols = c['grid_cols'] ?? 10;
+    final gridRows = c['grid_rows'] ?? 7;
 
     final templates = <String, UnitType>{};
     for (final t in (u['templates'] as List)) {
@@ -102,18 +118,46 @@ class CampaignConfig {
       date: c['date'] ?? '',
       blueName: c['blue_name'] ?? '蓝方',
       redName: c['red_name'] ?? '红方',
-      gridCols: c['grid_cols'] ?? 10,
-      gridRows: c['grid_rows'] ?? 7,
+      gridCols: gridCols,
+      gridRows: gridRows,
       hexSize: (c['hex_size'] ?? 27).toDouble(),
-      mapTerrain: Battlefield.createMapFromJson(m),
+      mapGrid: Battlefield.createMapGrid(m, gridCols, gridRows),
+      terrainCatalog: _parseCatalog(m),
       templates: templates,
       initialUnits: units,
       reinforcementWaves: waves,
       maxTurns: c['max_turns'],
       initialPlayerPower: c['initial_huaye_power'],
       initialFortStrength: c['initial_fort_strength'],
+      victoryClearedText: c['victory_cleared_text'] ?? '敌军已全部肃清！',
+      victoryCoreText: c['victory_core_text'] ?? '核心阵地已被攻占！',
     );
   }
+
+  /// 从 map.json 的 `catalog` 段解析地形目录。
+  static Map<String, TerrainProps> _parseCatalog(Map<String, dynamic> json) {
+    final catalogJson = json['catalog'] as Map<String, dynamic>?;
+    if (catalogJson == null) return {};
+    final catalog = <String, TerrainProps>{};
+    for (final e in catalogJson.entries) {
+      final v = e.value as Map<String, dynamic>;
+      catalog[e.key] = TerrainProps(
+        name: v['name'] as String,
+        moveCost: v['move_cost'] as int,
+        defenseBonus: v['defense'] as int,
+        color: _hex(v['color'] as String),
+        fillColor: _hex(v['fill_color'] as String),
+        icon: v['icon'] as String? ?? '',
+        fullCover: v['full_cover'] as bool? ?? false,
+        isCore: v['is_core'] as bool? ?? false,
+        assaultOnly: v['assault_only'] as bool? ?? false,
+      );
+    }
+    return catalog;
+  }
+
+  static int _hex(String s) =>
+      int.parse(s.replaceFirst('0x', '').replaceFirst('#', ''), radix: 16);
 }
 
 class UnitSpec {
@@ -156,20 +200,17 @@ class ReinforcementWave {
 
 class Game {
   final CampaignConfig config;
-  late final List<List<TerrainType>> mapTerrain;
 
-  Game(this.config) {
-    mapTerrain = config.mapTerrain;
-  }
+  /// 注入的地形容器（网格 + 目录 + 尺寸），核心地形逻辑全走这里。
+  late final TerrainBook terrain;
 
-  static int terrainDefense(Unit unit, List<List<TerrainType>> map) =>
-      terrainProps[map[unit.row][unit.col]]!.defenseBonus;
-
-  static bool inFullCover(Unit unit, List<List<TerrainType>> map) =>
-      terrainProps[map[unit.row][unit.col]]!.fullCover;
-
-  static bool inCore(Unit unit, List<List<TerrainType>> map) =>
-      terrainProps[map[unit.row][unit.col]]!.isCore;
+  Game(this.config)
+    : terrain = TerrainBook(
+        grid: config.mapGrid,
+        catalog: config.terrainCatalog,
+        cols: config.gridCols,
+        rows: config.gridRows,
+      );
 
   Map<String, int> getMoveRange(
     Unit unit,
@@ -186,13 +227,18 @@ class Game {
 
     while (queue.isNotEmpty) {
       final (c, r, remaining) = queue.removeAt(0);
-      for (final (nc, nr) in Battlefield.getNeighbors(c, r)) {
+      for (final (nc, nr) in Battlefield.getNeighbors(
+        c,
+        r,
+        config.gridCols,
+        config.gridRows,
+      )) {
         final nk = '$nc,$nr';
         final occ = getUnitAt(nc, nr, allUnits);
         if (occ != null && occ.id != unit.id) continue;
-        final terrain = mapTerrain[nr][nc];
-        if (terrain == TerrainType.coreFort && !unit.type.isAssault) continue;
-        final cost = terrainProps[terrain]!.moveCost;
+        final props = terrain.propsAt(nc, nr);
+        if (props.assaultOnly && !unit.type.isAssault) continue;
+        final cost = props.moveCost;
         final nr2 = remaining - cost;
         if (nr2 < 0) continue;
         if (!reachable.containsKey(nk) || reachable[nk]! < nr2) {
@@ -216,7 +262,9 @@ class Game {
         enemy.row,
       );
       if (dist <= unit.type.attackRange) {
-        if (inFullCover(enemy, mapTerrain) && dist > 1) continue;
+        if (terrain.propsAt(enemy.col, enemy.row).fullCover && dist > 1) {
+          continue;
+        }
         targets.add('${enemy.col},${enemy.row}');
       }
     }
@@ -261,16 +309,19 @@ class Game {
     if (natUnits.isEmpty) {
       campaign.gameOver = true;
       campaign.victory = true;
-      campaign.victoryDetail = '帝丘店地区国军全部肃清！';
+      campaign.victoryDetail = config.victoryClearedText;
       return;
     }
     final coreOccupied = units.any(
-      (u) => u.alive && inCore(u, mapTerrain) && u.side == Side.blue,
+      (u) =>
+          u.alive &&
+          terrain.propsAt(u.col, u.row).isCore &&
+          u.side == Side.blue,
     );
     if (coreOccupied && campaign.fortStrength <= 0) {
       campaign.gameOver = true;
       campaign.victory = true;
-      campaign.victoryDetail = '帝丘店核心阵地已被攻占！';
+      campaign.victoryDetail = config.victoryCoreText;
       return;
     }
   }

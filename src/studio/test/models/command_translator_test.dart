@@ -6,12 +6,13 @@ import 'package:studio/models/game.dart';
 import 'package:studio/models/task.dart';
 import 'package:studio/models/unit.dart';
 import 'package:studio/controllers/command_translator.dart';
+import '../fixtures.dart';
 
 void main() {
   // 内存构造最小战局：7x10 全平原，(5,3) 为核心要塞
   Game makeGame({(int, int)? fort}) {
-    final grid = List.generate(7, (_) => List.filled(10, TerrainType.plain));
-    if (fort != null) grid[fort.$2][fort.$1] = TerrainType.coreFort;
+    final grid = List.generate(7, (_) => List.filled(10, 'plain'));
+    if (fort != null) grid[fort.$2][fort.$1] = 'core_fort';
     final config = CampaignConfig(
       name: 'test',
       description: '',
@@ -21,7 +22,8 @@ void main() {
       gridCols: 10,
       gridRows: 7,
       hexSize: 27,
-      mapTerrain: grid,
+      mapGrid: grid,
+      terrainCatalog: testTerrainCatalog,
       templates: {},
       initialUnits: [],
       reinforcementWaves: [],

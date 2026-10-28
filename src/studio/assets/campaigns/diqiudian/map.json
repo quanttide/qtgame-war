@@ -1,4 +1,49 @@
 {
+  "catalog": {
+    "plain": {
+      "name": "平原",
+      "move_cost": 1,
+      "defense": 0,
+      "color": "0xffb8a068",
+      "fill_color": "0xffa89458",
+      "icon": ""
+    },
+    "village": {
+      "name": "村庄",
+      "move_cost": 1,
+      "defense": 1,
+      "color": "0xff7a8a6a",
+      "fill_color": "0xff6a7a5a",
+      "icon": "▣"
+    },
+    "town": {
+      "name": "城镇据点",
+      "move_cost": 2,
+      "defense": 2,
+      "color": "0xff5a4a3a",
+      "fill_color": "0xff4a3a2a",
+      "icon": "▣"
+    },
+    "river": {
+      "name": "惠济河",
+      "move_cost": 4,
+      "defense": 0,
+      "color": "0xff3a5a7a",
+      "fill_color": "0xff2a4a6a",
+      "icon": "≈"
+    },
+    "core_fort": {
+      "name": "帝丘店核心",
+      "move_cost": 3,
+      "defense": 4,
+      "color": "0xff3a1a1a",
+      "fill_color": "0xff2a0a0a",
+      "icon": "\ud83c\udff0",
+      "full_cover": true,
+      "is_core": true,
+      "assault_only": true
+    }
+  },
   "terrains": {
     "river": [
       [0,5],[1,5],[2,4],[3,4],[4,3],[5,3],[6,3],[7,2],[8,2],[9,2],
