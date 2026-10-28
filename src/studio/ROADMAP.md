@@ -56,6 +56,7 @@
 - [ ] 4. 可注入战斗结算（依赖 3）：纯函数 + 可注入修正，核心只调用
 - [ ] 5. 可注入胜负策略（依赖 3）：核心只调用，不预设规则
 - [ ] 6. `applyMove` / `applyAttack` 拆为「通用原语（进核心）」+「帝丘店修正（降为注入）」（依赖 2 的原语）；同批把 `GameController` 中剩余帝丘店专属逻辑注入化：
+  - **守卫唯一化**：`applyMove`/`applyAttack` 去守卫，降为「假定输入合法」的纯原语；守卫全部由 CommandExecutor 承担。点击路径改为构造 Command 走执行器——与「明确淘汰」里「逐子微操降级为发令的一种方式」对齐，点击只是发令的一种渠道。守卫现状是双份（执行器 + 原语各一份 `!alive`/`side != blue`/`hasActed`），根因是原语建于点击路径时代自带守卫，本项一并纠正
   - `_recomputeExhaustion` 敌军自动重部署的帝丘店坐标 → 剧本注入部署表
   - `initialPlanViewData` 兵力表文案 → 剧本数据
   - `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据

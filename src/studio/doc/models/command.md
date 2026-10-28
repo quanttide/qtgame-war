@@ -66,7 +66,7 @@ v0.1.0 单回合内即发即执行，`expired` 只作为跨回合长命令（Pha
 
 执行：
 
-1. 有 `moveTo` → `applyMove`；无路可达 → 整条 `blocked`，不再尝试攻击。
+1. 有 `moveTo` → `applyMove`；无路可达 → 整条 `blocked`，不再尝试攻击。**原地不动须表达为 `moveTo: null`**——`getMoveRange` 结尾排除原地格，移到同格会被判「不可达」。
 2. 有 `attack` → 找目标格敌军 → `applyAttack`。目标不在射程/已撤离：无移动则整条 `blocked`；有移动则移动算数，`executed` 并记「攻击落空」。
 3. 任一动作成功 → 登记姿态（`unit.task`）、标记已行动、`executed`。
 
