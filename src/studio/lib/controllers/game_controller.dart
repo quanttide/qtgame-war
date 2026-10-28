@@ -6,24 +6,37 @@ import '../models/combat.dart';
 import '../models/game.dart';
 import '../models/battlefield.dart';
 
+/// 领域执行结果：成功与否 + 本次产生的战报。
+///
+/// 供 CommandExecutor 等非点击调用方读取，不携带任何 UI 态。
+class ExecutionResult {
+  final bool ok;
+  final List<Dispatch> dispatches;
+  const ExecutionResult(this.ok, [this.dispatches = const []]);
+}
+
 class GameController extends ChangeNotifier {
   final Game engine;
   final GameState _state;
   GameState get state => _state;
 
   GameController(this.engine)
-      : _state = GameState(
-          units: engine.createInitialUnits(),
-          campaign: Campaign(
-            playerPower: engine.config.initialPlayerPower,
-            fortStrength: engine.config.initialFortStrength,
+    : _state = GameState(
+        units: engine.createInitialUnits(),
+        campaign: Campaign(
+          playerPower: engine.config.initialPlayerPower,
+          fortStrength: engine.config.initialFortStrength,
+        ),
+        logMessages: [
+          Dispatch('\u{1F4FB}野司：包围${engine.config.name}！', 'info', 1),
+          Dispatch('\u{23F0}${_reinforceDesc(engine.config)}', 'info', 1),
+          const Dispatch(
+            '\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击',
+            'info',
+            1,
           ),
-          logMessages: [
-            Dispatch('\u{1F4FB}野司：包围${engine.config.name}！', 'info', 1),
-            Dispatch('\u{23F0}${_reinforceDesc(engine.config)}', 'info', 1),
-            const Dispatch('\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击', 'info', 1),
-          ],
-        );
+        ],
+      );
 
   static String _reinforceDesc(CampaignConfig config) {
     return config.reinforcementWaves
@@ -34,10 +47,13 @@ class GameController extends ChangeNotifier {
   void selectUnit(int unitId) {
     if (_state.phase != GamePhase.player || _state.isGameOver) return;
     final unit = _state.units.cast<Unit?>().firstWhere(
-          (u) => u!.id == unitId,
-          orElse: () => null,
-        );
-    if (unit == null || !unit.alive || unit.side != Side.blue || unit.hasActed) {
+      (u) => u!.id == unitId,
+      orElse: () => null,
+    );
+    if (unit == null ||
+        !unit.alive ||
+        unit.side != Side.blue ||
+        unit.hasActed) {
       return;
     }
 
@@ -47,8 +63,10 @@ class GameController extends ChangeNotifier {
     }
 
     _state.selectedUnitId = unitId;
-    _state.moveCandidates =
-        engine.getMoveRange(unit, _state.units, _state.campaign).keys.toSet();
+    _state.moveCandidates = engine
+        .getMoveRange(unit, _state.units, _state.campaign)
+        .keys
+        .toSet();
     _state.attackCandidates = engine.getAttackTargets(unit, _state.units);
     notifyListeners();
   }
@@ -98,49 +116,78 @@ class GameController extends ChangeNotifier {
     }
   }
 
-  void _executeMove(Unit unit, int tc, int tr) {
-    final key = '$tc,$tr';
-    if (!_state.moveCandidates.contains(key)) return;
+  /// 移动一个单位。领域口子：不依赖点击态（selectedUnitId/moveCandidates），
+  /// 用引擎真实移动范围校验。供 CommandExecutor 驱动。
+  ExecutionResult applyMove(Unit unit, int tc, int tr) {
+    if (_state.isGameOver ||
+        !unit.alive ||
+        unit.side != Side.blue ||
+        unit.hasActed) {
+      return const ExecutionResult(false);
+    }
+    final reachable = engine.getMoveRange(unit, _state.units, _state.campaign);
+    if (!reachable.containsKey('$tc,$tr')) return const ExecutionResult(false);
 
     unit.moveTo(tc, tr);
-    _state.campaign.playerPower =
-        (_state.campaign.playerPower - 1).clamp(5, 100);
-    _state.logMessages = [
-      ..._state.logMessages,
+    _state.campaign.playerPower = (_state.campaign.playerPower - 1).clamp(
+      5,
+      100,
+    );
+    return ExecutionResult(true, [
       Dispatch('${unit.type.name} 向 ($tc,$tr) 推进', 'info', _state.currentTurn),
-    ];
-
-    _state.moveCandidates = {};
-    _state.attackCandidates =
-        engine.getAttackTargets(unit, _state.units);
-    notifyListeners();
+    ]);
   }
 
-  void _executeAttack(Unit attacker, Unit defender) {
-    final result =
-        resolveCombat(attacker, defender, _state.campaign, engine.mapTerrain);
+  /// 攻击一个单位。领域口子：不依赖点击态，用引擎真实攻击范围校验，
+  /// 自行处理战果/工事/胜负。供 CommandExecutor 驱动。
+  ExecutionResult applyAttack(Unit attacker, Unit defender) {
+    if (_state.isGameOver ||
+        !attacker.alive ||
+        attacker.side != Side.blue ||
+        attacker.hasActed) {
+      return const ExecutionResult(false);
+    }
+    if (!defender.alive || defender.side != Side.red || !defender.revealed) {
+      return const ExecutionResult(false);
+    }
+    final targets = engine.getAttackTargets(attacker, _state.units);
+    if (!targets.contains('${defender.col},${defender.row}')) {
+      return const ExecutionResult(false);
+    }
 
-    _state.campaign.playerPower =
-        (_state.campaign.playerPower - 3).clamp(5, 100);
+    final result = resolveCombat(
+      attacker,
+      defender,
+      _state.campaign,
+      engine.mapTerrain,
+    );
+    _state.campaign.playerPower = (_state.campaign.playerPower - 3).clamp(
+      5,
+      100,
+    );
 
-    _state.logMessages = [
-      ..._state.logMessages,
-      Dispatch('${attacker.type.name} \u2192 ${defender.type.name}：${result.text}',
-          'hit', _state.currentTurn),
+    final dispatches = <Dispatch>[
+      Dispatch(
+        '${attacker.type.name} \u2192 ${defender.type.name}：${result.text}',
+        'hit',
+        _state.currentTurn,
+      ),
     ];
 
     if (result.killed) {
       final defTerrain = engine.mapTerrain[defender.row][defender.col];
       if (terrainProps[defTerrain]!.isCore) {
-        _state.campaign.fortStrength =
-            (_state.campaign.fortStrength - 1).clamp(0, 5);
-        _state.logMessages = [
-          ..._state.logMessages,
+        _state.campaign.fortStrength = (_state.campaign.fortStrength - 1).clamp(
+          0,
+          5,
+        );
+        dispatches.add(
           Dispatch(
-              '\u{1F3F0}帝丘店核心防御被削弱！（剩余强度${_state.campaign.fortStrength}）',
-              'urgent',
-              _state.currentTurn),
-        ];
+            '\u{1F3F0}帝丘店核心防御被削弱！（剩余强度${_state.campaign.fortStrength}）',
+            'urgent',
+            _state.currentTurn,
+          ),
+        );
       }
     }
 
@@ -150,6 +197,22 @@ class GameController extends ChangeNotifier {
 
     engine.checkVictory(_state.units, _state.campaign, _state.currentTurn);
 
+    return ExecutionResult(true, dispatches);
+  }
+
+  void _executeMove(Unit unit, int tc, int tr) {
+    final result = applyMove(unit, tc, tr);
+    if (!result.ok) return;
+    _state.logMessages = [..._state.logMessages, ...result.dispatches];
+    _state.moveCandidates = {};
+    _state.attackCandidates = engine.getAttackTargets(unit, _state.units);
+    notifyListeners();
+  }
+
+  void _executeAttack(Unit attacker, Unit defender) {
+    final result = applyAttack(attacker, defender);
+    if (!result.ok) return;
+    _state.logMessages = [..._state.logMessages, ...result.dispatches];
     _state.selectedUnitId = null;
     _state.moveCandidates = {};
     _state.attackCandidates = {};
@@ -182,7 +245,10 @@ class GameController extends ChangeNotifier {
     if (_state.phase != GamePhase.ai || _state.isGameOver) return;
 
     final (reinforcements, spawnLogs) = engine.spawnReinforcements(
-        _state.units, _state.campaign, _state.currentTurn);
+      _state.units,
+      _state.campaign,
+      _state.currentTurn,
+    );
     if (reinforcements.isNotEmpty) {
       _state.units.addAll(reinforcements);
       _state.logMessages = [..._state.logMessages, ...spawnLogs];
@@ -190,23 +256,31 @@ class GameController extends ChangeNotifier {
 
     for (final nu in _state.enemyUnits.where((u) => u.revealed)) {
       final targets = _state.playerUnits.where((pu) {
-        final d =
-            Battlefield.hexDistance(nu.col, nu.row, pu.col, pu.row);
+        final d = Battlefield.hexDistance(nu.col, nu.row, pu.col, pu.row);
         if (d > nu.type.attackRange) return false;
         if (Game.inFullCover(pu, engine.mapTerrain) && d > 1) return false;
         return true;
       }).toList();
 
       if (targets.isNotEmpty) {
-        targets.sort((a, b) =>
-            (b.type.baseAttack + (b.type.isAssault ? 5 : 0))
-                .compareTo(a.type.baseAttack + (a.type.isAssault ? 5 : 0)));
+        targets.sort(
+          (a, b) => (b.type.baseAttack + (b.type.isAssault ? 5 : 0)).compareTo(
+            a.type.baseAttack + (a.type.isAssault ? 5 : 0),
+          ),
+        );
         final result = resolveCombat(
-            nu, targets.first, _state.campaign, engine.mapTerrain);
+          nu,
+          targets.first,
+          _state.campaign,
+          engine.mapTerrain,
+        );
         _state.logMessages = [
           ..._state.logMessages,
-          Dispatch('${nu.type.name} \u2192 ${targets.first.type.name}：${result.text}',
-              'urgent', _state.currentTurn),
+          Dispatch(
+            '${nu.type.name} \u2192 ${targets.first.type.name}：${result.text}',
+            'urgent',
+            _state.currentTurn,
+          ),
         ];
 
         if (_state.playerUnits.isEmpty) {
@@ -221,8 +295,10 @@ class GameController extends ChangeNotifier {
     }
 
     var newTurn = _state.currentTurn + 1;
-    _state.campaign.playerPower =
-        (_state.campaign.playerPower - 1).clamp(5, 100);
+    _state.campaign.playerPower = (_state.campaign.playerPower - 1).clamp(
+      5,
+      100,
+    );
 
     engine.checkVictory(_state.units, _state.campaign, newTurn);
 
