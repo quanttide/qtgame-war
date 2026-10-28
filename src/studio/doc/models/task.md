@@ -1,6 +1,18 @@
 # Task 模块
 
-命令档位与疲劳规则。每个回合玩家为每个纵队指定一个 Task，Task 决定该纵队参与哪条战线、结算加值与疲劳增量。规格来自 `examples/prototype/龙王店战斗.html` 的 `TASK` 表与 `resolve()`，逐项等价。
+命令档位与疲劳规则。**指挥官层词汇**：描述一个纵队本回合接受的姿态（「1纵这回合围困」），不含坐标、不跨回合。
+
+每个回合玩家为每个纵队指定一个 Task，Task 决定该纵队参与哪条战线、结算加值与疲劳增量。规格来自 `examples/prototype/龙王店战斗.html` 的 `TASK` 表与 `resolve()`，逐项等价。
+
+## 在两层桥中的位置
+
+```
+指挥官层   Task（本模块）      姿态：「围困」，无坐标
+    ↓ 翻译层（CommandExecutor，待建）
+执行层     Command（待建）      带坐标/目标/时限，喂给战棋引擎
+```
+
+Task 是指挥官决策的直接表达，不是引擎执行的载体。翻译层从 Task + 战场态势推导出带坐标的 Command，交给引擎按位置结算。故 Task 保持剧本无关、纯姿态值——不要往里加坐标或执行状态。
 
 ## TaskType（本体，七档）
 
@@ -53,8 +65,9 @@ enum TaskType { assault, siege, feint, block, flank, lure, standby }
 
 ## 归属
 
-TaskType/TaskRole 是剧本无关的规则词汇，不含坐标与数值调整来源；每局的纵队名、初始 role、坐标由剧本数据提供（v0.1.0 待建 `assets/campaigns/longwangdian/`）。per-Unit 的 `task`/`fat` 字段接线与结算消费在后续任务落地。
+TaskType/TaskRole 是剧本无关的规则词汇，不含坐标与数值调整来源；每局的纵队名、初始 role、坐标由剧本数据提供。per-Unit 的 `task`/`fat` 字段接线与翻译层消费（Task → Command）在 v0.1.0 竖切中落地（见 `ROADMAP.md`）。
 
 ## 变更记录
 
 - 初版：从原型 `TASK` 表、`slots()`、`resolve()` 抽取，含战线分组与疲劳规则
+- 定位澄清：Task 是指挥官层姿态词汇，两层桥的上半；执行载体是 Command（翻译层产出），不在此模块
