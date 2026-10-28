@@ -14,7 +14,7 @@
 | 剧本（if 线） | 4 篇战役推演稿 + 剧本管理工具原型 |
 | 单元测试 | 覆盖 models / controllers / views / screens |
 
-阶段计划与结论见 [docs/dev-guide/roadmap.md](docs/dev-guide/roadmap.md)。
+阶段实现进度见 [src/studio/ROADMAP.md](src/studio/ROADMAP.md)。
 
 ## 目录结构
 
@@ -57,11 +57,10 @@ cd src/studio && flutter test
 
 | 文档 | 内容 |
 |------|------|
-| [docs/dev-guide/index.md](docs/dev-guide/index.md) | 开发方向：剧本为核心，AI 推演为机制核心 |
-| [docs/dev-guide/method.md](docs/dev-guide/method.md) | 反事实军事推演的五层递进分析法 |
-| [docs/dev-guide/roadmap.md](docs/dev-guide/roadmap.md) | Phase A–D 路线图与已完成实验结论 |
-| [docs/dev-guide/yudong-sample.md](docs/dev-guide/yudong-sample.md) | 豫东样本：三个核心机制、时窗与胜利条件、验收测试 |
-| [docs/dev-guide/params.md](docs/dev-guide/params.md) | 数值参数的具体落地：参数组、初值、写入位置与启用阶段 |
+| [docs/dev-guide/index.md](docs/dev-guide/index.md) | studio 现行设计的唯一来源（目录） |
+| [docs/dev-guide/core-mechanism.md](docs/dev-guide/core-mechanism.md) | 核心机制：玩家是指挥官，不是棋手 |
+| [docs/dev-guide/constraints.md](docs/dev-guide/constraints.md) | 架构约束：通用核心加剧本注入、红蓝语义、模型签名 |
+| [docs/dev-guide/layering.md](docs/dev-guide/layering.md) | 分层结构：指挥官层、执行核心、剧本层 |
 | [examples/scene-manager/scenes/](examples/scene-manager/scenes/) | 豫东、辽沈、淮海、平津战役 if 线（frontmatter 格式） |
 | [STATUS.md](STATUS.md) | 已实现 / 未实现 / 差距 |
 | [src/studio/doc/index.md](src/studio/doc/index.md) | 架构与状态管理现状 |

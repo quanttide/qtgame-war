@@ -10,7 +10,7 @@
 
 ## 数据模型（默认方案）
 
-剧本为 Markdown 文件，YAML frontmatter 承载元数据，正文按 `docs/dev-guide/method.md` 五步组织：
+剧本为 Markdown 文件，YAML frontmatter 承载元数据，正文按五步分析法组织（方法详见 Git 历史中 `docs/dev-guide/method.md`）：
 
 ```markdown
 ---
@@ -33,7 +33,7 @@ outcomes: []       # 结局 + 概率
 ## 形态与数据模型（2026-09-06 定稿）
 
 - 形态：`scene_manager.py`，tkinter GUI，零安装依赖（Python 标准库 + PyYAML）
-- 数据源：`scenes/*.md`，frontmatter 承载元数据，正文按 `docs/dev-guide/method.md` 五步组织（原文原样保留，不改写）
+- 数据源：`scenes/*.md`，frontmatter 承载元数据，正文按五步分析法组织（原文原样保留，不改写；方法见 Git 历史中 `docs/dev-guide/method.md`）
 - schema 简化：outcomes 用扁字符串「结局名（NN%）」承载概率，不用嵌套对象，便于免解析器读写
 - 状态枚举扩充：`scanned`（支点已扫描未推演）→ `draft`（推演完成）→ `verified` → `playable`
 - 功能：清单浏览、详情展示（含概率条与归一校验提示）、状态流转、新建脚手架、打开原文

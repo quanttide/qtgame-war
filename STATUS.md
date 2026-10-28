@@ -5,7 +5,7 @@
 - **兵棋推演引擎**（`src/studio/`，Flutter）：六角格地图、单位移动/攻击、战斗结算、援军触发、回合与 AI，可运行，有单元测试
 - **龙王店战斗可玩原型**（`examples/prototype/`）：决心卡 + 六角格结算的完整可玩闭环，史实逐回合对应
 - **剧本管理工具**（`examples/scene-manager/`）：frontmatter schema v3 + DAG 分支图，4 篇战役剧本已重构入库
-- **Phase A/B 实验**（`examples/intent-*`、`chief-of-staff-prototype`）：意图→行动过滤、情报→意图映射、参谋长交互均已验证，结论固化在 `docs/dev-guide/roadmap.md`
+- **Phase A/B 实验**（`examples/intent-*`、`chief-of-staff-prototype`）：意图→行动过滤、情报→意图映射、参谋长交互均已验证，结论见各 examples 目录与 Git 历史
 
 ## 未实现（Phase C，见 roadmap）
 

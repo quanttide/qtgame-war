@@ -151,7 +151,7 @@
 
 | 类别 | 目录 | 内容 | 读者 |
 |------|------|------|------|
-| 开发指南 | `docs/dev-guide/` | **现行设计的唯一来源。** 方法、路线图、数值参数、剧本推演稿 | 开发者 |
+| 开发指南 | `docs/dev-guide/` | **现行设计的唯一来源。** 核心机制、架构约束、分层结构 | 开发者 |
 | 实验记录 | `examples/` | 实验原型，验证设计假设。Phase A/B 已完成的结论以此为准 | 开发者 |
 | 实现 | `src/studio/` | Flutter 兵棋引擎 + 指挥部界面，模块文档在 `src/studio/doc/` | 开发者 |
 
@@ -159,3 +159,8 @@
 - 现行设计只认工作树中的 `docs/dev-guide/`。
 - Git 历史中存在已废弃的设计文档与原型（`docs/context/`、`docs/roadmap/`、`docs/insight/`、旧 HTML 原型等），仅为演化记录，**不得从历史版本中把已删除的文档当作现状引用**。
 - examples 的实验原型验证通过后，功能实现才进入正式代码。原型本身不进入产品。
+
+**dev-guide 治理**：
+- 分层定位：跨版本的设计共识进 `docs/dev-guide/`；版本执行计划（待做/已交付）留 `src/studio/ROADMAP.md`；模块规格在 `src/studio/doc/`。划分标准：被两个以上版本引用的内容归 dev-guide，只服务当前版本的归 ROADMAP。ROADMAP 对设计只留一行链接，不留正文。
+- `docs/dev-guide/index.md` 是唯一目录；新增或删除 dev-guide 文件必须同 commit 更新 index。
+- 提交前跑 `qtfounder docs <文件> --stats`；AI 对话稿按上节规则清洗。
