@@ -29,8 +29,6 @@ qtgame-war/
 │   ├── assets/campaigns/        战役数据（campaign / map / units.json）
 │   ├── doc/                     架构与模块说明
 │   └── test/                    单元测试
-├── docs/
-│   └── dev-guide/               开发方向、推演方法、路线图
 ├── examples/                    HTML/Python 实验原型，不进产品
 ├── assets/                      史料与剧本素材（history / scenario）
 ├── scripts/run.sh               启动脚本
@@ -57,10 +55,7 @@ cd src/studio && flutter test
 
 | 文档 | 内容 |
 |------|------|
-| [docs/dev-guide/index.md](docs/dev-guide/index.md) | studio 现行设计的唯一来源（目录） |
-| [docs/dev-guide/core-mechanism.md](docs/dev-guide/core-mechanism.md) | 核心机制：玩家是指挥官，不是棋手 |
-| [docs/dev-guide/constraints.md](docs/dev-guide/constraints.md) | 架构约束：通用核心加剧本注入、红蓝语义、模型签名 |
-| [docs/dev-guide/layering.md](docs/dev-guide/layering.md) | 分层结构：指挥官层、执行核心、剧本层 |
+| 创始人档案仓 `qtgame-war/` 分区 | 现行设计的唯一来源（核心机制、架构约束、分层结构） |
 | [examples/scene-manager/scenes/](examples/scene-manager/scenes/) | 豫东、辽沈、淮海、平津战役 if 线（frontmatter 格式） |
 | [STATUS.md](STATUS.md) | 已实现 / 未实现 / 差距 |
 | [src/studio/doc/index.md](src/studio/doc/index.md) | 架构与状态管理现状 |

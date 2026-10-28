@@ -1,12 +1,12 @@
 # studio ROADMAP
 
-> 核心机制、架构约束与分层结构见 [docs/dev-guide/](../../docs/dev-guide/index.md)。
+> 核心机制、架构约束与分层结构见创始人档案仓 `qtgame-war/` 分区（跨版本设计共识）。
 
 ## v0.1.0 — 通用引擎核心
 
 **目标**：建立跨剧本的核心——战场模型 + CommandExecutor + 可注入的战斗/胜负/地形，不绑任何剧本。
 
-**验收**：核心代码检索不到剧本专名；Task/Command/translator/执行原语全部落在核心层；一个虚构最小剧本可驱动核心跑通一回合。核心 / 剧本边界清单见 [docs/dev-guide/constraints.md](../../docs/dev-guide/constraints.md)。
+**验收**：核心代码检索不到剧本专名；Task/Command/translator/执行原语全部落在核心层；一个虚构最小剧本可驱动核心跑通一回合。核心 / 剧本边界清单见创始人档案仓 `qtgame-war/constraints.md`。
 
 ### 待做（顺序即依赖）
 
