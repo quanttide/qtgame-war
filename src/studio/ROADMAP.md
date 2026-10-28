@@ -8,28 +8,19 @@
 
 **验收**：核心代码检索不到剧本专名；Task/Command/translator/执行原语全部落在核心层；一个虚构最小剧本可驱动核心跑通一回合。核心 / 剧本边界清单见创始人档案仓 `qtgame-war/constraints.md`。
 
-### 待做（顺序即依赖）
+### 待做
 
-- [x] 1. **模型签名去 Campaign 化**：`Unit.effectiveMoveRange` / `resolveCombat` 收注入修正标量，解绑 `Campaign`
-- [x] 2. **CommandExecutor** — 命令序列 → 通用原语 → 战报。守卫逻辑（已亡/不归我方/不在场/空令）收进执行器，**停止在每个新入口内联复制**。建在已去 Campaign 化的签名上，立即可做
-- [x] 3. **帝丘店数据剥离**（一并处理，不再拆项）：
-  - 地形数据化：`TerrainType` enum + 全局 `terrainProps` → 剧本注入的 terrain catalog（props per id）
-  - `Battlefield` 静态 10×7 尺寸 → 剧本提供
-  - `createMapTerrain()` 硬编码帝丘店坐标 → 剧本地图数据
-  - `checkVictory` 硬编码「帝丘店核心」文案 → 剧本注入
-  - terrain id 的 `name` 字段（`帝丘店核心` / `惠济河`）→ 剧本地名
-  - 测试数据跟随：直接用 `createMapTerrain()` 的测试同步改造
-- [ ] 4. 可注入战斗结算（依赖 3）：纯函数 + 可注入修正，核心只调用
-- [ ] 5. 可注入胜负策略（依赖 3）：核心只调用，不预设规则
-- [ ] 6. `applyMove` / `applyAttack` 拆为「通用原语（进核心）」+「帝丘店修正（降为注入）」（依赖 2 的原语）；同批把 `GameController` 中剩余帝丘店专属逻辑注入化：
+- [ ] 1. 可注入战斗结算：纯函数 + 可注入修正，核心只调用
+- [ ] 2. 可注入胜负策略：核心只调用，不预设规则
+- [ ] 3. `applyMove` / `applyAttack` 拆为「通用原语（进核心）」+「帝丘店修正（降为注入）」；同批把 `GameController` 中剩余帝丘店专属逻辑注入化：
   - **守卫唯一化**：`applyMove`/`applyAttack` 去守卫，降为「假定输入合法」的纯原语；守卫全部由 CommandExecutor 承担。点击路径改为构造 Command 走执行器——与「明确淘汰」里「逐子微操降级为发令的一种方式」对齐，点击只是发令的一种渠道。守卫现状是双份（执行器 + 原语各一份 `!alive`/`side != blue`/`hasActed`），根因是原语建于点击路径时代自带守卫，本项一并纠正
   - `_recomputeExhaustion` 敌军自动重部署的帝丘店坐标 → 剧本注入部署表
   - `initialPlanViewData` 兵力表文案 → 剧本数据
   - `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
-- [ ] 7. **剧本资产收尾**（做完 3 才暴露的问题；在 4–6 大改 config 之前做，减小返工）：
-  - `CampaignConfig.load` 拆为纯函数 `fromJson(campaignJson, mapJson, unitsJson)` + 薄 IO 壳；新增测试解析**真实帝丘店 JSON 资产**——目前真实资产零测试，map.json 写错（非法转义/字段缺失/键不匹配）只能在启动 App 时发现；item 5 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔
+- [ ] 4. **剧本资产收尾**（帝丘店数据剥离后暴露的问题；宜在 config 大改前完成，减小返工）：
+  - `CampaignConfig.load` 拆为纯函数 `fromJson(campaignJson, mapJson, unitsJson)` + 薄 IO 壳；新增测试解析**真实帝丘店 JSON 资产**——目前真实资产零测试，map.json 写错（非法转义/字段缺失/键不匹配）只能在启动 App 时发现；龙王店（v0.1.1）走纯 JSON 剧本，schema 无测试等于注入机制裸奔
   - JSON key `initial_huaye_power` 含「华野」专名 → 改通用名并同步 campaign.json——「核心检索不到剧本专名」的验收要覆盖 JSON schema，不只 Dart 代码
-  - `hexSize` 双源归一：`config.hexSize` 与 `Battlefield.hexSize`（static 27）并存但几何只读后者，config 那份是死的——item 3 的「尺寸归剧本」只走了 cols/rows，此项补完：几何改收注入值，或删 config 字段并明记为跨剧本常量
+  - `hexSize` 双源归一：`config.hexSize` 与 `Battlefield.hexSize`（static 27）并存但几何只读后者，config 那份是死的——帝丘店数据剥离的「尺寸归剧本」只走了 cols/rows，此项补完：几何改收注入值，或删 config 字段并明记为跨剧本常量
 
 ### 已交付（本就通用，归位核心层）
 
