@@ -29,20 +29,90 @@ void main() {
           'aslt': UnitLibrary.assaultInfantry,
         },
         initialUnits: [
-          UnitSpec(id: 1, template: UnitLibrary.artillery, side: Side.blue, col: 3, row: 3, revealed: true),
-          UnitSpec(id: 2, template: UnitLibrary.lightInfantry, side: Side.blue, col: 0, row: 1, revealed: true),
-          UnitSpec(id: 3, template: UnitLibrary.assaultInfantry, side: Side.blue, col: 1, row: 2, revealed: true),
-          UnitSpec(id: 10, template: UnitLibrary.heavyInfantry, side: Side.red, col: 4, row: 3, revealed: true),
-          UnitSpec(id: 11, template: UnitLibrary.lightInfantry, side: Side.red, col: 4, row: 5),
-          UnitSpec(id: 12, template: UnitLibrary.heavyInfantry, side: Side.red, col: 6, row: 4),
+          UnitSpec(
+            id: 1,
+            template: UnitLibrary.artillery,
+            side: Side.blue,
+            col: 3,
+            row: 3,
+            revealed: true,
+          ),
+          UnitSpec(
+            id: 2,
+            template: UnitLibrary.lightInfantry,
+            side: Side.blue,
+            col: 0,
+            row: 1,
+            revealed: true,
+          ),
+          UnitSpec(
+            id: 3,
+            template: UnitLibrary.assaultInfantry,
+            side: Side.blue,
+            col: 1,
+            row: 2,
+            revealed: true,
+          ),
+          UnitSpec(
+            id: 10,
+            template: UnitLibrary.heavyInfantry,
+            side: Side.red,
+            col: 4,
+            row: 3,
+            revealed: true,
+          ),
+          UnitSpec(
+            id: 11,
+            template: UnitLibrary.lightInfantry,
+            side: Side.red,
+            col: 4,
+            row: 5,
+          ),
+          UnitSpec(
+            id: 12,
+            template: UnitLibrary.heavyInfantry,
+            side: Side.red,
+            col: 6,
+            row: 4,
+          ),
         ],
         reinforcementWaves: [
-          ReinforcementWave(label: 'qiu', name: '邱清泉', turn: 8, message: '邱兵团到达', arrivedFlag: 'qiu_arrived', units: [
-            UnitSpec(id: 0, template: UnitLibrary.cavalry, side: Side.red, col: 0, row: 2, revealed: true, isReinforcement: true),
-          ]),
-          ReinforcementWave(label: 'hu', name: '胡琏', turn: 7, message: '胡兵团到达', arrivedFlag: 'hu_arrived', units: [
-            UnitSpec(id: 0, template: UnitLibrary.lightInfantry, side: Side.red, col: 8, row: 5, revealed: true, isReinforcement: true),
-          ]),
+          ReinforcementWave(
+            label: 'qiu',
+            name: '邱清泉',
+            turn: 8,
+            message: '邱兵团到达',
+            arrivedFlag: 'qiu_arrived',
+            units: [
+              UnitSpec(
+                id: 0,
+                template: UnitLibrary.cavalry,
+                side: Side.red,
+                col: 0,
+                row: 2,
+                revealed: true,
+                isReinforcement: true,
+              ),
+            ],
+          ),
+          ReinforcementWave(
+            label: 'hu',
+            name: '胡琏',
+            turn: 7,
+            message: '胡兵团到达',
+            arrivedFlag: 'hu_arrived',
+            units: [
+              UnitSpec(
+                id: 0,
+                template: UnitLibrary.lightInfantry,
+                side: Side.red,
+                col: 8,
+                row: 5,
+                revealed: true,
+                isReinforcement: true,
+              ),
+            ],
+          ),
         ],
         maxTurns: 12,
         initialPlayerPower: 85,
@@ -60,7 +130,11 @@ void main() {
 
     test('getMoveRange excludes own position', () {
       final unit = initialUnits.first;
-      final range = game.getMoveRange(unit, initialUnits, Campaign(playerPower: 85, fortStrength: 3));
+      final range = game.getMoveRange(
+        unit,
+        initialUnits,
+        Campaign(playerPower: 85, fortStrength: 3),
+      );
       expect(range.containsKey('${unit.col},${unit.row}'), false);
     });
 
@@ -73,7 +147,7 @@ void main() {
         final c = int.parse(parts[0]);
         final r = int.parse(parts[1]);
         final dist = Battlefield.hexDistance(unit.col, unit.row, c, r);
-        expect(dist, lessThanOrEqualTo(unit.effectiveMoveRange(camp)));
+        expect(dist, lessThanOrEqualTo(unit.effectiveMoveRange(camp.moveMod)));
       }
     });
 
@@ -84,14 +158,20 @@ void main() {
       expect(targets, isNotEmpty);
       for (final key in targets) {
         final parts = key.split(',');
-        final u = game.getUnitAt(int.parse(parts[0]), int.parse(parts[1]), initialUnits);
+        final u = game.getUnitAt(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          initialUnits,
+        );
         expect(u, isNotNull);
         expect(u!.side, Side.red);
       }
     });
 
     test('getAttackTargets ignores unrevealed enemies', () {
-      for (final u in initialUnits) { if (u.side == Side.red) u.revealed = false; }
+      for (final u in initialUnits) {
+        if (u.side == Side.red) u.revealed = false;
+      }
       final player = initialUnits.firstWhere((u) => u.side == Side.blue);
       final targets = game.getAttackTargets(player, initialUnits);
       expect(targets, isEmpty);
@@ -111,14 +191,22 @@ void main() {
 
     test('spawnReinforcements does not spawn before wave turn', () {
       final campaign = Campaign(playerPower: 85, fortStrength: 3);
-      final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 1);
+      final (newUnits, logs) = game.spawnReinforcements(
+        initialUnits,
+        campaign,
+        1,
+      );
       expect(newUnits, isEmpty);
       expect(logs, isEmpty);
     });
 
     test('spawnReinforcements spawns at wave turn', () {
       final campaign = Campaign(playerPower: 85, fortStrength: 3);
-      final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 7);
+      final (newUnits, logs) = game.spawnReinforcements(
+        initialUnits,
+        campaign,
+        7,
+      );
       expect(newUnits, hasLength(1));
       expect(logs, hasLength(1));
       expect(logs.first.msg, '胡兵团到达');
@@ -128,24 +216,33 @@ void main() {
       final campaign = Campaign(playerPower: 85, fortStrength: 3);
       game.spawnReinforcements(initialUnits, campaign, 7); // hu arrives
       game.spawnReinforcements(initialUnits, campaign, 8); // qiu arrives
-      final (newUnits, logs) = game.spawnReinforcements(initialUnits, campaign, 10);
+      final (newUnits, logs) = game.spawnReinforcements(
+        initialUnits,
+        campaign,
+        10,
+      );
       expect(newUnits, isEmpty);
     });
 
     test('checkVictory detects no enemies left', () {
       final campaign = Campaign();
-      for (final u in initialUnits) { if (u.side == Side.red) u.alive = false; }
+      for (final u in initialUnits) {
+        if (u.side == Side.red) u.alive = false;
+      }
       game.checkVictory(initialUnits, campaign, 5);
       expect(campaign.gameOver, true);
       expect(campaign.victory, true);
       expect(campaign.victoryDetail, contains('肃清'));
     });
 
-    test('checkVictory does not trigger with enemies alive and core not taken', () {
-      final campaign = Campaign(fortStrength: 3);
-      game.checkVictory(initialUnits, campaign, 5);
-      expect(campaign.gameOver, false);
-    });
+    test(
+      'checkVictory does not trigger with enemies alive and core not taken',
+      () {
+        final campaign = Campaign(fortStrength: 3);
+        game.checkVictory(initialUnits, campaign, 5);
+        expect(campaign.gameOver, false);
+      },
+    );
   });
 }
 

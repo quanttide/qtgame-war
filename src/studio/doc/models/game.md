@@ -31,5 +31,5 @@
 
 ## 变更记录
 
-- `getMoveRange` 签名增加 `Campaign campaign` 参数，传参给 `effectiveMoveRange(campaign)`
+- `getMoveRange` 签名带 `Campaign campaign` 参数，内部取 `campaign.moveMod` 传给 `effectiveMoveRange(moveMod)`（几何通用，编排层仍帝丘店感知）
 - `initialHuayePower` → `initialPlayerPower`：统一命名

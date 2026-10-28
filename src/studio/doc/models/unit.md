@@ -53,7 +53,7 @@ enum Side { blue, red }
 
 ## 实例操作
 
-- `effectiveMoveRange(Campaign)` — 计算有效移动范围（baseMoveRange - moveMod）
+- `effectiveMoveRange(int moveMod)` — 计算有效移动范围（baseMoveRange - moveMod）。收注入修正标量，不收 `Campaign`——模型签名保持剧本无关
 - `moveTo(col, row)` — 修改坐标
 - `takeDamage(damage)` — 扣血，hp≤0 时 alive 置 false
 - `markActed()` — hasActed = true
@@ -63,6 +63,6 @@ enum Side { blue, red }
 
 ## 变更记录
 
-- `effectiveMoveRange` 从 getter 改为方法，接受 `Campaign` 参数以接入 `moveMod`
+- `effectiveMoveRange` 从 getter 改为方法；后又从收 `Campaign` 改为收注入的 `int moveMod` 标量，解绑帝丘店战力模型（模型签名剧本无关）
 - 移除 `markReinforcement()` 死方法（从未被调用）
 - 移除 `Campaign` 循环依赖（显式 import）

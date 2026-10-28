@@ -122,9 +122,10 @@ class Unit {
     this.fat = 0,
   }) : hp = hp ?? type.maxHp;
 
-  /// 有效移动范围 = 基础移动范围 - 战力消耗修正（moveMod 越大移动力越少）
-  int effectiveMoveRange(Campaign campaign) =>
-      (type.baseMoveRange - campaign.moveMod).clamp(1, 99);
+  /// 有效移动范围 = 基础移动范围 - 移动修正（moveMod 越大移动力越少）。
+  /// 收注入修正标量而非 Campaign，保持模型签名剧本无关。
+  int effectiveMoveRange(int moveMod) =>
+      (type.baseMoveRange - moveMod).clamp(1, 99);
   int get maxHp => type.maxHp;
 
   void moveTo(int newCol, int newRow) {

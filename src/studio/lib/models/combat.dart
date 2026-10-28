@@ -1,14 +1,25 @@
 import 'dart:math';
 import 'unit.dart';
-import 'campaign.dart';
 import 'battlefield.dart';
 
-CombatResult resolveCombat(Unit attacker, Unit defender, Campaign campaign, List<List<TerrainType>> mapTerrain) {
+/// 战斗结算。纯函数，收注入命中修正标量 [hitMod]（由调用方从剧本状态取出），
+/// 不收整个剧本状态对象——保持签名剧本无关。
+CombatResult resolveCombat(
+  Unit attacker,
+  Unit defender,
+  List<List<TerrainType>> mapTerrain, {
+  int hitMod = 0,
+}) {
   int hitChance = 55;
   hitChance += attacker.type.baseAttack * 6;
-  hitChance += campaign.hitMod;
+  hitChance += hitMod;
   hitChance -= _terrainDefense(defender, mapTerrain) * 8;
-  final dist = Battlefield.hexDistance(attacker.col, attacker.row, defender.col, defender.row);
+  final dist = Battlefield.hexDistance(
+    attacker.col,
+    attacker.row,
+    defender.col,
+    defender.row,
+  );
   if (dist > 1) hitChance -= (dist - 1) * 4;
   hitChance = hitChance.clamp(5, 92);
 

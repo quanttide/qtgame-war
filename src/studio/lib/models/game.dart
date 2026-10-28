@@ -40,9 +40,15 @@ class CampaignConfig {
   });
 
   static Future<CampaignConfig> load(String id) async {
-    final c = jsonDecode(await rootBundle.loadString('assets/campaigns/$id/campaign.json'));
-    final m = jsonDecode(await rootBundle.loadString('assets/campaigns/$id/map.json'));
-    final u = jsonDecode(await rootBundle.loadString('assets/campaigns/$id/units.json'));
+    final c = jsonDecode(
+      await rootBundle.loadString('assets/campaigns/$id/campaign.json'),
+    );
+    final m = jsonDecode(
+      await rootBundle.loadString('assets/campaigns/$id/map.json'),
+    );
+    final u = jsonDecode(
+      await rootBundle.loadString('assets/campaigns/$id/units.json'),
+    );
 
     final templates = <String, UnitType>{};
     for (final t in (u['templates'] as List)) {
@@ -50,32 +56,45 @@ class CampaignConfig {
       templates[t['id']] = ut;
     }
 
-    final units = (u['units'] as List).map((x) => UnitSpec(
-      id: x['id'],
-      template: templates[x['template']]!,
-      side: x['side'] == 'blue' ? Side.blue : Side.red,
-      col: x['col'],
-      row: x['row'],
-      revealed: x['revealed'] ?? false,
-      isReinforcement: x['is_reinforcement'] ?? false,
-    )).toList();
+    final units = (u['units'] as List)
+        .map(
+          (x) => UnitSpec(
+            id: x['id'],
+            template: templates[x['template']]!,
+            side: x['side'] == 'blue' ? Side.blue : Side.red,
+            col: x['col'],
+            row: x['row'],
+            revealed: x['revealed'] ?? false,
+            isReinforcement: x['is_reinforcement'] ?? false,
+          ),
+        )
+        .toList();
 
-    final waves = (c['reinforcements'] as List).map((x) => ReinforcementWave(
-      label: x['label'],
-      name: x['name'] ?? x['label'],
-      turn: x['turn'],
-      message: x['message'],
-      arrivedFlag: x['arrived_flag'] as String? ?? '${x['label']}_arrived',
-      units: (x['units'] as List).map((su) => UnitSpec(
-        id: su['id'] ?? 0,
-        template: templates[su['template']]!,
-        side: su['side'] == 'blue' ? Side.blue : Side.red,
-        col: su['col'],
-        row: su['row'],
-        revealed: true,
-        isReinforcement: true,
-      )).toList(),
-    )).toList();
+    final waves = (c['reinforcements'] as List)
+        .map(
+          (x) => ReinforcementWave(
+            label: x['label'],
+            name: x['name'] ?? x['label'],
+            turn: x['turn'],
+            message: x['message'],
+            arrivedFlag:
+                x['arrived_flag'] as String? ?? '${x['label']}_arrived',
+            units: (x['units'] as List)
+                .map(
+                  (su) => UnitSpec(
+                    id: su['id'] ?? 0,
+                    template: templates[su['template']]!,
+                    side: su['side'] == 'blue' ? Side.blue : Side.red,
+                    col: su['col'],
+                    row: su['row'],
+                    revealed: true,
+                    isReinforcement: true,
+                  ),
+                )
+                .toList(),
+          ),
+        )
+        .toList();
 
     return CampaignConfig(
       name: c['name'] ?? '',
@@ -152,11 +171,18 @@ class Game {
   static bool inCore(Unit unit, List<List<TerrainType>> map) =>
       terrainProps[map[unit.row][unit.col]]!.isCore;
 
-  Map<String, int> getMoveRange(Unit unit, List<Unit> allUnits, Campaign campaign) {
+  Map<String, int> getMoveRange(
+    Unit unit,
+    List<Unit> allUnits,
+    Campaign campaign,
+  ) {
+    final moveMod = campaign.moveMod;
     final reachable = <String, int>{};
     final key = '${unit.col},${unit.row}';
-    final queue = <(int, int, int)>[(unit.col, unit.row, unit.effectiveMoveRange(campaign))];
-    reachable[key] = unit.effectiveMoveRange(campaign);
+    final queue = <(int, int, int)>[
+      (unit.col, unit.row, unit.effectiveMoveRange(moveMod)),
+    ];
+    reachable[key] = unit.effectiveMoveRange(moveMod);
 
     while (queue.isNotEmpty) {
       final (c, r, remaining) = queue.removeAt(0);
@@ -183,7 +209,12 @@ class Game {
     final targets = <String>{};
     for (final enemy in allUnits) {
       if (!enemy.alive || enemy.side != Side.red || !enemy.revealed) continue;
-      final dist = Battlefield.hexDistance(unit.col, unit.row, enemy.col, enemy.row);
+      final dist = Battlefield.hexDistance(
+        unit.col,
+        unit.row,
+        enemy.col,
+        enemy.row,
+      );
       if (dist <= unit.type.attackRange) {
         if (inFullCover(enemy, mapTerrain) && dist > 1) continue;
         targets.add('${enemy.col},${enemy.row}');
@@ -193,25 +224,31 @@ class Game {
   }
 
   (List<Unit>, List<Dispatch>) spawnReinforcements(
-      List<Unit> units, Campaign campaign, int currentTurn) {
+    List<Unit> units,
+    Campaign campaign,
+    int currentTurn,
+  ) {
     final newUnits = <Unit>[];
     final logs = <Dispatch>[];
 
     for (final wave in config.reinforcementWaves) {
-      if (currentTurn >= wave.turn && !(campaign.arrived[wave.arrivedFlag] ?? false)) {
+      if (currentTurn >= wave.turn &&
+          !(campaign.arrived[wave.arrivedFlag] ?? false)) {
         campaign.arrived[wave.arrivedFlag] = true;
         for (final spec in wave.units) {
           final nextId = units.fold(0, (max, u) => u.id > max ? u.id : max) + 1;
-          newUnits.add(Unit(
-            id: nextId,
-            side: spec.side,
-            type: spec.template,
-            col: spec.col,
-            row: spec.row,
-            hp: spec.template.maxHp,
-            revealed: true,
-            isReinforcement: true,
-          ));
+          newUnits.add(
+            Unit(
+              id: nextId,
+              side: spec.side,
+              type: spec.template,
+              col: spec.col,
+              row: spec.row,
+              hp: spec.template.maxHp,
+              revealed: true,
+              isReinforcement: true,
+            ),
+          );
         }
         logs.add(Dispatch(wave.message, 'urgent', currentTurn));
       }
@@ -227,7 +264,9 @@ class Game {
       campaign.victoryDetail = '帝丘店地区国军全部肃清！';
       return;
     }
-    final coreOccupied = units.any((u) => u.alive && inCore(u, mapTerrain) && u.side == Side.blue);
+    final coreOccupied = units.any(
+      (u) => u.alive && inCore(u, mapTerrain) && u.side == Side.blue,
+    );
     if (coreOccupied && campaign.fortStrength <= 0) {
       campaign.gameOver = true;
       campaign.victory = true;
@@ -248,15 +287,17 @@ class Game {
     final specs = config.initialUnits;
     final units = <Unit>[];
     for (final spec in specs) {
-      units.add(Unit(
-        id: spec.id,
-        side: spec.side,
-        type: spec.template,
-        col: spec.col,
-        row: spec.row,
-        revealed: spec.revealed,
-        isReinforcement: spec.isReinforcement,
-      ));
+      units.add(
+        Unit(
+          id: spec.id,
+          side: spec.side,
+          type: spec.template,
+          col: spec.col,
+          row: spec.row,
+          revealed: spec.revealed,
+          isReinforcement: spec.isReinforcement,
+        ),
+      );
       if (spec.id > id) id = spec.id;
     }
     return units;
@@ -290,13 +331,14 @@ class GameState {
       units.where((u) => u.alive && u.side == Side.blue).toList();
   List<Unit> get enemyUnits =>
       units.where((u) => u.alive && u.side == Side.red).toList();
-  List<Unit> get readyPlayerUnits =>
-      units.where((u) => u.alive && u.side == Side.blue && !u.hasActed).toList();
+  List<Unit> get readyPlayerUnits => units
+      .where((u) => u.alive && u.side == Side.blue && !u.hasActed)
+      .toList();
   Unit? get selectedUnit => selectedUnitId != null
       ? units.cast<Unit?>().firstWhere(
-            (u) => u!.id == selectedUnitId,
-            orElse: () => null,
-          )
+          (u) => u!.id == selectedUnitId,
+          orElse: () => null,
+        )
       : null;
   bool get isGameOver => phase == GamePhase.gameOver;
 }

@@ -3,7 +3,7 @@
 | 模块 | 评分 | 状态 | 关键问题 |
 |------|------|------|----------|
 | Battlefield | ★★★★☆ | 干净 | 网格尺寸常量绑定特定战役 |
-| Unit | ★★★☆☆ | 较干净 | effectiveMoveRange 已接入 Campaign |
+| Unit | ★★★☆☆ | 较干净 | effectiveMoveRange 已解绑 Campaign，改收注入 moveMod 标量 |
 | Campaign | ★★★☆☆ | 已重构 | 字段名通用化，fromJson 移除 |
 | Task | 新增 | v0.1.0 | 指挥官层姿态词汇，七档命令 + 角色档位 + 疲劳规则 |
 | Command | 新增 | v0.1.0 | 执行层指令，Task+态势的具体化（带坐标/目标/时限）；配套翻译层 |

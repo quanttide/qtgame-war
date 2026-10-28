@@ -158,8 +158,8 @@ class GameController extends ChangeNotifier {
     final result = resolveCombat(
       attacker,
       defender,
-      _state.campaign,
       engine.mapTerrain,
+      hitMod: _state.campaign.hitMod,
     );
     _state.campaign.playerPower = (_state.campaign.playerPower - 3).clamp(
       5,
@@ -271,8 +271,8 @@ class GameController extends ChangeNotifier {
         final result = resolveCombat(
           nu,
           targets.first,
-          _state.campaign,
           engine.mapTerrain,
+          hitMod: _state.campaign.hitMod,
         );
         _state.logMessages = [
           ..._state.logMessages,
