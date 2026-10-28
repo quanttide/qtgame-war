@@ -1,4 +1,5 @@
 import 'campaign.dart';
+import 'task.dart';
 
 enum Side { blue, red }
 
@@ -34,27 +35,57 @@ class UnitType {
 
 class UnitLibrary {
   static const lightInfantry = UnitType(
-    name: '轻步兵', maxHp: 3, baseAttack: 2, baseDefense: 0, baseMoveRange: 4, attackRange: 1,
+    name: '轻步兵',
+    maxHp: 3,
+    baseAttack: 2,
+    baseDefense: 0,
+    baseMoveRange: 4,
+    attackRange: 1,
   );
 
   static const heavyInfantry = UnitType(
-    name: '重步兵', maxHp: 4, baseAttack: 3, baseDefense: 1, baseMoveRange: 3, attackRange: 1,
+    name: '重步兵',
+    maxHp: 4,
+    baseAttack: 3,
+    baseDefense: 1,
+    baseMoveRange: 3,
+    attackRange: 1,
   );
 
   static const artillery = UnitType(
-    name: '炮兵', maxHp: 2, baseAttack: 4, baseDefense: 0, baseMoveRange: 3, attackRange: 3,
+    name: '炮兵',
+    maxHp: 2,
+    baseAttack: 4,
+    baseDefense: 0,
+    baseMoveRange: 3,
+    attackRange: 3,
   );
 
   static const cavalry = UnitType(
-    name: '骑兵', maxHp: 3, baseAttack: 2, baseDefense: 0, baseMoveRange: 6, attackRange: 1,
+    name: '骑兵',
+    maxHp: 3,
+    baseAttack: 2,
+    baseDefense: 0,
+    baseMoveRange: 6,
+    attackRange: 1,
   );
 
   static const assaultInfantry = UnitType(
-    name: '突击步兵', maxHp: 3, baseAttack: 2, baseDefense: 1, baseMoveRange: 5, attackRange: 1, isAssault: true,
+    name: '突击步兵',
+    maxHp: 3,
+    baseAttack: 2,
+    baseDefense: 1,
+    baseMoveRange: 5,
+    attackRange: 1,
+    isAssault: true,
   );
 
   static final List<UnitType> all = [
-    lightInfantry, heavyInfantry, artillery, cavalry, assaultInfantry,
+    lightInfantry,
+    heavyInfantry,
+    artillery,
+    cavalry,
+    assaultInfantry,
   ];
 }
 
@@ -70,6 +101,12 @@ class Unit {
   bool alive;
   bool isReinforcement;
 
+  /// 本回合命令档位（指挥官层姿态），null 未指派
+  TaskType? task;
+
+  /// 累积疲劳，由档位增量/待命恢复驱动
+  int fat;
+
   Unit({
     required this.id,
     required this.side,
@@ -81,21 +118,30 @@ class Unit {
     this.revealed = false,
     this.alive = true,
     this.isReinforcement = false,
+    this.task,
+    this.fat = 0,
   }) : hp = hp ?? type.maxHp;
 
   /// 有效移动范围 = 基础移动范围 - 战力消耗修正（moveMod 越大移动力越少）
-  int effectiveMoveRange(Campaign campaign) => (type.baseMoveRange - campaign.moveMod).clamp(1, 99);
+  int effectiveMoveRange(Campaign campaign) =>
+      (type.baseMoveRange - campaign.moveMod).clamp(1, 99);
   int get maxHp => type.maxHp;
 
-  void moveTo(int newCol, int newRow) { col = newCol; row = newRow; }
+  void moveTo(int newCol, int newRow) {
+    col = newCol;
+    row = newRow;
+  }
 
   void takeDamage(int damage) {
     hp = (hp - damage).clamp(0, type.maxHp);
     if (hp <= 0) alive = false;
   }
 
-  void markActed() { hasActed = true; }
+  void markActed() {
+    hasActed = true;
+  }
 
-  void reveal() { revealed = true; }
-
+  void reveal() {
+    revealed = true;
+  }
 }

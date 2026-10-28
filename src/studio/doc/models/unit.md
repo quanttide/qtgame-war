@@ -29,6 +29,8 @@
 | revealed | bool | 是否已被发现 |
 | alive | bool | hp≤0 时自动 false |
 | isReinforcement | bool | 是否为增援单位 |
+| task | TaskType? | 本回合命令档位（指挥官层姿态），null 未指派。见 [task.md](task.md) |
+| fat | int | 累积疲劳，由档位增量/待命恢复驱动，默认 0 |
 
 ### UnitLibrary（框架通用兵种）
 
@@ -56,6 +58,8 @@ enum Side { blue, red }
 - `takeDamage(damage)` — 扣血，hp≤0 时 alive 置 false
 - `markActed()` — hasActed = true
 - `reveal()` — revealed = true
+
+`task`/`fat` 把指挥官层姿态与疲劳归到 Unit 上；其消费（疲劳惩罚进结算、待命恢复、轮换信号）在可注入结算层落地，Unit 只持有状态。
 
 ## 变更记录
 
