@@ -11,7 +11,7 @@
 - **通用核心 + 剧本注入**：引擎核心（战场状态、命令执行、战斗结算、胜负判断）**不绑定任何剧本**。剧本 = 数据 + 策略注入：地形、单位模板、战斗修正、胜负条件、指挥官档位全部由剧本提供。帝丘店与龙王店都是核心之上的两个剧本。核心代码里检索不到「帝丘店」「playerPower」这类剧本专属符号。
   - 教训：一开始按帝丘店这一特定剧本建引擎（`playerPower` 0-100 标量、`fortStrength`、硬编码 `checkVictory`、`TerrainType` 枚举带帝丘店名），是方向性错误，早期未能纠正。现在改：**先立通用核心，再让剧本注入**，不再为核心打剧本补丁。
 - **已知地雷：红蓝语义相反**。studio `Side.blue` = 华野 = 玩家方，`Side.red` = 国军；而龙王店原型与中文战棋惯例均是红方 = 我方。移植时显式核对敌我，防「敌我颠倒」级错误。
-- **执行原语已解耦点击态，但仍帝丘店耦合**。`applyMove`/`applyAttack` 已公开、返回 `ExecutionResult`、不依赖点击态；但体内仍改 `playerPower`/`fortStrength`、调帝丘店 `checkVictory`——属帝丘店编排，**需把通用部分上移进核心、帝丘店部分降为剧本注入**（v0.1.0 项）。
+- **帝丘店耦合下探到模型签名，不止编排层**。`applyMove`/`applyAttack` 已公开、不依赖点击态，但体内仍改 `playerPower`/`fortStrength`、调帝丘店 `checkVictory`。更深一层：`Unit.effectiveMoveRange(Campaign)`、`resolveCombat(..., Campaign, ...)` 的**签名里就收 `Campaign`**——而 `Campaign` 是帝丘店模型（含 `playerPower` 0-100 标量、`hitMod`/`moveMod` 派生）。只要签名还收 `Campaign`，任何调用方（含未来的 CommandExecutor）都被传染帝丘店耦合。**通用核心的前提是模型签名 Campaign-free**：`effectiveMoveRange`/`resolveCombat` 改收注入的修正标量（int），不收整个剧本状态对象。
 
 ## 分层结构（通用核心）
 
@@ -30,18 +30,20 @@
 
 **验收**：核心代码检索不到剧本专名；Task/Command/translator/执行原语全部落在核心层；一个虚构最小剧本可驱动核心跑通一回合。
 
-### 待做
+### 待做（顺序即依赖）
 
-- [ ] 战场状态模型：Unit 含 `task`/`fat`；地形为数据（props per id，非硬编码枚举名）；回合状态
-- [ ] 战斗结算：纯函数 + 可注入修正（解绑 `playerPower` 标量）
+- [ ] **模型签名去 Campaign 化**：`Unit.effectiveMoveRange` 收注入修正标量而非 `Campaign`；`resolveCombat` 同理（解绑 `playerPower`/`hitMod`/`moveMod`）。这是通用核心的前提，先于 CommandExecutor
+- [ ] 战场状态模型：地形为数据（props per id，非硬编码枚举名）；回合状态
+- [ ] 战斗结算：纯函数 + 可注入修正（依赖上一项，签名已干净）
 - [ ] 胜负：可注入策略（核心只调用，不预设规则）
-- [ ] CommandExecutor：命令序列 → 通用原语 → 战报，不读剧本字段
+- [ ] CommandExecutor：命令序列 → 通用原语 → 战报，建在已去 Campaign 化的签名上，不读剧本字段
 - [ ] 把 `applyMove`/`applyAttack` 拆为「通用原语（进核心）」+「帝丘店修正（降为注入）」
 
 ### 已交付（本就通用，归位核心层）
 
 - **Task**（`lib/models/task.dart` + 测试 + `doc/models/task.md`）：指挥官层姿态词汇，七档命令 + 角色档位 + 疲劳规则。
 - **Command + 翻译层**（`lib/models/command.dart` + `lib/controllers/command_translator.dart` + 测试 + `doc/models/command.md`）：Task + 战场态势 → 带坐标指令。纯函数，不掷骰不改状态。
+- **Unit task/fat**（`lib/models/unit.dart` + 测试 + `doc/models/unit.md`）：指挥官层姿态与疲劳已归到 Unit，只持有状态，消费留给可注入结算层。
 
 ## v0.1.1 — 龙王店剧本（第一个场景，竖切）
 
