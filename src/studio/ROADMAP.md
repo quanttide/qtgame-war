@@ -45,7 +45,7 @@
 ### 待做（顺序即依赖）
 
 - [x] 1. **模型签名去 Campaign 化**：`Unit.effectiveMoveRange` / `resolveCombat` 收注入修正标量，解绑 `Campaign`
-- [ ] 2. **CommandExecutor** — 命令序列 → 通用原语 → 战报。守卫逻辑（已亡/不归我方/不在场/空令）收进执行器，**停止在每个新入口内联复制**。建在已去 Campaign 化的签名上，立即可做
+- [x] 2. **CommandExecutor** — 命令序列 → 通用原语 → 战报。守卫逻辑（已亡/不归我方/不在场/空令）收进执行器，**停止在每个新入口内联复制**。建在已去 Campaign 化的签名上，立即可做
 - [ ] 3. **帝丘店数据剥离**（一并处理，不再拆项）：
   - 地形数据化：`TerrainType` enum + 全局 `terrainProps` → 剧本注入的 terrain catalog（props per id）
   - `Battlefield` 静态 10×7 尺寸 → 剧本提供
@@ -65,6 +65,7 @@
 - **Task**（`lib/models/task.dart` + 测试 + `doc/models/task.md`）：指挥官层姿态词汇，七档命令 + 角色档位 + 疲劳规则。
 - **Command + 翻译层**（`lib/models/command.dart` + `lib/controllers/command_translator.dart` + 测试 + `doc/models/command.md`）：Task + 战场态势 → 带坐标指令。纯函数，不掷骰不改状态。
 - **Unit task/fat**（`lib/models/unit.dart` + 测试 + `doc/models/unit.md`）：指挥官层姿态与疲劳已归到 Unit，只持有状态，消费留给可注入结算层。
+- **CommandExecutor**（`lib/controllers/command_executor.dart` + 测试 + `doc/models/command.md` 执行规则节）：命令序列 → 引擎原语（applyMove/applyAttack）→ 战报。守卫（过期/不在场/已亡/不归我方/已行动/空令）集中一处，逐条独立，批量汇总战报。
 
 ## v0.1.1 — 龙王店剧本（第一个场景，竖切）
 

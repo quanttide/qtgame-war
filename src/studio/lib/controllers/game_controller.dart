@@ -200,6 +200,9 @@ class GameController extends ChangeNotifier {
     return ExecutionResult(true, dispatches);
   }
 
+  /// 通知监听者。供 CommandExecutor 等批量执行方在收敛后统一刷新。
+  void notifyChanged() => notifyListeners();
+
   void _executeMove(Unit unit, int tc, int tr) {
     final result = applyMove(unit, tc, tr);
     if (!result.ok) return;

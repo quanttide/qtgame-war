@@ -50,12 +50,35 @@ v0.1.0 单回合内即发即执行，`expired` 只作为跨回合长命令（Pha
 
 翻译层不掷骰、不改状态——它是纯函数，产出待执行的 Command 列表。结算由引擎执行时完成。
 
+## 执行规则（CommandExecutor）
+
+`translateOrders` 产出 Command 后，由 `CommandExecutor` 批量执行：命令序列 → 引擎原语（`applyMove`/`applyAttack`）→ 战报。守卫集中在执行器一处，调用方不再各自内联复制。
+
+守卫（按序，命中即拒绝整条命令）：
+
+| 情形 | 结果 |
+|------|------|
+| `deadlineTurn` 已过 | `expired`（跨回合长命令预留，v0.1.0 不触发） |
+| unitId 无对应存活单位 | `blocked` |
+| 不归我方（非蓝方） | `blocked` |
+| 本回合已行动（含同批前一条命令刚执行过） | `blocked` |
+| 空令（无移动无攻击，如 standby） | `executed`：只登记姿态，不算行动 |
+
+执行：
+
+1. 有 `moveTo` → `applyMove`；无路可达 → 整条 `blocked`，不再尝试攻击。
+2. 有 `attack` → 找目标格敌军 → `applyAttack`。目标不在射程/已撤离：无移动则整条 `blocked`；有移动则移动算数，`executed` 并记「攻击落空」。
+3. 任一动作成功 → 登记姿态（`unit.task`）、标记已行动、`executed`。
+
+逐条独立：一条 `blocked`/`expired` 不影响同批其余命令。`executeAll` 汇总全部战报，追加进战报流并通知一次。
+
 ## 归属
 
 - `lib/models/command.dart` — Command / CommandStatus（纯数据）
 - `lib/controllers/command_translator.dart` — `translateOrders`（纯函数）
-- 引擎执行接口（把 Command 序列喂给 GameController，绕开玩家点击）在下一步落地
+- `lib/controllers/command_executor.dart` — `CommandExecutor`（守卫 + 批量执行）
 
 ## 变更记录
 
 - 初版：Command 模型 + 翻译规则；Command 单条含可选 move/attack，对应引擎「移动后攻击」语义
+- v0.1.0：新增 CommandExecutor——守卫集中、批量执行、战报汇总（详见「执行规则」节）
