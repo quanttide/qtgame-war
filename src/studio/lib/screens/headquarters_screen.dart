@@ -3,7 +3,7 @@ import '../campaigns/diqiudian_victory.dart';
 import '../models/game.dart';
 import '../controllers/game_controller.dart';
 import '../views/battlefield_view.dart';
-import '../views/plan_view.dart';
+import '../views/commander_view.dart';
 
 class HeadquartersScreen extends StatefulWidget {
   final GameController? controller;
@@ -51,12 +51,13 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
         title: const Text('三分钟会玩'),
         content: const SingleChildScrollView(
           child: Text(
-            '1. 点蓝色己方单位：蓝格可移动，点带红框的敌人即攻击。\n\n'
-            '2. 每单位每回合行动一次，行动后变灰。全部行动完，点底部「结束回合」，敌军自动行动。\n\n'
-            '3. 胜利二选一：12 回合内歼灭全部敌军；或消灭中央要塞的守军（每歼一名工事减 1），'
-            '工事归零后让己方站上要塞格。\n\n'
-            '提示：只有突击步兵能进要塞格；要塞里的敌人须贴身打；'
-            '移动与攻击都消耗战力，战力越低命中越差。',
+            '1. 这里是指挥官视角：不用逐个摆弄单位，下决策即可。\n\n'
+            '2. 点右侧决策卡（强攻 / 围困 / 休整），全部未行动的纵队立刻执行——'
+            '地图上可见各单位移动与交战。每单位每回合一次，动完变灰。\n\n'
+            '3. 全部行动完，点底部「结束回合」，敌军自动行动。\n\n'
+            '4. 胜利：消灭要塞守军使工事归零后占住要塞格，或歼灭全部敌军；'
+            '己方全灭或拖过 12 回合则败。\n\n'
+            '提示：也可直接点地图上的己方单位微操（蓝格移动，红框攻击）。',
           ),
         ),
         actions: [
@@ -155,11 +156,8 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
                           ),
                           const SizedBox(width: 8),
                           SizedBox(
-                            width: 260,
-                            child: PlanView(
-                              state: state,
-                              controller: controller,
-                            ),
+                            width: 216,
+                            child: CommanderView(controller: controller),
                           ),
                         ],
                       ),

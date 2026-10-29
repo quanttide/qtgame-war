@@ -7,6 +7,7 @@ import '../fixtures.dart';
 import 'package:studio/controllers/game_controller.dart';
 import 'package:studio/screens/headquarters_screen.dart';
 import 'package:studio/views/battlefield_view.dart';
+import 'package:studio/views/commander_view.dart';
 
 Widget _buildApp(GameController controller) {
   return MaterialApp(home: HeadquartersScreen(controller: controller));
@@ -57,14 +58,16 @@ GameController _createController() {
 
 void main() {
   group('HeadquartersScreen', () {
-    testWidgets('renders main layout: battlefield and situation panel', (
+    testWidgets('renders main layout: battlefield and commander view', (
       tester,
     ) async {
       final controller = _createController();
       await tester.pumpWidget(_buildApp(controller));
 
       expect(find.byType(BattlefieldView), findsOneWidget);
-      expect(find.text('战 况'), findsOneWidget);
+      expect(find.byType(CommanderView), findsOneWidget);
+      expect(find.text('⚔ 强攻要塞'), findsOneWidget);
+      expect(find.text('战 况'), findsNothing);
       expect(find.text('情 报 看 板'), findsNothing);
       expect(find.text('通 信 科'), findsNothing);
     });
