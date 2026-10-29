@@ -20,6 +20,9 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
   final Set<String> _adoptedIntel = {'intel1', 'intel2'};
   String _selectedPlanId = 'A';
 
+  /// 每次运行只弹一次玩法说明（仅真实启动路径，测试注入控制器不弹）。
+  static bool _howToPlayShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +41,35 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
     );
     controller.addListener(_onGameStateChanged);
     setState(() => _controller = controller);
+    if (!_howToPlayShown) {
+      _howToPlayShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showHowToPlay());
+    }
+  }
+
+  void _showHowToPlay() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('三分钟会玩'),
+        content: const SingleChildScrollView(
+          child: Text(
+            '1. 点蓝色己方单位：蓝格可移动，点带红框的敌人即攻击。\n\n'
+            '2. 每单位每回合行动一次，行动后变灰。全部行动完，点右上「结束回合」，敌军自动行动。\n\n'
+            '3. 胜利二选一：12 回合内歼灭全部敌军；或消灭中央要塞的守军（每歼一名工事减 1），'
+            '工事归零后让己方站上要塞格。\n\n'
+            '提示：只有突击步兵能进要塞格；要塞里的敌人须贴身打；'
+            '移动与攻击都消耗战力，战力越低命中越差。',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('开始作战'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onGameStateChanged() {
