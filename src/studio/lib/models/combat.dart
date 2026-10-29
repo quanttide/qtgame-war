@@ -2,12 +2,14 @@ import 'dart:math';
 import 'unit.dart';
 import 'battlefield.dart';
 
-/// 战斗结算。纯函数，收注入命中修正标量 [hitMod]（由调用方从剧本状态取出）
-/// 与注入的 [book] 地形容器，不收整个剧本状态对象——保持签名剧本无关。
+/// 战斗结算。纯函数，收注入命中修正标量 [hitMod]（由调用方从剧本状态取出）、
+/// 注入的 [book] 地形容器与注入的随机源 [rng]，不收整个剧本状态对象、
+/// 不内部构造 Random——保持签名剧本无关，同种子同输入序列结算可复算。
 CombatResult resolveCombat(
   Unit attacker,
   Unit defender,
   TerrainBook book, {
+  required Random rng,
   int hitMod = 0,
 }) {
   final defProps = book.propsAt(defender.col, defender.row);
@@ -25,7 +27,7 @@ CombatResult resolveCombat(
   if (dist > 1) hitChance -= (dist - 1) * 4;
   hitChance = hitChance.clamp(5, 92);
 
-  final roll = Random().nextInt(100) + 1;
+  final roll = rng.nextInt(100) + 1;
   final bool hit = roll <= hitChance;
   int damage = 0;
   String text;

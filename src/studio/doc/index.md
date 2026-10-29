@@ -20,9 +20,9 @@ UI → GameController (ChangeNotifier) → notifyListeners()
 ```
 CampaignConfig ← Game ─→ GameController → Unit/Campaign (变异)
                         ↕
-                   CombatService (combat.dart, 纯函数)
+                   resolveCombat (combat.dart, 纯函数, 随机源自注入)
 ```
 
 - Game 不依赖 GameController
-- 战斗逻辑已抽离到 `combat.dart`（`resolveCombat` 纯函数）
+- 战斗结算已抽离到 `combat.dart`（`resolveCombat` 纯函数，`Random` 由调用方注入，见 [models/combat.md](models/combat.md)）
 - 回合管理、AI 逻辑、UI 通知全部在 GameController

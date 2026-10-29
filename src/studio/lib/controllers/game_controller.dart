@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/unit.dart';
 import '../models/campaign.dart';
@@ -17,11 +18,16 @@ class ExecutionResult {
 
 class GameController extends ChangeNotifier {
   final Game engine;
+
+  /// 结算随机源。可注入种子（测试/回放用），默认非种子化。
+  final Random rng;
+
   final GameState _state;
   GameState get state => _state;
 
-  GameController(this.engine)
-    : _state = GameState(
+  GameController(this.engine, {Random? rng})
+    : rng = rng ?? Random(),
+      _state = GameState(
         units: engine.createInitialUnits(),
         campaign: Campaign(
           playerPower: engine.config.initialPlayerPower,
@@ -159,6 +165,7 @@ class GameController extends ChangeNotifier {
       attacker,
       defender,
       engine.terrain,
+      rng: rng,
       hitMod: _state.campaign.hitMod,
     );
     _state.campaign.playerPower = (_state.campaign.playerPower - 3).clamp(
@@ -276,6 +283,7 @@ class GameController extends ChangeNotifier {
           nu,
           targets.first,
           engine.terrain,
+          rng: rng,
           hitMod: _state.campaign.hitMod,
         );
         _state.logMessages = [
