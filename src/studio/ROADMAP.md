@@ -42,7 +42,7 @@
 - [ ] 原语去守卫，降为「假定输入合法」的纯原语
 - [ ] 守卫唯一化：全部由 CommandExecutor 承担（消除执行器与原语的双份守卫）——前置：原语去守卫，与之同批做
 - [ ] 点击路径改为构造 Command 走执行器——点击只是发令的一种渠道——前置：守卫唯一化
-- [ ] 胜负评估收敛 +「战役结束」单源：`checkVictory` 从三处调用点收敛为状态变更后统一评估（现推模式靠调用点时序契约，重复评估不报错只静默丢战报——任务 2 实现中当场踩中）；`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）双标志归一为单源，另一处改派生——前置：守卫唯一化（同为状态所有权收敛）——验收：`checkVictory` 调用点唯一；只写一个标志时测试变红
+- [ ] 胜负评估收敛 +「战役结束」单源：`checkVictory` 从三处调用点收敛为状态变更后统一评估。现为推模式，靠调用点时序契约维持，重复评估不报错只静默丢战报（任务 2 实现中当场踩中）。`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）双标志归一为单源，另一处改派生。——前置：守卫唯一化（同为状态所有权收敛）——验收：`checkVictory` 调用点唯一；只写一个标志时测试变红
 - [ ] 消除 `_aiStep` 内联射程/掩体规则：`game_controller.dart` 目标筛选改复用 `Game.getAttackTargets`（side 过滤参数化，现手抄 `d > attackRange` / `fullCover && d > 1`）——验收：射程/fullCover 规则只在 `game.dart` 一处；补敌军目标筛选与引擎查询一致的测试
 - [x] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`markActed`/战报（原只写战报文本，现玩家/敌军两路共用 `combat.dart` 的 `applyCombatOutcome`）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
 - [ ] `_recomputeExhaustion` 敌军重部署的帝丘店坐标 → 剧本注入部署表
@@ -54,10 +54,10 @@
 **前置**：无——宜先于组 3 的注入化大改与 v0.1.1「战力换算规则降为注入」开工，减小返工
 
 - [ ] `CampaignConfig.load` 拆纯函数 `fromJson(campaignJson, mapJson, unitsJson)` + 薄 IO 壳
-- [ ] 新增测试解析真实帝丘店 JSON 资产——目前真实资产零测试，map.json 写错只能启动 App 时发现；v0.1.1 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔；顺手抽 `CampaignConfig` 测试构造 builder，消掉五个测试文件手抄 40 行配置
+- [ ] 新增测试解析真实帝丘店 JSON 资产——目前真实资产零测试，map.json 写错只能启动 App 时发现；v0.1.1 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔；顺手抽 `CampaignConfig` 测试构造 builder，消掉七个测试文件手抄 40 行配置
 - [ ] JSON key `initial_huaye_power` 含「华野」专名 → 改通用名并同步 campaign.json
-- [ ] `hexSize` 双源归一：`config.hexSize` 与 `Battlefield.hexSize`（static 27）并存但几何只读后者——几何改收注入值，或删 config 字段并明记为跨剧本常量
-- [ ] `maxTurns` 双源归一：`game_controller.dart` `_aiStep` 时间耗尽判断改读 `config.maxTurns`（现写死 `12`，UI 读 `config.maxTurns`）——验收：campaign.json 设 `max_turns: N` 时第 N+1 回合触发时间耗尽；补配置驱动回合上限的测试，与 `hexSize` 同批处理
+- [ ] `hexSize` 双源归一（已决：删 config 字段与 JSON key）：`Battlefield.hexSize`（static 27）被几何与视图读取，`config.hexSize` 解析后无几何读点——假注入。像素尺寸是 UI 渲染参数，非剧本事实，删字段后 `Battlefield.hexSize` 明记为跨剧本表现常量
+- [ ] `maxTurns` 双源归一：`diqiudian_victory.dart` 超时判断写死 `turn > 12`（魔数随任务 2 自 `_aiStep` 迁入此处），UI 读 `config.maxTurns`——验收：campaign.json 设 `max_turns: N` 时第 N+1 回合触发时间耗尽；补配置驱动回合上限的测试，与 `hexSize` 同批处理
 
 ### 5. 控制器层确定性验证
 
@@ -65,11 +65,11 @@
 
 - [ ] 补 `GameController` 层同种子双跑测试：新增 `test/controllers/game_controller_test.dart`，固定种子构造 `GameController`，执行同一命令序列两次（覆盖点击路径与 `_aiStep` 异步路径），断言战报序列与单位终态逐项一致——验收：同种子双跑零偏离、不同种子允许偏离；这是 v0.2.0「确定性常青」在控制器层的基线首测
 
-### 已知缺陷索引（2026-10-29 两轮复盘：0df653e 触碰面 + 任务 2 落地复盘；本节只留索引，修复行在任务组，按修复落点排列）
+### 已知缺陷索引（2026-10-29 两轮复盘：0df653e 触碰面 + 任务 2 落地复盘；本节只留索引，修复行在任务组，按修复归处排列）
 
 - `_aiStep` 目标筛选手抄射程/掩体规则，不走引擎查询（修复见本版组 3「消除 `_aiStep` 内联射程/掩体规则」条）
 - 胜负评估是推模式：`checkVictory` 三处调用点靠时序契约维持，重复评估不报错只静默丢战报；「战役结束」双标志：`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）成对分离赋值（修复见本版组 3「胜负评估收敛 +『战役结束』单源」条）
-- `maxTurns` 双源：`_aiStep` 写死 `12`，UI 读 `config.maxTurns`（修复见本版组 4「maxTurns 双源归一」条）
+- `maxTurns` 双源：`diqiudian_victory.dart` 写死 `12`，UI 读 `config.maxTurns`（修复见本版组 4「maxTurns 双源归一」条）
 - `Campaign.hitMod/moveMod` 的 70/45/25 阈值表与战力消耗写死在核心，「收注入修正标量」只做到标量层（修复见 v0.1.1「战力换算规则降为注入」条）
 - `Campaign.powerDesc` 把显示文案（充沛/尚可/吃紧/濒临极限）放模型 getter，`plan_view.dart` 直接消费——与 hitMod 阈值表同文件同病（修复见 v0.1.1「战力换算规则降为注入」条）
 - 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见本版组 5）
