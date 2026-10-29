@@ -12,15 +12,15 @@
 - 测试 77 → 93：策略四条件分支、`checkVictory` 转发/落盘/已结束不评估、控制器判败转 gameOver、超时战报入 logMessages
 - 收尾已同步：ROADMAP 任务 2 勾选、已知缺陷索引改「控制器余 3 处专名，胜负详情/超时战报已迁策略实现」；复盘四缺陷已登记 ROADMAP（评估时序耦合、gameOver 双标志、战报无结构、注入双通道）
 
-## 进行中：v0.1.0 组 4「剧本资产收尾」（2026-10-29 抽取分解）
+## 进行中：v0.0.1 组 4「剧本资产收尾」（2026-10-29 抽取分解）
 
-**为何是它**：ROADMAP 组 4 组头前置声明「宜先于组 3 的注入化大改与 v0.1.1『战力换算规则降为注入』开工，减小返工」。本组全是 schema 级改动（JSON key 改名、假字段删除、魔数归配置），现在动一次到位，组 3 与 v0.1.1 的注入化就不必二次返工；五行无前置、改动面小、可独立绿。组 3 是大改，留给资产收尾之后。
+**为何是它**：ROADMAP 组 4 组头前置声明「宜先于组 3 的收口大改与 v0.0.2『战力换算规则降为注入』开工，减小返工」。本组全是 schema 级改动（JSON key 改名、假字段删除、魔数归配置），现在动一次到位，组 3 与 v0.0.2 就不必二次返工；五行无前置、改动面小、可独立绿。组 3 是大改，留给资产收尾之后。
 
 **现状核实**（2026-10-29 对照代码）：
 - `CampaignConfig.load`（`game.dart`）rootBundle IO 与 JSON 解析 inline 混在一起，`fromJson` 无从单测
 - 真实资产 `assets/campaigns/diqiudian/{campaign,map,units}.json` 零测试
 - `hexSize` 双源实测：`Battlefield.hexSize`（static 27）被几何与 `battlefield_view.dart` 读取；`config.hexSize` 从 JSON 解析后无几何读点——假注入
-- 魔数 12 已随任务 2 迁入 `lib/campaigns/diqiudian_victory.dart`（`turn > 12`），ROADMAP 组 4 第 5 条「`_aiStep` 写死 12」描述过期，本次同步
+- 魔数 12 已随任务 2 迁入 `lib/campaigns/diqiudian_victory.dart`（`turn > 12`），ROADMAP 组 4 第 5 条描述已过期，本次同步
 - 手抄 `CampaignConfig` 的测试文件实测 7 个（ROADMAP 写「五个」，一并修正）
 
 **方案决断**（`hexSize` 二选一，已决）：删 `config.hexSize` 字段与 campaign.json 的 `hex_size` key，`Battlefield.hexSize` 明记为跨剧本表现常量。理由：像素尺寸是 UI 渲染参数，不是剧本事实；「几何收注入值」要动 TerrainBook/几何/视图全链，扩大改动面且无剧本差异化需求。
@@ -35,11 +35,11 @@
 - [ ] 3. lib：`game.dart` 拆 `fromJson(c, m, u)` 纯函数，`load` 只留 IO + decode + 调用；JSON key `initial_huaye_power` → `initial_player_power` 并同步 campaign.json；删 `CampaignConfig.hexSize` 字段与解析（`battlefield_view.dart` 已读 static，不动）；`diqiudian_victory.dart` `turn > 12` 改 `turn > config.maxTurns`——验收：`flutter test` 全绿；`grep -rn "hex_size\|huaye" lib/ assets/` 零命中
 - [ ] 4. 收尾：ROADMAP 组 4 五条勾选（第 2 条「五个」→「七个」、第 5 条魔数新家同步、`hexSize` 条记录已决方向）；已知缺陷索引 `maxTurns` 条同步；本文件更新——验收：索引与勾选行一致
 
-## v0.1.0 后续待做（顺序已按 ROADMAP 前置声明与落地主线调整：组 4 → 组 3 → 组 5）
+## v0.0.1 后续待做（顺序已按 ROADMAP 前置声明与落地主线调整：组 4 → 组 3 → 组 5）
 
-**落地主线（2026-10-29 定）**：组 4 → 组 3 → v0.1.1 龙王店一回合闭环 → v0.1.3 指挥官界面（玩家可玩版本）；v0.1.2 与组 5 不在主线。
+**落地主线（2026-10-29 定）**：v0.0.1（组 4 → 组 3）→ v0.0.2 龙王店可玩竖切（落地终点：玩家能玩一局）→ v0.0.3 完整战役；v0.1.0 帝丘店与组 5 不在主线。
 
 - [ ] 3. 原语拆分 + 状态所有权收口（两线：守卫归一、状态单源；开工前按组内任务行分解，胜负评估收敛随守卫唯一化同批；原三条注入化幽灵行已删）
-- [ ] 5. 控制器层确定性验证：`GameController` 同种子双跑测试——非主线，宜在 v0.1.1「endTurn 改可等待」落地后做，v0.2.0 前补齐即可
+- [ ] 5. 控制器层确定性验证：`GameController` 同种子双跑测试——非主线，宜在 v0.0.2「endTurn 改可等待」落地后做，v0.2.0 前补齐即可
 
-完成后进入 v0.1.1 龙王店剧本注入（详见 `data/roadmap/qtgame-war/v0.1.1.md`）。
+落地终点为 v0.0.2 龙王店可玩竖切；主仓 `data/roadmap/qtgame-war/` 基线仍为旧编号，待回流（映射见 ROADMAP 头部编号说明）。
