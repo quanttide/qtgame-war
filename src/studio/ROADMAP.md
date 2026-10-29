@@ -26,39 +26,28 @@
 - [x] 结算随机源由调用方注入：`rng` 改 required，`GameController` 持有可注入 `Random`（默认非种子化）——确定性从第一天进门，不等 v0.2.0 重审结算路径
 - [x] 测试：同种子双跑结算序列逐项一致；不同种子允许偏离；随机源不被结算层重置
 
-### 已知缺陷（2026-10-29 复审 0df653e 触碰面，本节只留索引，修复行在任务组）
-
-- 敌军 `resolveCombat` 后只写战报文本，不 `takeDamage`/`markActed`，玩家单位永不掉血（已修，见任务 3 第 7 条）
-- `_aiStep` 目标筛选手抄射程/掩体规则，不走引擎查询（修复见任务 3 第 8 条）
-- `Campaign.hitMod/moveMod` 的 70/45/25 阈值表与战力消耗写死在核心，「收注入修正标量」只做到标量层（修复见 v0.1.1「战力换算规则降为注入」条）
-- 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见 v0.1.0 第 5 组第 1 条）
-- 「核心检索不到剧本专名」验收在文案层失真：`game_controller.dart` 余 3 处（野司×2/华野回合结束）+ `plan_view.dart`/`main.dart` 写死；胜负详情 2 处与超时战报 1 处已迁 `lib/campaigns/diqiudian_victory.dart`（修复见 v0.1.2 第 2 条）
-- `maxTurns` 双源：`_aiStep` 写死 `12`，UI 读 `config.maxTurns`（修复见任务 4 第 5 条）
-- 胜负评估是推模式：`checkVictory` 三处调用点靠时序契约维持，重复评估不报错只静默丢战报（任务 2 实现中当场踩中）；「战役结束」双标志：`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）成对分离赋值（修复见任务 3 第 9 条）
-- 战报无结构：`Dispatch.type` 为裸字符串，`plan_view.dart` 靠 case 字符串匹配分流；剧本文案没有可指认的归属，清专名只能人肉逐条判断（修复见 v0.1.2 第 3 条）
-- `Campaign.powerDesc` 把显示文案（充沛/尚可/吃紧/濒临极限）放模型 getter，`plan_view.dart` 直接消费——与 hitMod 阈值表同文件同病（修复见 v0.1.1「战力换算规则降为注入」条）
-- 注入双通道：胜负策略走构造参数，`engine.config` 被控制器自由读取拼战报 9 处（修复见 v0.1.2 第 4 条）
-
 ### 2. 可注入胜负策略
 
-**前置**：无——可开工
+**前置**：无——可开工（已完成）
 
 - [x] 胜负判断抽为注入策略（`lib/models/victory_policy.dart` 只定形状；`Game.checkVictory` 降为调用+落盘+返回战报，`gameOver` 已置位不再评估）
 - [x] 帝丘店现有「占领核心」降为注入实现（`lib/campaigns/diqiudian_victory.dart` 四条件 + 文案 + 超时战报；`_aiStep` 两处手写失败块删除，胜负出口收敛到 `checkVictory`）
 
-### 3. `applyMove`/`applyAttack` 拆分 + `GameController` 注入化
+### 3. 原语拆分 + `GameController` 注入化 + 状态所有权收口
 
 **前置**：无——组内除行内注明外无序，可并行开工
+
+**主题**：本组三线——守卫归 CommandExecutor 一处、剧本数据注入化、状态事实（评估时机 / 结束标志）归单源。第三线是任务 2 复盘的根因修复，随守卫唯一化同批做。
 
 - [ ] 原语去守卫，降为「假定输入合法」的纯原语
 - [ ] 守卫唯一化：全部由 CommandExecutor 承担（消除执行器与原语的双份守卫）——前置：原语去守卫，与之同批做
 - [ ] 点击路径改为构造 Command 走执行器——点击只是发令的一种渠道——前置：守卫唯一化
+- [ ] 胜负评估收敛 +「战役结束」单源：`checkVictory` 从三处调用点收敛为状态变更后统一评估（现推模式靠调用点时序契约，重复评估不报错只静默丢战报——任务 2 实现中当场踩中）；`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）双标志归一为单源，另一处改派生——前置：守卫唯一化（同为状态所有权收敛）——验收：`checkVictory` 调用点唯一；只写一个标志时测试变红
+- [ ] 消除 `_aiStep` 内联射程/掩体规则：`game_controller.dart` 目标筛选改复用 `Game.getAttackTargets`（side 过滤参数化，现手抄 `d > attackRange` / `fullCover && d > 1`）——验收：射程/fullCover 规则只在 `game.dart` 一处；补敌军目标筛选与引擎查询一致的测试
+- [x] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`markActed`/战报（原只写战报文本，现玩家/敌军两路共用 `combat.dart` 的 `applyCombatOutcome`）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
 - [ ] `_recomputeExhaustion` 敌军重部署的帝丘店坐标 → 剧本注入部署表
 - [ ] `initialPlanViewData` 兵力表文案 → 剧本数据
 - [ ] `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
-- [x] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`markActed`/战报（原只写战报文本，现玩家/敌军两路共用 `combat.dart` 的 `applyCombatOutcome`）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
-- [ ] 消除 `_aiStep` 内联射程/掩体规则：`game_controller.dart` 目标筛选改复用 `Game.getAttackTargets`（side 过滤参数化，现手抄 `d > attackRange` / `fullCover && d > 1`）——验收：射程/fullCover 规则只在 `game.dart` 一处；补敌军目标筛选与引擎查询一致的测试
-- [ ] 胜负评估收敛 +「战役结束」单源：`checkVictory` 从三处调用点收敛为状态变更后统一评估（现推模式靠调用点时序契约，重复评估静默丢战报）；`campaign.gameOver` 与 `phase == gameOver` 双标志归一为单源，另一处改派生——前置：守卫唯一化（同为状态所有权收敛）——验收：`checkVictory` 调用点唯一；只写一个标志时测试变红
 
 ### 4. 剧本资产收尾
 
@@ -76,6 +65,18 @@
 
 - [ ] 补 `GameController` 层同种子双跑测试：新增 `test/controllers/game_controller_test.dart`，固定种子构造 `GameController`，执行同一命令序列两次（覆盖点击路径与 `_aiStep` 异步路径），断言战报序列与单位终态逐项一致——验收：同种子双跑零偏离、不同种子允许偏离；这是 v0.2.0「确定性常青」在控制器层的基线首测
 
+### 已知缺陷索引（2026-10-29 两轮复盘：0df653e 触碰面 + 任务 2 落地复盘；本节只留索引，修复行在任务组，按修复落点排列）
+
+- `_aiStep` 目标筛选手抄射程/掩体规则，不走引擎查询（修复见本版组 3「消除 `_aiStep` 内联射程/掩体规则」条）
+- 胜负评估是推模式：`checkVictory` 三处调用点靠时序契约维持，重复评估不报错只静默丢战报；「战役结束」双标志：`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）成对分离赋值（修复见本版组 3「胜负评估收敛 +『战役结束』单源」条）
+- `maxTurns` 双源：`_aiStep` 写死 `12`，UI 读 `config.maxTurns`（修复见本版组 4「maxTurns 双源归一」条）
+- `Campaign.hitMod/moveMod` 的 70/45/25 阈值表与战力消耗写死在核心，「收注入修正标量」只做到标量层（修复见 v0.1.1「战力换算规则降为注入」条）
+- `Campaign.powerDesc` 把显示文案（充沛/尚可/吃紧/濒临极限）放模型 getter，`plan_view.dart` 直接消费——与 hitMod 阈值表同文件同病（修复见 v0.1.1「战力换算规则降为注入」条）
+- 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见本版组 5）
+- 「核心检索不到剧本专名」验收在文案层失真：`game_controller.dart` 余 3 处（野司×2/华野回合结束）+ `plan_view.dart`/`main.dart` 写死；胜负详情 2 处与超时战报 1 处已迁 `lib/campaigns/diqiudian_victory.dart`（修复见 v0.1.2「清文案层剧本专名」条）
+- 战报无结构：`Dispatch.type` 为裸字符串，`plan_view.dart` 靠 case 字符串匹配分流；剧本文案没有可指认的归属，清专名只能人肉逐条判断（修复见 v0.1.2「战报结构化」条）
+- 注入双通道：胜负策略走构造参数，`engine.config` 被控制器自由读取拼战报 9 处（修复见 v0.1.2「注入通道约定」条）
+
 ## v0.1.1 — 龙王店剧本（未开始）
 
 **前置**：无——组内各条可开工（行内注明前置者除外），与 v0.1.0 未完组可并行
@@ -86,31 +87,31 @@
 
 - [ ] 地图注入：8×7 + 地名（龙王店[要塞]、铁佛寺、帝丘店、田花园、杨拐）+ 地形 props
 - [ ] 单位注入：4 纵队（1/4/6纵[assault]、11纵[reserve]）+ 守军 + 整25师
-- [ ] 显形死行与幻影单位收口：`game_controller.dart` `applyAttack` 删 `defender.reveal()`（入守卫已要求 `revealed`，死代码），`doc/models/combat.md` 边界写明「目标必须已显形，攻击不负责显形」，`game_controller_test.dart` 补测试钉住现状「units.json 缺省 `revealed: false` 的初始单位不可被攻击」——验收：删后全量测试绿；将来做真雾隐须成对改守卫与显形，此测试变红即提醒
 - [ ] 战斗修正：疲劳（`fat`≥4 惩罚、standby 恢复）经注入接入 `resolveCombat`，取代战力标量
 - [ ] 战力换算规则降为注入：`campaign.dart` 的 `hitMod`/`moveMod` 70/45/25 阈值表与 `game_controller.dart` 的战力消耗（移动 −1 / 攻击 −3 / 每回合 −1，clamp 5..100）改为剧本注入的换算——验收：核心检索不到 70/45/25 阈值常数；`powerDesc` 显示文案（充沛/尚可/吃紧/濒临极限，现为 `Campaign` getter，`plan_view.dart` 直接消费）同批归剧本；补换算由剧本提供的测试
+- [ ] 胜负策略：克据点 / 两部失去战斗力 / 时限未决——前置：v0.1.0 组 2「可注入胜负策略」（已完成）
+- [ ] 显形死行与幻影单位收口：`game_controller.dart` `applyAttack` 删 `defender.reveal()`（入守卫已要求 `revealed`，死代码），`doc/models/combat.md` 边界写明「目标必须已显形，攻击不负责显形」，`game_controller_test.dart` 补测试钉住现状「units.json 缺省 `revealed: false` 的初始单位不可被攻击」——验收：删后全量测试绿；将来做真雾隐须成对改守卫与显形，此测试变红即提醒
 - [ ] 定突击×工事契约：`doc/models/combat.md` 称「突击对 fullCover 必中且伤害 2」，`combat.dart` 分支实际要求先掷命中——二改一（代码实现必中并补必中测试，或 doc 改「命中后必重创」并补该分支测试）——验收：doc 与代码一致，`combat_test.dart` 有该分支锁定测试
 - [ ] 战斗测试桩契约化（前置：「定突击×工事契约」先落——若裁定必中免掷骰，「恰掷 1 次」改按分支限定）：`combat_test.dart` 的 `_ScriptedRandom.nextInt` 校验 `0 ≤ v < max`（违约报错指明桩违规）、记录掷骰次数并断言「每次结算恰掷 1 次」，三档 roll 魔数 99/39/9 注明命中率公式来源（55+baseAttack×6+hitMod−def×8）——验收：故意给 `resolveCombat` 加第二次掷骰时，红在「掷骰次数」断言而非 RangeError
-- [ ] 胜负策略：克据点 / 两部失去战斗力 / 时限未决——前置：v0.1.0 组 2「可注入胜负策略」
-- [ ] 指挥官决策：矛盾从战局派生（援军距离/疲劳/工事），决心卡 = 给一组纵队各指派 Task
-- [ ] endTurn 改可等待：`game_controller.dart` `endTurn` 返回 `Future<void>`（视图调用方 fire-and-forget 不改），`game_controller_test.dart` 种子冒烟改 `await c.endTurn()`，删「两个 Duration.zero 让拍」的注册顺序 hack——验收：冒烟测试无任何 `Future.delayed` 让拍，`await endTurn()` 返回后 `_aiStep` 已完成的状态断言成立
 - [ ] 补红方 hasActed 回合末重置：`game_controller.dart` `_aiStep` 新回合重置循环现只清蓝方，与 `applyCombatOutcome` 对两侧行动对称置位脱节（现靠无人读红方 hasActed 维持）——验收：连跑两个 AI 回合后红方 `hasActed` 为 false 有测试；敌军行动闸门（按 hasActed 限动）落地前必须先有此重置
+- [ ] endTurn 改可等待：`game_controller.dart` `endTurn` 返回 `Future<void>`（视图调用方 fire-and-forget 不改），`game_controller_test.dart` 种子冒烟改 `await c.endTurn()`，删「两个 Duration.zero 让拍」的注册顺序 hack——验收：冒烟测试无任何 `Future.delayed` 让拍，`await endTurn()` 返回后 `_aiStep` 已完成的状态断言成立
+- [ ] 指挥官决策：矛盾从战局派生（援军距离/疲劳/工事），决心卡 = 给一组纵队各指派 Task
 - [ ] 一回合闭环集成验证——前置：本组其余各行全部完成
 
 **玩法事实源**：`examples/prototype/龙王店战斗.html`——决策层照此，静态地图与写死卡脚本按 v0.1.3「明确淘汰」处理。
 
 ## v0.1.2 — 帝丘店剧本（未开始）
 
-**前置**：v0.1.0 组 2、组 3 与 v0.1.1 完成（帝丘店注入依赖胜负策略注入与原语/守卫注入化）
+**前置**：v0.1.0 组 3 与 v0.1.1 完成（组 2「可注入胜负策略」已完成；帝丘店注入依赖原语/守卫注入化）
 
 **目标**：现有帝丘店搬到核心上作第二个剧本——两场景共用一个核心，才真正证明核心通用。
 
-- [ ] 帝丘店作为剧本注入：`playerPower` 标量、`fortStrength`、核心占领胜负、地形数据全归剧本
-- [ ] 清文案层剧本专名：`game_controller.dart` 战报/胜负详情 5 处（华野/帝丘店等）与 `plan_view.dart`、`main.dart` 写死文案改剧本注入——验收：`grep -rn "华野\|帝丘店" lib/` 零命中
+- [ ] 帝丘店作为剧本注入：`playerPower` 运行时换算、`fortStrength`、地形数据全归剧本（核心占领胜负已在 v0.1.0 组 2 归策略）
 - [ ] 战报结构化：`Dispatch.type` 裸字符串收枚举（`plan_view.dart` 现靠 case 字符串匹配分流，拼错静默走 default）+ 剧本文案字段改由剧本/策略产出，让「哪些字符串算剧本资产」有可指认的家——验收：type 漏处理显式报错而非静默；清专名不靠人肉逐条判断
 - [ ] 注入通道约定：剧本数据只经注入参数/策略流入控制器，不再经引擎转发（现 `engine.config` 被控制器自由读取拼战报 9 处，如 `野司：包围${config.name}`）——验收：`grep "engine.config" lib/controllers/` 零命中
+- [ ] 清文案层剧本专名：`game_controller.dart` 余 3 处战报（野司×2/华野回合结束）与 `plan_view.dart`、`main.dart` 写死文案改剧本注入——前置：战报结构化、注入通道约定（先有家，再搬家）——验收：`grep -rn "华野\|帝丘店" lib/` 零命中
 - [ ] `headquarters_screen` 点击路径改在核心 + 帝丘店注入之上
-- [ ] 现有 74 测试回归不砸
+- [ ] 现有全量测试（93，随任务增长）回归不砸
 
 ## v0.1.3 — 完整龙王店 + 指挥官界面（未开始）
 
@@ -133,6 +134,7 @@
 ## 跨版本纪律
 
 - 核心检索不到剧本专名（含 JSON schema），每版验收都查
-- v0.2.0 起确定性常青：同种子双跑零偏离，不过即回滚（基线见主仓 `v0.2.0.md`）——比对范围须含 `GameController` 层 rng 消耗顺序，不只 `resolveCombat` 叶子函数（v0.1.0 已知缺陷）
+- 状态事实单一属主：新增全局状态（标志、评估时机、文案）先定归属再落字段；要写第二处时改派生，不改复制（任务 2 复盘根因）
+- v0.2.0 起确定性常青：同种子双跑零偏离，不过即回滚（基线见主仓 `v0.2.0.md`）——比对范围须含 `GameController` 层 rng 消耗顺序，不只 `resolveCombat` 叶子函数
 - 大模型不进结算，只碰文本层
 - 红方 `hasActed` 现无代码读取；将来 AI 按 `hasActed` 做闸门须在回合末重置红方
