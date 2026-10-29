@@ -35,9 +35,11 @@
 - [ ] 3. lib：`game.dart` 拆 `fromJson(c, m, u)` 纯函数，`load` 只留 IO + decode + 调用；JSON key `initial_huaye_power` → `initial_player_power` 并同步 campaign.json；删 `CampaignConfig.hexSize` 字段与解析（`battlefield_view.dart` 已读 static，不动）；`diqiudian_victory.dart` `turn > 12` 改 `turn > config.maxTurns`——验收：`flutter test` 全绿；`grep -rn "hex_size\|huaye" lib/ assets/` 零命中
 - [ ] 4. 收尾：ROADMAP 组 4 五条勾选（第 2 条「五个」→「七个」、第 5 条魔数新家同步、`hexSize` 条记录已决方向）；已知缺陷索引 `maxTurns` 条同步；本文件更新——验收：索引与勾选行一致
 
-## v0.1.0 后续待做（顺序已按 ROADMAP 前置声明调整：组 4 → 组 3 → 组 5）
+## v0.1.0 后续待做（顺序已按 ROADMAP 前置声明与落地主线调整：组 4 → 组 3 → 组 5）
 
-- [ ] 3. 原语拆分 + `GameController` 注入化 + 状态所有权收口（三线详见 ROADMAP 组 3；开工前按组内任务行分解，胜负评估收敛随守卫唯一化同批）
-- [ ] 5. 控制器层确定性验证：`GameController` 同种子双跑测试——宜在 v0.1.1「endTurn 改可等待」落地后做
+**落地主线（2026-10-29 定）**：组 4 → 组 3 → v0.1.1 龙王店一回合闭环 → v0.1.3 指挥官界面（玩家可玩版本）；v0.1.2 与组 5 不在主线。
+
+- [ ] 3. 原语拆分 + 状态所有权收口（两线：守卫归一、状态单源；开工前按组内任务行分解，胜负评估收敛随守卫唯一化同批；原三条注入化幽灵行已删）
+- [ ] 5. 控制器层确定性验证：`GameController` 同种子双跑测试——非主线，宜在 v0.1.1「endTurn 改可等待」落地后做，v0.2.0 前补齐即可
 
 完成后进入 v0.1.1 龙王店剧本注入（详见 `data/roadmap/qtgame-war/v0.1.1.md`）。
