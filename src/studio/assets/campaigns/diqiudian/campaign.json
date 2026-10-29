@@ -11,7 +11,7 @@
   "red_name": "国军",
 
   "initial_huaye_power": 85,
-  "initial_fort_strength": 3,
+  "initial_fort_strength": 1,
 
   "victory_cleared_text": "帝丘店地区国军全部肃清！",
   "victory_core_text": "帝丘店核心阵地已被攻占！",
@@ -24,8 +24,8 @@
       "message": "💥邱清泉兵团援军从西面抵达战场！",
       "arrived_flag": "qiu_arrived",
       "units": [
-        { "id": 30, "template": "qiu_van", "side": "red", "col": 0, "row": 2 },
-        { "id": 31, "template": "qiu_div", "side": "red", "col": 0, "row": 4 }
+        { "id": 30, "template": "qiu_van", "side": "red", "col": 0, "row": 2, "revealed": true },
+        { "id": 31, "template": "qiu_div", "side": "red", "col": 0, "row": 4, "revealed": true }
       ]
     },
     {
@@ -35,8 +35,8 @@
       "message": "💥胡琏兵团援军从南面抵达战场！",
       "arrived_flag": "hu_arrived",
       "units": [
-        { "id": 32, "template": "hu_van", "side": "red", "col": 7, "row": 6 },
-        { "id": 33, "template": "hu_main", "side": "red", "col": 8, "row": 5 }
+        { "id": 32, "template": "hu_van", "side": "red", "col": 7, "row": 6, "revealed": true },
+        { "id": 33, "template": "hu_main", "side": "red", "col": 8, "row": 5, "revealed": true }
       ]
     }
   ]

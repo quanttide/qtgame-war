@@ -29,9 +29,9 @@
     { "id": 6,  "template": "liu_shi_liu", "side": "blue", "col": 5, "row": 5, "revealed": true },
     { "id": 7,  "template": "liu_shi_qi",  "side": "blue", "col": 6, "row": 5, "revealed": true },
     { "id": 8,  "template": "te_art",      "side": "blue", "col": 0, "row": 3, "revealed": true },
-    { "id": 20, "template": "zheng_40",    "side": "red",  "col": 5, "row": 4 },
-    { "id": 21, "template": "zheng_108",   "side": "red",  "col": 4, "row": 4 },
-    { "id": 22, "template": "kuai_su",     "side": "red",  "col": 6, "row": 4 },
+    { "id": 20, "template": "zheng_40",    "side": "red",  "col": 5, "row": 4, "revealed": true },
+    { "id": 21, "template": "zheng_108",   "side": "red",  "col": 4, "row": 4, "revealed": true },
+    { "id": 22, "template": "kuai_su",     "side": "red",  "col": 6, "row": 4, "revealed": true },
     { "id": 23, "template": "tian",        "side": "red",  "col": 3, "row": 2, "revealed": true },
     { "id": 24, "template": "ma_kou",      "side": "red",  "col": 2, "row": 5, "revealed": true },
     { "id": 25, "template": "liu_lou",     "side": "red",  "col": 7, "row": 1, "revealed": true }

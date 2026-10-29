@@ -52,9 +52,10 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
         content: const SingleChildScrollView(
           child: Text(
             '1. 这里是指挥官视角：不用逐个摆弄单位，下决策即可。\n\n'
-            '2. 点右侧决策卡（强攻 / 围困 / 休整），全部未行动的纵队立刻执行——'
+            '2. 点右侧决策卡（强攻 / 阻援 / 休整），全部未行动的纵队立刻执行——'
             '地图上可见各单位移动与交战。每单位每回合一次，动完变灰。\n\n'
-            '3. 全部行动完，点底部「结束回合」，敌军自动行动。\n\n'
+            '3. 全部行动完，点底部「结束回合」，敌军自动行动；'
+            '地图下方一行战报实时显示最新结果。\n\n'
             '4. 胜利：消灭要塞守军使工事归零后占住要塞格，或歼灭全部敌军；'
             '己方全灭或拖过 12 回合则败。\n\n'
             '提示：也可直接点地图上的己方单位微操（蓝格移动，红框攻击）。',
@@ -165,6 +166,7 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
                   ),
                 ),
                 const Divider(height: 1, color: Color(0xff3a2010)),
+                _eventBar(controller),
                 _endTurnBar(state),
               ],
             ),
@@ -230,6 +232,27 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
             style: const TextStyle(fontSize: 11, color: Color(0xff8a7a50)),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 事件条：地图下方一行最新战报——每次决策与交战的结果在这里回答玩家。
+  Widget _eventBar(GameController controller) {
+    final log = controller.state.logMessages;
+    return Container(
+      height: 30,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Text(
+        log.isEmpty ? '下达决策，战报会显示在这里' : log.last.msg,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 12,
+          fontFamily: 'serif',
+          color: Color(0xffc9b896),
+        ),
       ),
     );
   }

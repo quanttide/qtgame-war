@@ -16,9 +16,9 @@ class CommanderView extends StatelessWidget {
   const CommanderView({super.key, required this.controller});
 
   static const List<(TaskType, String, String)> _cards = [
-    (TaskType.assault, '⚔ 强攻要塞', '各纵队向要塞推进，攻击守军'),
-    (TaskType.siege, '\u{1F6E1} 围困要塞', '推进至要塞外围，压制守军'),
-    (TaskType.standby, '\u{1F634} 原地休整', '不行动，恢复疲劳'),
+    (TaskType.assault, '⚔ 强攻要塞', '向要塞推进，消灭守军'),
+    (TaskType.block, '\u{1F6E1} 阻击援军', '迎击到达的援军，未到待命'),
+    (TaskType.standby, '\u{1F634} 原地休整', '不行动，待命'),
   ];
 
   @override
@@ -65,7 +65,7 @@ class CommanderView extends StatelessWidget {
             canOrder ? '$ready 部待令' : '敌军行动中…',
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               color: Color(0xff8a7a60),
               fontFamily: 'serif',
             ),
@@ -87,7 +87,7 @@ class CommanderView extends StatelessWidget {
       engine: controller.engine,
       campaign: state.campaign,
       fortPos: _fortPos(),
-      reliefPos: null,
+      reliefPos: TaskType.reliefTasks.contains(task) ? _reliefPos() : null,
       currentTurn: state.currentTurn,
     );
     CommandExecutor(controller).executeAll(commands);
@@ -101,6 +101,14 @@ class CommanderView extends StatelessWidget {
           backgroundColor: const Color(0xff3a2f28),
         ),
       );
+  }
+
+  /// 首支存活援军的位置；援军未到达则 null（阻击卡原地待命）。
+  (int, int)? _reliefPos() {
+    for (final u in controller.state.enemyUnits) {
+      if (u.isReinforcement && u.alive) return (u.col, u.row);
+    }
+    return null;
   }
 
   /// 要塞格：地形目录中 isCore 的唯一格（数据来自剧本注入的 catalog）。
@@ -157,7 +165,7 @@ class _DecisionCard extends StatelessWidget {
               Text(
                 subtitle,
                 style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: Color(0xff6b6050),
                   fontFamily: 'serif',
                 ),
