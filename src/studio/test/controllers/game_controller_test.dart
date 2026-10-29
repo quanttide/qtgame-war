@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/models/unit.dart';
 import 'package:studio/models/game.dart';
@@ -98,6 +100,22 @@ void main() {
     test('endTurn transitions to ai phase', () async {
       controller.endTurn();
       expect(controller.state.phase, GamePhase.ai);
+    });
+
+    test('种子冒烟：敌军回合跑完蓝方单位 hp 下降', () async {
+      final c = GameController(
+        game,
+        rng: Random(1),
+        aiDelay: Duration.zero, // 修订一：假时钟，不真实等待
+      );
+      final blue = c.state.units.firstWhere((x) => x.id == 1);
+      final before = blue.hp;
+
+      c.endTurn();
+      await Future.delayed(Duration.zero);
+      await Future.delayed(Duration.zero); // 让出拍子，确保 _aiStep 链路完成
+
+      expect(blue.hp, lessThan(before)); // 只断状态落盘，不断文本不断数值
     });
 
     test('reset restores initial state', () {

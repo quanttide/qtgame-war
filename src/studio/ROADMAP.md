@@ -26,7 +26,7 @@
 
 ### 已知缺陷（2026-10-29 复审 0df653e 触碰面，本节只留索引，修复行在任务组）
 
-- 敌军 `resolveCombat` 后只写战报文本，不 `takeDamage`/`reveal`，玩家单位永不掉血（修复见任务 3 第 7 条）
+- 敌军 `resolveCombat` 后只写战报文本，不 `takeDamage`/`markActed`，玩家单位永不掉血（已修，见任务 3 第 7 条）
 - `_aiStep` 目标筛选手抄射程/掩体规则，不走引擎查询（修复见任务 3 第 8 条）
 - `Campaign.hitMod/moveMod` 的 70/45/25 阈值表与战力消耗写死在核心，「收注入修正标量」只做到标量层（修复见 v0.1.1「战力换算规则降为注入」条）
 - 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见 v0.1.0 第 5 组第 1 条）
@@ -46,7 +46,7 @@
 - [ ] `_recomputeExhaustion` 敌军重部署的帝丘店坐标 → 剧本注入部署表
 - [ ] `initialPlanViewData` 兵力表文案 → 剧本数据
 - [ ] `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
-- [ ] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`reveal`（现只写战报文本，复用第 1 条拆出的原语）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
+- [x] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`markActed`/战报（原只写战报文本，现玩家/敌军两路共用 `combat.dart` 的 `applyCombatOutcome`）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
 - [ ] 消除 `_aiStep` 内联射程/掩体规则：`game_controller.dart` 目标筛选改复用 `Game.getAttackTargets`（side 过滤参数化，现手抄 `d > attackRange` / `fullCover && d > 1`）——验收：射程/fullCover 规则只在 `game.dart` 一处；补敌军目标筛选与引擎查询一致的测试
 
 ### 4. 剧本资产收尾（宜在大改 config 前做，减小返工）
@@ -107,3 +107,4 @@
 - 核心检索不到剧本专名（含 JSON schema），每版验收都查
 - v0.2.0 起确定性常青：同种子双跑零偏离，不过即回滚（基线见主仓 `v0.2.0.md`）——比对范围须含 `GameController` 层 rng 消耗顺序，不只 `resolveCombat` 叶子函数（v0.1.0 已知缺陷）
 - 大模型不进结算，只碰文本层
+- 红方 `hasActed` 现无代码读取；将来 AI 按 `hasActed` 做闸门须在回合末重置红方

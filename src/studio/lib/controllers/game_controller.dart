@@ -22,10 +22,17 @@ class GameController extends ChangeNotifier {
   /// 结算随机源。可注入种子（测试/回放用），默认非种子化。
   final Random rng;
 
+  /// AI 回合延迟。可注入（测试用 `Duration.zero`），默认 500ms 保持现行为。
+  final Duration aiDelay;
+
   final GameState _state;
   GameState get state => _state;
 
-  GameController(this.engine, {Random? rng})
+  GameController(
+    this.engine, {
+    Random? rng,
+    this.aiDelay = const Duration(milliseconds: 500),
+  })
     : rng = rng ?? Random(),
       _state = GameState(
         units: engine.createInitialUnits(),
@@ -173,11 +180,14 @@ class GameController extends ChangeNotifier {
       100,
     );
 
+    defender.reveal(); // 侧别专属（雾隐显形），留玩家路径
     final dispatches = <Dispatch>[
-      Dispatch(
-        '${attacker.type.name} \u2192 ${defender.type.name}：${result.text}',
-        'hit',
-        _state.currentTurn,
+      applyCombatOutcome(
+        attacker,
+        defender,
+        result,
+        turn: _state.currentTurn,
+        type: 'hit',
       ),
     ];
 
@@ -196,10 +206,6 @@ class GameController extends ChangeNotifier {
         );
       }
     }
-
-    defender.reveal();
-    defender.takeDamage(result.damage);
-    attacker.markActed();
 
     engine.checkVictory(_state.units, _state.campaign, _state.currentTurn);
 
@@ -246,7 +252,7 @@ class GameController extends ChangeNotifier {
     ];
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(aiDelay);
     _aiStep();
   }
 
@@ -288,10 +294,12 @@ class GameController extends ChangeNotifier {
         );
         _state.logMessages = [
           ..._state.logMessages,
-          Dispatch(
-            '${nu.type.name} \u2192 ${targets.first.type.name}：${result.text}',
-            'urgent',
-            _state.currentTurn,
+          applyCombatOutcome(
+            nu,
+            targets.first,
+            result,
+            turn: _state.currentTurn,
+            type: 'urgent',
           ),
         ];
 

@@ -22,6 +22,22 @@ CombatResult resolveCombat(
 - `rng`：**必填**，核心不内部构造 `Random`
 - `hitMod`：剧本状态（如战力标量）由**调用方**换算成整数修正传入，结算层不收剧本对象
 
+### 应用原语（侧别中立）
+
+```dart
+Dispatch applyCombatOutcome(
+  Unit attacker,
+  Unit defender,
+  CombatResult result, {
+  required int turn,   // 战报回合号，调用方给
+  required String type, // 战报类别，玩家路 'hit' / 敌军路 'urgent'
+})
+```
+
+- 落盘三样：`defender.takeDamage(result.damage)`、`attacker.markActed()`、产一条 `Dispatch`
+- **侧别专属语义不进原语**：`playerPower` 消耗、`fortStrength` 削减、`reveal` 留在玩家路径调用方（`applyAttack`）；敌军路径（`_aiStep`）只调原语
+- 玩家与敌军两路共用本原语，战果落盘不再各写一份；不放宽 `applyAttack` 的侧别守卫（它绑着玩家专属资源结算）
+
 ## 结算公式
 
 1. 命中率 = `55 + 攻方 baseAttack×6 + hitMod − 地形 defenseBonus×8`
@@ -40,6 +56,7 @@ CombatResult resolveCombat(
 
 ## 边界
 
-- 不改单位状态：伤害应用（`takeDamage`/`markActed`）由调用方做
+- `resolveCombat` 不改单位状态：纯掷骰与文案产出；伤害应用（`takeDamage`/`markActed`）由 `applyCombatOutcome` 做
+- `applyCombatOutcome` 只落伤害、行动标记与战报，不碰 `playerPower`/`fortStrength`/`reveal`——侧别专属资源结算归各调用方
 - 不判胜负：胜负策略是剧本注入，见 `game.md`
 - 不认识 `Campaign`：命中修正收标量不收对象

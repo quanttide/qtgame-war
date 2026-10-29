@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'unit.dart';
 import 'battlefield.dart';
+import 'game.dart';
 
 /// 战斗结算。纯函数，收注入命中修正标量 [hitMod]（由调用方从剧本状态取出）、
 /// 注入的 [book] 地形容器与注入的随机源 [rng]，不收整个剧本状态对象、
@@ -70,4 +71,25 @@ class CombatResult {
     required this.text,
     required this.killed,
   });
+}
+
+/// 战斗应用原语（侧别中立）：把结算结果落到单位上并产战报。
+///
+/// 只做三样：守方 `takeDamage`、攻方 `markActed`、产一条 [Dispatch]。
+/// 侧别专属资源结算（`playerPower` 消耗、`fortStrength` 削减、`reveal`）
+/// 留在玩家路径调用方；玩家与敌军两路共用本原语，战果落盘不各写一份。
+Dispatch applyCombatOutcome(
+  Unit attacker,
+  Unit defender,
+  CombatResult result, {
+  required int turn,
+  required String type,
+}) {
+  defender.takeDamage(result.damage);
+  attacker.markActed();
+  return Dispatch(
+    '${attacker.type.name} → ${defender.type.name}：${result.text}',
+    type,
+    turn,
+  );
 }
