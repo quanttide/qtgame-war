@@ -3,7 +3,6 @@ import '../campaigns/diqiudian_victory.dart';
 import '../models/game.dart';
 import '../controllers/game_controller.dart';
 import '../views/battlefield_view.dart';
-import '../views/intel_view.dart';
 import '../views/plan_view.dart';
 
 class HeadquartersScreen extends StatefulWidget {
@@ -17,8 +16,6 @@ class HeadquartersScreen extends StatefulWidget {
 
 class _HeadquartersScreenState extends State<HeadquartersScreen> {
   GameController? _controller;
-  final Set<String> _adoptedIntel = {'intel1', 'intel2'};
-  String _selectedPlanId = 'A';
 
   /// 每次运行只弹一次玩法说明（仅真实启动路径，测试注入控制器不弹）。
   static bool _howToPlayShown = false;
@@ -55,7 +52,7 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
         content: const SingleChildScrollView(
           child: Text(
             '1. 点蓝色己方单位：蓝格可移动，点带红框的敌人即攻击。\n\n'
-            '2. 每单位每回合行动一次，行动后变灰。全部行动完，点右上「结束回合」，敌军自动行动。\n\n'
+            '2. 每单位每回合行动一次，行动后变灰。全部行动完，点底部「结束回合」，敌军自动行动。\n\n'
             '3. 胜利二选一：12 回合内歼灭全部敌军；或消灭中央要塞的守军（每歼一名工事减 1），'
             '工事归零后让己方站上要塞格。\n\n'
             '提示：只有突击步兵能进要塞格；要塞里的敌人须贴身打；'
@@ -117,21 +114,6 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
     }
   }
 
-  void _toggleIntel(String id) {
-    setState(() {
-      if (_adoptedIntel.contains(id)) {
-        _adoptedIntel.remove(id);
-      } else {
-        _adoptedIntel.add(id);
-      }
-    });
-  }
-
-  void _selectPlan(String id) {
-    if (_controller!.state.isGameOver) return;
-    setState(() => _selectedPlanId = id);
-  }
-
   @override
   void dispose() {
     _controller?.removeListener(_onGameStateChanged);
@@ -166,11 +148,7 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          IntelView(
-                            adoptedIntel: _adoptedIntel,
-                            onToggleIntel: _toggleIntel,
-                          ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           SizedBox(
                             width: 572,
                             child: BattlefieldView(controller: controller),
@@ -179,8 +157,6 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
                           SizedBox(
                             width: 260,
                             child: PlanView(
-                              selectedPlanId: _selectedPlanId,
-                              onSelectPlan: _selectPlan,
                               state: state,
                               controller: controller,
                             ),
@@ -191,7 +167,7 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
                   ),
                 ),
                 const Divider(height: 1, color: Color(0xff3a2010)),
-                _bottomBar(state),
+                _endTurnBar(state),
               ],
             ),
           ),
@@ -250,15 +226,6 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          ...state.playerUnits
-              .take(5)
-              .map(
-                (u) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _signalDot(u.type.name, u.hasActed ? 'gray' : 'green'),
-                ),
-              ),
           const Spacer(),
           Text(
             '回合 ${state.currentTurn} / ${_controller!.engine.config.maxTurns}',
@@ -269,118 +236,32 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
     );
   }
 
-  Widget _signalDot(String label, String status) {
-    Color c;
-    switch (status) {
-      case 'green':
-        c = const Color(0xff5a9a5a);
-        break;
-      case 'yellow':
-        c = const Color(0xffc8a030);
-        break;
-      case 'red':
-        c = const Color(0xffa04040);
-        break;
-      default:
-        c = const Color(0xff555555);
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: c,
-            boxShadow: [
-              BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 4),
-            ],
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 9,
-            color: Color(0xffb8a080),
-            fontFamily: 'serif',
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _bottomBar(GameState state) {
+  Widget _endTurnBar(GameState state) {
+    final canEnd = state.phase == GamePhase.player && !state.isGameOver;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: const Color(0xff1a1008),
-      child: Row(
-        children: [
-          const Text(
-            '通 信 科',
-            style: TextStyle(
-              fontSize: 9,
-              color: Color(0xff8a7050),
-              fontFamily: 'serif',
+      child: Center(
+        child: SizedBox(
+          width: 240,
+          child: ElevatedButton(
+            onPressed: canEnd ? () => _controller!.endTurn() : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xff8b3030),
+              foregroundColor: const Color(0xfff0d0b0),
+              disabledBackgroundColor: const Color(0xff3a2f28),
+              disabledForegroundColor: const Color(0xff6a5f50),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+            child: Text(
+              canEnd ? '\u23ED 结束回合' : '敌军行动中…',
+              style: const TextStyle(
+                fontFamily: 'serif',
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          _commUnit('军委台', 'green'),
-          const SizedBox(width: 8),
-          _commUnit('1纵', 'green'),
-          const SizedBox(width: 8),
-          _commUnit('6纵', 'yellow'),
-          const SizedBox(width: 8),
-          _commUnit('中野11纵', 'red'),
-        ],
-      ),
-    );
-  }
-
-  Widget _commUnit(String label, String status) {
-    Color c;
-    switch (status) {
-      case 'yellow':
-        c = const Color(0xffc8a030);
-        break;
-      case 'red':
-        c = const Color(0xffa04040);
-        break;
-      default:
-        c = const Color(0xff5a9a5a);
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(0, 0, 0, 0.4),
-        border: Border.all(color: const Color(0xff3a2818)),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: c,
-              boxShadow: [
-                BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 3),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 9,
-              color: Color(0xffb8a080),
-              fontFamily: 'serif',
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -57,13 +57,16 @@ GameController _createController() {
 
 void main() {
   group('HeadquartersScreen', () {
-    testWidgets('renders three-column layout', (tester) async {
+    testWidgets('renders main layout: battlefield and situation panel', (
+      tester,
+    ) async {
       final controller = _createController();
       await tester.pumpWidget(_buildApp(controller));
 
-      expect(find.text('情 报 看 板'), findsOneWidget);
       expect(find.byType(BattlefieldView), findsOneWidget);
-      expect(find.text('作 战 计 划'), findsOneWidget);
+      expect(find.text('战 况'), findsOneWidget);
+      expect(find.text('情 报 看 板'), findsNothing);
+      expect(find.text('通 信 科'), findsNothing);
     });
 
     testWidgets('renders top bar with phase indicator and turn info', (
@@ -76,12 +79,13 @@ void main() {
       expect(find.text('回合 1 / 12'), findsOneWidget);
     });
 
-    testWidgets('renders bottom bar with comm units', (tester) async {
+    testWidgets('renders end-turn button as the primary bottom action', (
+      tester,
+    ) async {
       final controller = _createController();
       await tester.pumpWidget(_buildApp(controller));
 
-      expect(find.text('通 信 科'), findsOneWidget);
-      expect(find.text('军委台'), findsOneWidget);
+      expect(find.textContaining('结束回合'), findsOneWidget);
     });
   });
 }

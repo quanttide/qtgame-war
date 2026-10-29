@@ -3,18 +3,10 @@ import '../models/game.dart';
 import '../controllers/game_controller.dart';
 
 class PlanView extends StatelessWidget {
-  final String selectedPlanId;
-  final ValueChanged<String> onSelectPlan;
   final GameState state;
   final GameController controller;
 
-  const PlanView({
-    super.key,
-    required this.selectedPlanId,
-    required this.onSelectPlan,
-    required this.state,
-    required this.controller,
-  });
+  const PlanView({super.key, required this.state, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -31,16 +23,6 @@ class PlanView extends StatelessWidget {
         children: [
           _title(),
           const SizedBox(height: 6),
-          _planCard(
-            'A',
-            '甲案：集中打区寿年',
-            '风险中',
-            'medium',
-            '以1、4、6、11纵包围区兵团；3、8、10纵阻援',
-          ),
-          const SizedBox(height: 4),
-          _planCard('B', '乙案：先打邱清泉', '风险高', 'high', '以主力迎击邱兵团机械化部队'),
-          const SizedBox(height: 8),
           _campaignView(),
           const SizedBox(height: 8),
           Expanded(child: _unitList()),
@@ -55,100 +37,13 @@ class PlanView extends StatelessWidget {
 
   Widget _title() {
     return const Text(
-      '作 战 计 划',
+      '战 况',
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w700,
         fontFamily: 'serif',
         color: Color(0xff2c2416),
-      ),
-    );
-  }
-
-  Widget _planCard(
-    String id,
-    String title,
-    String risk,
-    String level,
-    String desc,
-  ) {
-    final selected = selectedPlanId == id;
-    Color riskColor;
-    Color riskBg;
-    switch (level) {
-      case 'high':
-        riskColor = const Color(0xff8b2020);
-        riskBg = const Color(0xfff0d0d0);
-        break;
-      default:
-        riskColor = const Color(0xff6b4e18);
-        riskBg = const Color(0xfff0e4c0);
-    }
-    return GestureDetector(
-      onTap: () => onSelectPlan(id),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xfffaf3e0) : const Color(0xfff4efe2),
-          border: Border.all(
-            color: selected ? const Color(0xff8b6914) : const Color(0xffd8c8a8),
-            width: selected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(3),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: const Color.fromRGBO(200, 160, 60, 0.2),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'serif',
-                      color: const Color(0xff2c2416),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: riskBg,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: Text(
-                    risk,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                      color: riskColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              desc,
-              style: const TextStyle(fontSize: 8.5, color: Color(0xff6b6050)),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -352,17 +247,8 @@ class PlanView extends StatelessWidget {
   }
 
   Widget _buttons(BuildContext context) {
-    final canEnd = state.phase == GamePhase.player && !state.isGameOver;
     return Row(
       children: [
-        Expanded(
-          child: _styledButton(
-            '\u23ED 结束回合',
-            canEnd ? () => controller.endTurn() : null,
-            primary: true,
-          ),
-        ),
-        const SizedBox(width: 5),
         Expanded(
           child: _styledButton(
             '\u{1F504} 重置',

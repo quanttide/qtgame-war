@@ -22,29 +22,55 @@ void main() {
     });
 
     test('战线分组：攻城三档 / 阻援三档 / 恢复一档', () {
-      expect(TaskType.assaultTargets, {TaskType.assault, TaskType.siege, TaskType.feint});
-      expect(TaskType.reliefTasks, {TaskType.block, TaskType.flank, TaskType.lure});
+      expect(TaskType.assaultTargets, {
+        TaskType.assault,
+        TaskType.siege,
+        TaskType.feint,
+      });
+      expect(TaskType.reliefTasks, {
+        TaskType.block,
+        TaskType.flank,
+        TaskType.lure,
+      });
       expect(TaskType.standbyTasks, {TaskType.standby});
       // 七档不重不漏
-      final all = {...TaskType.assaultTargets, ...TaskType.reliefTasks, ...TaskType.standbyTasks};
+      final all = {
+        ...TaskType.assaultTargets,
+        ...TaskType.reliefTasks,
+        ...TaskType.standbyTasks,
+      };
       expect(all, TaskType.values.toSet());
     });
   });
 
   group('slotsFor 角色档位', () {
     test('攻城角色三档：强攻/围困/佯攻', () {
-      expect(TaskType.slotsFor(TaskRole.assault),
-          [TaskType.assault, TaskType.siege, TaskType.feint]);
+      expect(TaskType.slotsFor(TaskRole.assault), [
+        TaskType.assault,
+        TaskType.siege,
+        TaskType.feint,
+      ]);
     });
 
     test('预备队五档：正面/侧翼/诱敌/待命/强攻', () {
-      expect(TaskType.slotsFor(TaskRole.reserve),
-          [TaskType.block, TaskType.flank, TaskType.lure, TaskType.standby, TaskType.assault]);
+      expect(TaskType.slotsFor(TaskRole.reserve), [
+        TaskType.block,
+        TaskType.flank,
+        TaskType.lure,
+        TaskType.standby,
+        TaskType.assault,
+      ]);
     });
 
     test('攻城角色不可阻援，预备队可攻城', () {
-      expect(TaskType.slotsFor(TaskRole.assault).contains(TaskType.block), false);
-      expect(TaskType.slotsFor(TaskRole.reserve).contains(TaskType.assault), true);
+      expect(
+        TaskType.slotsFor(TaskRole.assault).contains(TaskType.block),
+        false,
+      );
+      expect(
+        TaskType.slotsFor(TaskRole.reserve).contains(TaskType.assault),
+        true,
+      );
     });
   });
 

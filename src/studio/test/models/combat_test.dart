@@ -61,13 +61,7 @@ void main() {
           rng: _ScriptedRandom([39]), // roll=40 → 命中且非重创
           hitMod: 5,
         );
-        final dispatch = applyCombatOutcome(
-          a,
-          d,
-          result,
-          turn: 7,
-          type: 'hit',
-        );
+        final dispatch = applyCombatOutcome(a, d, result, turn: 7, type: 'hit');
         expect(d.hp, 2); // 3 − 1
         expect(a.hasActed, isTrue);
         expect(dispatch.msg, contains('轻步兵'));
