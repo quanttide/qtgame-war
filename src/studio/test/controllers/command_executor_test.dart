@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studio/campaigns/diqiudian_victory.dart';
 import 'package:studio/models/battlefield.dart';
 import 'package:studio/models/command.dart';
 import 'package:studio/models/game.dart';
@@ -54,7 +55,7 @@ void main() {
         initialPlayerPower: 85,
         initialFortStrength: 3,
       );
-      game = Game(config);
+      game = Game(config, victoryPolicy: diqiudianVictory(config));
       controller = GameController(game);
       executor = CommandExecutor(controller);
     });

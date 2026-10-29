@@ -31,7 +31,7 @@ void main() {
       initialPlayerPower: 85,
       initialFortStrength: 3,
     );
-    return Game(config);
+    return Game(config, victoryPolicy: (u, c, t, terr) => null);
   }
 
   Unit mk(

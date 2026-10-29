@@ -32,15 +32,15 @@
 - `_aiStep` 目标筛选手抄射程/掩体规则，不走引擎查询（修复见任务 3 第 8 条）
 - `Campaign.hitMod/moveMod` 的 70/45/25 阈值表与战力消耗写死在核心，「收注入修正标量」只做到标量层（修复见 v0.1.1「战力换算规则降为注入」条）
 - 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见 v0.1.0 第 5 组第 1 条）
-- 「核心检索不到剧本专名」验收在文案层失真：`game_controller.dart` 5 处 + `plan_view.dart`/`main.dart` 写死（修复见 v0.1.2 第 2 条）
+- 「核心检索不到剧本专名」验收在文案层失真：`game_controller.dart` 余 3 处（野司×2/华野回合结束）+ `plan_view.dart`/`main.dart` 写死；胜负详情 2 处与超时战报 1 处已迁 `lib/campaigns/diqiudian_victory.dart`（修复见 v0.1.2 第 2 条）
 - `maxTurns` 双源：`_aiStep` 写死 `12`，UI 读 `config.maxTurns`（修复见任务 4 第 5 条）
 
 ### 2. 可注入胜负策略
 
 **前置**：无——可开工
 
-- [ ] 胜负判断抽为注入策略（核心只调用，不预设规则）
-- [ ] 帝丘店现有「占领核心」降为注入实现
+- [x] 胜负判断抽为注入策略（`lib/models/victory_policy.dart` 只定形状；`Game.checkVictory` 降为调用+落盘+返回战报，`gameOver` 已置位不再评估）
+- [x] 帝丘店现有「占领核心」降为注入实现（`lib/campaigns/diqiudian_victory.dart` 四条件 + 文案 + 超时战报；`_aiStep` 两处手写失败块删除，胜负出口收敛到 `checkVictory`）
 
 ### 3. `applyMove`/`applyAttack` 拆分 + `GameController` 注入化
 

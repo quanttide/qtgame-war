@@ -32,24 +32,23 @@ class GameController extends ChangeNotifier {
     this.engine, {
     Random? rng,
     this.aiDelay = const Duration(milliseconds: 500),
-  })
-    : rng = rng ?? Random(),
-      _state = GameState(
-        units: engine.createInitialUnits(),
-        campaign: Campaign(
-          playerPower: engine.config.initialPlayerPower,
-          fortStrength: engine.config.initialFortStrength,
-        ),
-        logMessages: [
-          Dispatch('\u{1F4FB}野司：包围${engine.config.name}！', 'info', 1),
-          Dispatch('\u{23F0}${_reinforceDesc(engine.config)}', 'info', 1),
-          const Dispatch(
-            '\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击',
-            'info',
-            1,
-          ),
-        ],
-      );
+  }) : rng = rng ?? Random(),
+       _state = GameState(
+         units: engine.createInitialUnits(),
+         campaign: Campaign(
+           playerPower: engine.config.initialPlayerPower,
+           fortStrength: engine.config.initialFortStrength,
+         ),
+         logMessages: [
+           Dispatch('\u{1F4FB}野司：包围${engine.config.name}！', 'info', 1),
+           Dispatch('\u{23F0}${_reinforceDesc(engine.config)}', 'info', 1),
+           const Dispatch(
+             '\u{1F4A1}点击己方单位 \u2192 蓝色格移动 \u2192 红色格攻击',
+             'info',
+             1,
+           ),
+         ],
+       );
 
   static String _reinforceDesc(CampaignConfig config) {
     return config.reinforcementWaves
@@ -303,10 +302,16 @@ class GameController extends ChangeNotifier {
           ),
         ];
 
-        if (_state.playerUnits.isEmpty) {
-          _state.campaign.gameOver = true;
-          _state.campaign.victory = false;
-          _state.campaign.victoryDetail = '华野部队已无力再战，帝丘店未能攻克。';
+        _state.logMessages = [
+          ..._state.logMessages,
+          ...engine.checkVictory(
+            _state.units,
+            _state.campaign,
+            _state.currentTurn,
+          ),
+        ];
+
+        if (_state.campaign.gameOver) {
           _state.phase = GamePhase.gameOver;
           notifyListeners();
           return;
@@ -320,17 +325,10 @@ class GameController extends ChangeNotifier {
       100,
     );
 
-    engine.checkVictory(_state.units, _state.campaign, newTurn);
-
-    if (!_state.campaign.gameOver && newTurn > 12) {
-      _state.campaign.gameOver = true;
-      _state.campaign.victory = false;
-      _state.campaign.victoryDetail = '时间耗尽，援军逼近，华野被迫撤出战斗。';
-      _state.logMessages = [
-        ..._state.logMessages,
-        const Dispatch('\u{1F480}时间耗尽，未能攻克帝丘店。', 'urgent', 0),
-      ];
-    }
+    _state.logMessages = [
+      ..._state.logMessages,
+      ...engine.checkVictory(_state.units, _state.campaign, newTurn),
+    ];
 
     if (_state.campaign.gameOver) {
       _state.currentTurn = newTurn;

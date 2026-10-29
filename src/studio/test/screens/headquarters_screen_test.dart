@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:studio/models/unit.dart';
+import 'package:studio/campaigns/diqiudian_victory.dart';
 import 'package:studio/models/game.dart';
 import '../fixtures.dart';
 import 'package:studio/controllers/game_controller.dart';
@@ -51,7 +52,7 @@ GameController _createController() {
     initialPlayerPower: 85,
     initialFortStrength: 3,
   );
-  return GameController(Game(config));
+  return GameController(Game(config, victoryPolicy: diqiudianVictory(config)));
 }
 
 void main() {

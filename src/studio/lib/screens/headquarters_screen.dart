@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../campaigns/diqiudian_victory.dart';
 import '../models/game.dart';
 import '../controllers/game_controller.dart';
 import '../views/battlefield_view.dart';
@@ -32,7 +33,9 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
       return;
     }
     final config = await CampaignConfig.load('diqiudian');
-    final controller = GameController(Game(config));
+    final controller = GameController(
+      Game(config, victoryPolicy: diqiudianVictory(config)),
+    );
     controller.addListener(_onGameStateChanged);
     setState(() => _controller = controller);
   }
@@ -60,7 +63,10 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
           content: Text(
             campaign.victoryDetail,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xffc0b090), fontFamily: 'serif'),
+            style: const TextStyle(
+              color: Color(0xffc0b090),
+              fontFamily: 'serif',
+            ),
           ),
           actions: [
             TextButton(
@@ -68,8 +74,10 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
                 Navigator.of(context).pop();
                 c.reset();
               },
-              child: const Text('\u{1F504} 再来一局',
-                  style: TextStyle(color: Color(0xffc9a96e))),
+              child: const Text(
+                '\u{1F504} 再来一局',
+                style: TextStyle(color: Color(0xffc9a96e)),
+              ),
             ),
           ],
         ),
@@ -211,10 +219,14 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          ...state.playerUnits.take(5).map((u) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: _signalDot(u.type.name, u.hasActed ? 'gray' : 'green'),
-          )),
+          ...state.playerUnits
+              .take(5)
+              .map(
+                (u) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _signalDot(u.type.name, u.hasActed ? 'gray' : 'green'),
+                ),
+              ),
           const Spacer(),
           Text(
             '回合 ${state.currentTurn} / ${_controller!.engine.config.maxTurns}',
@@ -246,14 +258,23 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: c, boxShadow: [
-            BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 4),
-          ]),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: c,
+            boxShadow: [
+              BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 4),
+            ],
+          ),
         ),
         const SizedBox(width: 4),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 9, color: Color(0xffb8a080), fontFamily: 'serif')),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9,
+            color: Color(0xffb8a080),
+            fontFamily: 'serif',
+          ),
+        ),
       ],
     );
   }
@@ -264,8 +285,14 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
       color: const Color(0xff1a1008),
       child: Row(
         children: [
-          const Text('通 信 科',
-              style: TextStyle(fontSize: 9, color: Color(0xff8a7050), fontFamily: 'serif')),
+          const Text(
+            '通 信 科',
+            style: TextStyle(
+              fontSize: 9,
+              color: Color(0xff8a7050),
+              fontFamily: 'serif',
+            ),
+          ),
           const SizedBox(width: 12),
           _commUnit('军委台', 'green'),
           const SizedBox(width: 8),
@@ -304,14 +331,23 @@ class _HeadquartersScreenState extends State<HeadquartersScreen> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: c, boxShadow: [
-              BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 3),
-            ]),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: c,
+              boxShadow: [
+                BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 3),
+              ],
+            ),
           ),
           const SizedBox(width: 4),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 9, color: Color(0xffb8a080), fontFamily: 'serif')),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9,
+              color: Color(0xffb8a080),
+              fontFamily: 'serif',
+            ),
+          ),
         ],
       ),
     );

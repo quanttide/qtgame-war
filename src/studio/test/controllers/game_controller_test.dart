@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studio/campaigns/diqiudian_victory.dart';
+import 'package:studio/models/victory_policy.dart';
 import 'package:studio/models/unit.dart';
 import 'package:studio/models/game.dart';
 import '../fixtures.dart';
@@ -10,9 +12,10 @@ void main() {
   group('GameController', () {
     late GameController controller;
     late Game game;
+    late CampaignConfig config;
 
     setUp(() {
-      final config = CampaignConfig(
+      config = CampaignConfig(
         name: '测试战役',
         description: '测试用',
         date: '1948年7月',
@@ -51,7 +54,7 @@ void main() {
         initialPlayerPower: 85,
         initialFortStrength: 3,
       );
-      game = Game(config);
+      game = Game(config, victoryPolicy: diqiudianVictory(config));
       controller = GameController(game);
     });
 
@@ -164,6 +167,42 @@ void main() {
       expect(r.dispatches, isNotEmpty);
       expect(a.hasActed, isTrue);
       expect(controller.state.selectedUnitId, isNull);
+    });
+
+    test('注入策略判败 → 回合结束转 gameOver', () async {
+      final c = GameController(
+        Game(
+          config,
+          victoryPolicy: (u, ca, t, terr) => VictoryResult(false, '测试败因'),
+        ),
+        rng: Random(1),
+        aiDelay: Duration.zero,
+      );
+      c.endTurn();
+      await Future.delayed(Duration.zero);
+      await Future.delayed(Duration.zero);
+      expect(c.state.phase, GamePhase.gameOver);
+      expect(c.state.campaign.victory, isFalse);
+      expect(c.state.campaign.victoryDetail, '测试败因');
+    });
+
+    test('帝丘店策略：第 13 回合超时，详情与战报皆落盘', () async {
+      final c = GameController(
+        Game(config, victoryPolicy: diqiudianVictory(config)),
+        rng: Random(1),
+        aiDelay: Duration.zero,
+      );
+      c.state.currentTurn = 12;
+      c.endTurn();
+      await Future.delayed(Duration.zero);
+      await Future.delayed(Duration.zero);
+      expect(c.state.campaign.gameOver, isTrue);
+      expect(c.state.campaign.victory, isFalse);
+      expect(c.state.campaign.victoryDetail, '时间耗尽，援军逼近，华野被迫撤出战斗。');
+      expect(
+        c.state.logMessages.map((d) => d.msg),
+        contains('\u{1F480}时间耗尽，未能攻克帝丘店。'),
+      );
     });
 
     test('applyAttack 拒绝射程外目标', () {

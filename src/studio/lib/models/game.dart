@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'unit.dart';
 import 'campaign.dart';
 import 'battlefield.dart';
+import 'victory_policy.dart';
 
 class CampaignConfig {
   final String name;
@@ -201,10 +202,13 @@ class ReinforcementWave {
 class Game {
   final CampaignConfig config;
 
+  /// 剧本注入的胜负策略。条件与文案归策略，核心只调用与落盘。
+  final VictoryPolicy victoryPolicy;
+
   /// 注入的地形容器（网格 + 目录 + 尺寸），核心地形逻辑全走这里。
   late final TerrainBook terrain;
 
-  Game(this.config)
+  Game(this.config, {required this.victoryPolicy})
     : terrain = TerrainBook(
         grid: config.mapGrid,
         catalog: config.terrainCatalog,
@@ -304,26 +308,21 @@ class Game {
     return (newUnits, logs);
   }
 
-  void checkVictory(List<Unit> units, Campaign campaign, int currentTurn) {
-    final natUnits = units.where((u) => u.alive && u.side == Side.red);
-    if (natUnits.isEmpty) {
-      campaign.gameOver = true;
-      campaign.victory = true;
-      campaign.victoryDetail = config.victoryClearedText;
-      return;
-    }
-    final coreOccupied = units.any(
-      (u) =>
-          u.alive &&
-          terrain.propsAt(u.col, u.row).isCore &&
-          u.side == Side.blue,
-    );
-    if (coreOccupied && campaign.fortStrength <= 0) {
-      campaign.gameOver = true;
-      campaign.victory = true;
-      campaign.victoryDetail = config.victoryCoreText;
-      return;
-    }
+  /// 交给注入的胜负策略评估（已结束则不再评估）。
+  ///
+  /// 结果非 null 时落盘战役状态，返回策略产出的战报；条件与文案归策略。
+  List<Dispatch> checkVictory(
+    List<Unit> units,
+    Campaign campaign,
+    int currentTurn,
+  ) {
+    if (campaign.gameOver) return const [];
+    final result = victoryPolicy(units, campaign, currentTurn, terrain);
+    if (result == null) return const [];
+    campaign.gameOver = true;
+    campaign.victory = result.victory;
+    campaign.victoryDetail = result.detail;
+    return result.dispatches;
   }
 
   Unit? getUnitAt(int col, int row, List<Unit> units) {

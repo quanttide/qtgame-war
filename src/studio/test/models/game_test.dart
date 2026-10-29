@@ -3,6 +3,8 @@ import 'package:studio/models/unit.dart';
 import 'package:studio/models/campaign.dart';
 import 'package:studio/models/game.dart';
 import 'package:studio/models/battlefield.dart';
+import 'package:studio/campaigns/diqiudian_victory.dart';
+import 'package:studio/models/victory_policy.dart';
 import '../fixtures.dart';
 
 void main() {
@@ -120,7 +122,7 @@ void main() {
         initialPlayerPower: 85,
         initialFortStrength: 3,
       );
-      game = Game(config);
+      game = Game(config, victoryPolicy: diqiudianVictory(config));
       initialUnits = game.createInitialUnits();
     });
 
@@ -245,6 +247,46 @@ void main() {
         expect(campaign.gameOver, false);
       },
     );
+
+    test('checkVictory 策略返回 null 时 campaign 不变且无战报', () {
+      final g = Game(config, victoryPolicy: (u, c, t, terr) => null);
+      final campaign = Campaign();
+      final out = g.checkVictory(initialUnits, campaign, 3);
+      expect(out, isEmpty);
+      expect(campaign.gameOver, isFalse);
+      expect(campaign.victory, isNull);
+    });
+
+    test('checkVictory 落盘策略结果并返回战报', () {
+      final g = Game(
+        config,
+        victoryPolicy: (u, c, t, terr) => VictoryResult(
+          false,
+          '测试败因',
+          dispatches: [const Dispatch('超时横幅', 'urgent', 3)],
+        ),
+      );
+      final campaign = Campaign();
+      final out = g.checkVictory(initialUnits, campaign, 3);
+      expect(campaign.gameOver, isTrue);
+      expect(campaign.victory, isFalse);
+      expect(campaign.victoryDetail, '测试败因');
+      expect(out.single.msg, '超时横幅');
+    });
+
+    test('checkVictory 已结束不再评估策略', () {
+      var evaluated = false;
+      final g = Game(
+        config,
+        victoryPolicy: (u, c, t, terr) {
+          evaluated = true;
+          return null;
+        },
+      );
+      final campaign = Campaign()..gameOver = true;
+      g.checkVictory(initialUnits, campaign, 3);
+      expect(evaluated, isFalse);
+    });
   });
 }
 
