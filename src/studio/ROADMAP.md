@@ -34,6 +34,10 @@
 - 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见 v0.1.0 第 5 组第 1 条）
 - 「核心检索不到剧本专名」验收在文案层失真：`game_controller.dart` 余 3 处（野司×2/华野回合结束）+ `plan_view.dart`/`main.dart` 写死；胜负详情 2 处与超时战报 1 处已迁 `lib/campaigns/diqiudian_victory.dart`（修复见 v0.1.2 第 2 条）
 - `maxTurns` 双源：`_aiStep` 写死 `12`，UI 读 `config.maxTurns`（修复见任务 4 第 5 条）
+- 胜负评估是推模式：`checkVictory` 三处调用点靠时序契约维持，重复评估不报错只静默丢战报（任务 2 实现中当场踩中）；「战役结束」双标志：`campaign.gameOver`（策略守卫读）与 `phase == gameOver`（交互闸门读）成对分离赋值（修复见任务 3 第 9 条）
+- 战报无结构：`Dispatch.type` 为裸字符串，`plan_view.dart` 靠 case 字符串匹配分流；剧本文案没有可指认的归属，清专名只能人肉逐条判断（修复见 v0.1.2 第 3 条）
+- `Campaign.powerDesc` 把显示文案（充沛/尚可/吃紧/濒临极限）放模型 getter，`plan_view.dart` 直接消费——与 hitMod 阈值表同文件同病（修复见 v0.1.1「战力换算规则降为注入」条）
+- 注入双通道：胜负策略走构造参数，`engine.config` 被控制器自由读取拼战报 9 处（修复见 v0.1.2 第 4 条）
 
 ### 2. 可注入胜负策略
 
@@ -54,13 +58,14 @@
 - [ ] `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
 - [x] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`markActed`/战报（原只写战报文本，现玩家/敌军两路共用 `combat.dart` 的 `applyCombatOutcome`）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
 - [ ] 消除 `_aiStep` 内联射程/掩体规则：`game_controller.dart` 目标筛选改复用 `Game.getAttackTargets`（side 过滤参数化，现手抄 `d > attackRange` / `fullCover && d > 1`）——验收：射程/fullCover 规则只在 `game.dart` 一处；补敌军目标筛选与引擎查询一致的测试
+- [ ] 胜负评估收敛 +「战役结束」单源：`checkVictory` 从三处调用点收敛为状态变更后统一评估（现推模式靠调用点时序契约，重复评估静默丢战报）；`campaign.gameOver` 与 `phase == gameOver` 双标志归一为单源，另一处改派生——前置：守卫唯一化（同为状态所有权收敛）——验收：`checkVictory` 调用点唯一；只写一个标志时测试变红
 
 ### 4. 剧本资产收尾
 
 **前置**：无——宜先于组 3 的注入化大改与 v0.1.1「战力换算规则降为注入」开工，减小返工
 
 - [ ] `CampaignConfig.load` 拆纯函数 `fromJson(campaignJson, mapJson, unitsJson)` + 薄 IO 壳
-- [ ] 新增测试解析真实帝丘店 JSON 资产——目前真实资产零测试，map.json 写错只能启动 App 时发现；v0.1.1 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔
+- [ ] 新增测试解析真实帝丘店 JSON 资产——目前真实资产零测试，map.json 写错只能启动 App 时发现；v0.1.1 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔；顺手抽 `CampaignConfig` 测试构造 builder，消掉五个测试文件手抄 40 行配置
 - [ ] JSON key `initial_huaye_power` 含「华野」专名 → 改通用名并同步 campaign.json
 - [ ] `hexSize` 双源归一：`config.hexSize` 与 `Battlefield.hexSize`（static 27）并存但几何只读后者——几何改收注入值，或删 config 字段并明记为跨剧本常量
 - [ ] `maxTurns` 双源归一：`game_controller.dart` `_aiStep` 时间耗尽判断改读 `config.maxTurns`（现写死 `12`，UI 读 `config.maxTurns`）——验收：campaign.json 设 `max_turns: N` 时第 N+1 回合触发时间耗尽；补配置驱动回合上限的测试，与 `hexSize` 同批处理
@@ -83,7 +88,7 @@
 - [ ] 单位注入：4 纵队（1/4/6纵[assault]、11纵[reserve]）+ 守军 + 整25师
 - [ ] 显形死行与幻影单位收口：`game_controller.dart` `applyAttack` 删 `defender.reveal()`（入守卫已要求 `revealed`，死代码），`doc/models/combat.md` 边界写明「目标必须已显形，攻击不负责显形」，`game_controller_test.dart` 补测试钉住现状「units.json 缺省 `revealed: false` 的初始单位不可被攻击」——验收：删后全量测试绿；将来做真雾隐须成对改守卫与显形，此测试变红即提醒
 - [ ] 战斗修正：疲劳（`fat`≥4 惩罚、standby 恢复）经注入接入 `resolveCombat`，取代战力标量
-- [ ] 战力换算规则降为注入：`campaign.dart` 的 `hitMod`/`moveMod` 70/45/25 阈值表与 `game_controller.dart` 的战力消耗（移动 −1 / 攻击 −3 / 每回合 −1，clamp 5..100）改为剧本注入的换算——验收：核心检索不到 70/45/25 阈值常数；补换算由剧本提供的测试
+- [ ] 战力换算规则降为注入：`campaign.dart` 的 `hitMod`/`moveMod` 70/45/25 阈值表与 `game_controller.dart` 的战力消耗（移动 −1 / 攻击 −3 / 每回合 −1，clamp 5..100）改为剧本注入的换算——验收：核心检索不到 70/45/25 阈值常数；`powerDesc` 显示文案（充沛/尚可/吃紧/濒临极限，现为 `Campaign` getter，`plan_view.dart` 直接消费）同批归剧本；补换算由剧本提供的测试
 - [ ] 定突击×工事契约：`doc/models/combat.md` 称「突击对 fullCover 必中且伤害 2」，`combat.dart` 分支实际要求先掷命中——二改一（代码实现必中并补必中测试，或 doc 改「命中后必重创」并补该分支测试）——验收：doc 与代码一致，`combat_test.dart` 有该分支锁定测试
 - [ ] 战斗测试桩契约化（前置：「定突击×工事契约」先落——若裁定必中免掷骰，「恰掷 1 次」改按分支限定）：`combat_test.dart` 的 `_ScriptedRandom.nextInt` 校验 `0 ≤ v < max`（违约报错指明桩违规）、记录掷骰次数并断言「每次结算恰掷 1 次」，三档 roll 魔数 99/39/9 注明命中率公式来源（55+baseAttack×6+hitMod−def×8）——验收：故意给 `resolveCombat` 加第二次掷骰时，红在「掷骰次数」断言而非 RangeError
 - [ ] 胜负策略：克据点 / 两部失去战斗力 / 时限未决——前置：v0.1.0 组 2「可注入胜负策略」
@@ -102,6 +107,8 @@
 
 - [ ] 帝丘店作为剧本注入：`playerPower` 标量、`fortStrength`、核心占领胜负、地形数据全归剧本
 - [ ] 清文案层剧本专名：`game_controller.dart` 战报/胜负详情 5 处（华野/帝丘店等）与 `plan_view.dart`、`main.dart` 写死文案改剧本注入——验收：`grep -rn "华野\|帝丘店" lib/` 零命中
+- [ ] 战报结构化：`Dispatch.type` 裸字符串收枚举（`plan_view.dart` 现靠 case 字符串匹配分流，拼错静默走 default）+ 剧本文案字段改由剧本/策略产出，让「哪些字符串算剧本资产」有可指认的家——验收：type 漏处理显式报错而非静默；清专名不靠人肉逐条判断
+- [ ] 注入通道约定：剧本数据只经注入参数/策略流入控制器，不再经引擎转发（现 `engine.config` 被控制器自由读取拼战报 9 处，如 `野司：包围${config.name}`）——验收：`grep "engine.config" lib/controllers/` 零命中
 - [ ] `headquarters_screen` 点击路径改在核心 + 帝丘店注入之上
 - [ ] 现有 74 测试回归不砸
 
