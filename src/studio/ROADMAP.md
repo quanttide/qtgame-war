@@ -24,12 +24,14 @@
 - [x] 结算随机源由调用方注入：`rng` 改 required，`GameController` 持有可注入 `Random`（默认非种子化）——确定性从第一天进门，不等 v0.2.0 重审结算路径
 - [x] 测试：同种子双跑结算序列逐项一致；不同种子允许偏离；随机源不被结算层重置
 
-### 已知缺陷（2026-10-29 复审 0df653e 触碰面，勿在后续版本误信）
+### 已知缺陷（2026-10-29 复审 0df653e 触碰面，本节只留索引，修复行在任务组）
 
-- [ ] `_aiStep` 战果不落盘：敌军 `resolveCombat` 后只写战报文本，不 `takeDamage`/`reveal`——玩家单位永不掉血，胜负条件无从触发。修复归第 3 组（敌军路径复用结算应用原语），并补敌军攻击落伤害的测试
-- [ ] 修正标量的产生规则未注入：`Campaign.hitMod/moveMod` 的 70/45/25 阈值表、战力消耗（移动 −1 / 攻击 −3 / 每回合 −1，clamp 5..100）写死在核心——「收注入修正标量」只做到标量层，换算规则仍是帝丘店机制。v0.1.1 疲劳替换时一并降为注入
-- [ ] 确定性契约仅覆盖 `resolveCombat` 叶子函数：`GameController` 单 `Random` 的消耗顺序跨异步路径，控制器层无双跑测试——第 1 组勾选勿读作控制器层已达标
-- [ ] 「核心检索不到剧本专名」验收在文案层失真：`GameController` 战报/胜负详情（华野/帝丘店等 5 处）与 `plan_view`/`main.dart` 写死——帝丘店数据剥离遗留，v0.1.2 剧本注入时一并清
+- 敌军 `resolveCombat` 后只写战报文本，不 `takeDamage`/`reveal`，玩家单位永不掉血（修复见任务 3 第 7 条）
+- `_aiStep` 目标筛选手抄射程/掩体规则，不走引擎查询（修复见任务 3 第 8 条）
+- `Campaign.hitMod/moveMod` 的 70/45/25 阈值表与战力消耗写死在核心，「收注入修正标量」只做到标量层（修复见 v0.1.1「战力换算规则降为注入」条）
+- 确定性契约仅覆盖 `resolveCombat` 叶子函数，`GameController` 单 `Random` 消耗顺序无双跑测试（修复见 v0.1.0 第 5 组第 1 条）
+- 「核心检索不到剧本专名」验收在文案层失真：`game_controller.dart` 5 处 + `plan_view.dart`/`main.dart` 写死（修复见 v0.1.2 第 2 条）
+- `maxTurns` 双源：`_aiStep` 写死 `12`，UI 读 `config.maxTurns`（修复见任务 4 第 5 条）
 
 ### 2. 可注入胜负策略
 
@@ -44,7 +46,8 @@
 - [ ] `_recomputeExhaustion` 敌军重部署的帝丘店坐标 → 剧本注入部署表
 - [ ] `initialPlanViewData` 兵力表文案 → 剧本数据
 - [ ] `updateUnitIntent` 伏击部署的场景绑定 → 剧本数据
-- [ ] 敌军路径同权：`_aiStep` 目标筛选复用引擎射程/掩体查询（现内联手抄），攻击走结算应用原语（现战果不落盘，见已知缺陷）；控制层文案专名注入化扩为全量（不止兵力表）
+- [ ] 敌军攻击走结算应用原语：`game_controller.dart` `_aiStep` 攻击结算后落 `takeDamage`/`reveal`（现只写战报文本，复用第 1 条拆出的原语）——验收：敌军攻击命中后玩家单位 hp 下降；补敌军攻击落伤害的测试
+- [ ] 消除 `_aiStep` 内联射程/掩体规则：`game_controller.dart` 目标筛选改复用 `Game.getAttackTargets`（side 过滤参数化，现手抄 `d > attackRange` / `fullCover && d > 1`）——验收：射程/fullCover 规则只在 `game.dart` 一处；补敌军目标筛选与引擎查询一致的测试
 
 ### 4. 剧本资产收尾（宜在大改 config 前做，减小返工）
 
@@ -52,7 +55,11 @@
 - [ ] 新增测试解析真实帝丘店 JSON 资产——目前真实资产零测试，map.json 写错只能启动 App 时发现；v0.1.1 龙王店走纯 JSON 剧本，schema 无测试等于注入机制裸奔
 - [ ] JSON key `initial_huaye_power` 含「华野」专名 → 改通用名并同步 campaign.json
 - [ ] `hexSize` 双源归一：`config.hexSize` 与 `Battlefield.hexSize`（static 27）并存但几何只读后者——几何改收注入值，或删 config 字段并明记为跨剧本常量
-- [ ] `maxTurns` 双源归一：`_aiStep` 时间耗尽判断写死 `12`，UI 却读 `config.maxTurns`——改读注入配置，与 `hexSize` 同批处理
+- [ ] `maxTurns` 双源归一：`game_controller.dart` `_aiStep` 时间耗尽判断改读 `config.maxTurns`（现写死 `12`，UI 读 `config.maxTurns`）——验收：campaign.json 设 `max_turns: N` 时第 N+1 回合触发时间耗尽；补配置驱动回合上限的测试，与 `hexSize` 同批处理
+
+### 5. 控制器层确定性验证
+
+- [ ] 补 `GameController` 层同种子双跑测试：新增 `test/controllers/game_controller_test.dart`，固定种子构造 `GameController`，执行同一命令序列两次（覆盖点击路径与 `_aiStep` 异步路径），断言战报序列与单位终态逐项一致——验收：同种子双跑零偏离、不同种子允许偏离；这是 v0.2.0「确定性常青」在控制器层的基线首测
 
 ## v0.1.1 — 龙王店剧本（未开始）
 
@@ -62,7 +69,8 @@
 
 - [ ] 地图注入：8×7 + 地名（龙王店[要塞]、铁佛寺、帝丘店、田花园、杨拐）+ 地形 props
 - [ ] 单位注入：4 纵队（1/4/6纵[assault]、11纵[reserve]）+ 守军 + 整25师
-- [ ] 战斗修正：疲劳（`fat`≥4 惩罚、standby 恢复），取代战力标量——含 `hitMod`/`moveMod` 阈值表与战力消耗规则一并降为注入（v0.1.0 已知缺陷）
+- [ ] 战斗修正：疲劳（`fat`≥4 惩罚、standby 恢复）经注入接入 `resolveCombat`，取代战力标量
+- [ ] 战力换算规则降为注入：`campaign.dart` 的 `hitMod`/`moveMod` 70/45/25 阈值表与 `game_controller.dart` 的战力消耗（移动 −1 / 攻击 −3 / 每回合 −1，clamp 5..100）改为剧本注入的换算——验收：核心检索不到 70/45/25 阈值常数；补换算由剧本提供的测试
 - [ ] 胜负策略：克据点 / 两部失去战斗力 / 时限未决
 - [ ] 指挥官决策：矛盾从战局派生（援军距离/疲劳/工事），决心卡 = 给一组纵队各指派 Task
 - [ ] 一回合闭环集成验证
@@ -74,6 +82,7 @@
 **目标**：现有帝丘店搬到核心上作第二个剧本——两场景共用一个核心，才真正证明核心通用。
 
 - [ ] 帝丘店作为剧本注入：`playerPower` 标量、`fortStrength`、核心占领胜负、地形数据全归剧本
+- [ ] 清文案层剧本专名：`game_controller.dart` 战报/胜负详情 5 处（华野/帝丘店等）与 `plan_view.dart`、`main.dart` 写死文案改剧本注入——验收：`grep -rn "华野\|帝丘店" lib/` 零命中
 - [ ] `headquarters_screen` 点击路径改在核心 + 帝丘店注入之上
 - [ ] 现有 74 测试回归不砸
 
