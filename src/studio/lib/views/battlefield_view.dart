@@ -161,6 +161,15 @@ class _BattlefieldPainter extends CustomPainter {
     final path = Path()
       ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
 
+    // 暗晕：把棋子从地形底色里剥出来（清单 #2 可辨识度）
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color.fromRGBO(0, 0, 0, 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.5,
+    );
+
     canvas.drawPath(
       path,
       Paint()
@@ -176,7 +185,7 @@ class _BattlefieldPainter extends CustomPainter {
             ? const Color(0xffc44b3c)
             : const Color(0xff4a80b4)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2,
+        ..strokeWidth = 2.6,
     );
 
     String sym = '\u25A0';
@@ -193,9 +202,9 @@ class _BattlefieldPainter extends CustomPainter {
         text: sym,
         style: TextStyle(
           color: unit.side == Side.blue
-              ? const Color(0xfff0c0a0)
-              : const Color(0xffa0c8f0),
-          fontSize: r * 1.0,
+              ? const Color(0xfffff2e0)
+              : const Color(0xffdcedff),
+          fontSize: r * 1.15,
           fontWeight: FontWeight.bold,
         ),
       ),

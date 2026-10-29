@@ -49,6 +49,12 @@ Future<GameController> _playBot(WidgetTester tester, int seed) async {
     }
     await tester.tap(endBtn);
     await tester.pump();
+    // 有待令部队时的确认弹窗：bot 信息完备，直接确认
+    final confirm = find.text('结束回合');
+    if (confirm.evaluate().isNotEmpty) {
+      await tester.tap(confirm);
+      await tester.pump();
+    }
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pump(const Duration(milliseconds: 50));
     // 清掉决策回执与结算弹窗，避免堆叠

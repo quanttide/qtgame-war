@@ -79,7 +79,7 @@ void main() {
       await tester.pumpWidget(_buildApp(controller));
 
       expect(find.text('决 策 中'), findsOneWidget);
-      expect(find.text('回合 1 / 12'), findsOneWidget);
+      expect(find.text('第 1 / 12 回合'), findsOneWidget);
     });
 
     testWidgets('renders end-turn button as the primary bottom action', (

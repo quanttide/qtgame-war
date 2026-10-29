@@ -104,7 +104,10 @@ void main() {
       await tester.pump();
 
       expect((blue.col, blue.row), from);
-      expect(find.text('敌军行动中…'), findsOneWidget);
+      final cardOpacity = tester.widget<Opacity>(
+        find.ancestor(of: find.text('⚔ 强攻要塞'), matching: find.byType(Opacity)),
+      );
+      expect(cardOpacity.opacity, 0.45, reason: '敌军回合决策卡应置灰');
     });
   });
 }

@@ -16,9 +16,9 @@ class CommanderView extends StatelessWidget {
   const CommanderView({super.key, required this.controller});
 
   static const List<(TaskType, String, String)> _cards = [
-    (TaskType.assault, '⚔ 强攻要塞', '向要塞推进，消灭守军'),
-    (TaskType.block, '\u{1F6E1} 阻击援军', '迎击到达的援军，未到待命'),
-    (TaskType.standby, '\u{1F634} 原地休整', '不行动，待命'),
+    (TaskType.assault, '⚔ 强攻要塞', '全部未行动纵队 → 要塞，消灭守军'),
+    (TaskType.block, '\u{1F6E1} 阻击援军', '全部未行动纵队 → 援军，未到待命'),
+    (TaskType.standby, '\u{1F634} 原地休整', '全部未行动纵队原地待命'),
   ];
 
   @override
@@ -27,7 +27,7 @@ class CommanderView extends StatelessWidget {
     final canOrder = state.phase == GamePhase.player && !state.isGameOver;
     final ready = state.playerUnits.where((u) => !u.hasActed).length;
     return Container(
-      width: 216,
+      width: 240,
       padding: const EdgeInsets.all(10),
       decoration: const BoxDecoration(
         color: Color(0xfff4efe2),
@@ -61,15 +61,6 @@ class CommanderView extends StatelessWidget {
             const SizedBox(height: 6),
           ],
           const Spacer(),
-          Text(
-            canOrder ? '$ready 部待令' : '敌军行动中…',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xff8a7a60),
-              fontFamily: 'serif',
-            ),
-          ),
         ],
       ),
     );
