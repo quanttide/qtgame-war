@@ -69,10 +69,15 @@
 
 - [ ] 地图注入：8×7 + 地名（龙王店[要塞]、铁佛寺、帝丘店、田花园、杨拐）+ 地形 props
 - [ ] 单位注入：4 纵队（1/4/6纵[assault]、11纵[reserve]）+ 守军 + 整25师
+- [ ] 显形死行与幻影单位收口：`game_controller.dart` `applyAttack` 删 `defender.reveal()`（入守卫已要求 `revealed`，死代码），`doc/models/combat.md` 边界写明「目标必须已显形，攻击不负责显形」，`game_controller_test.dart` 补测试钉住现状「units.json 缺省 `revealed: false` 的初始单位不可被攻击」——验收：删后全量测试绿；将来做真雾隐须成对改守卫与显形，此测试变红即提醒
 - [ ] 战斗修正：疲劳（`fat`≥4 惩罚、standby 恢复）经注入接入 `resolveCombat`，取代战力标量
 - [ ] 战力换算规则降为注入：`campaign.dart` 的 `hitMod`/`moveMod` 70/45/25 阈值表与 `game_controller.dart` 的战力消耗（移动 −1 / 攻击 −3 / 每回合 −1，clamp 5..100）改为剧本注入的换算——验收：核心检索不到 70/45/25 阈值常数；补换算由剧本提供的测试
+- [ ] 定突击×工事契约：`doc/models/combat.md` 称「突击对 fullCover 必中且伤害 2」，`combat.dart` 分支实际要求先掷命中——二改一（代码实现必中并补必中测试，或 doc 改「命中后必重创」并补该分支测试）——验收：doc 与代码一致，`combat_test.dart` 有该分支锁定测试
+- [ ] 战斗测试桩契约化：`combat_test.dart` 的 `_ScriptedRandom.nextInt` 校验 `0 ≤ v < max`（违约报错指明桩违规）、记录掷骰次数并断言「每次结算恰掷 1 次」，三档 roll 魔数 99/39/9 注明命中率公式来源（55+baseAttack×6+hitMod−def×8）——验收：故意给 `resolveCombat` 加第二次掷骰时，红在「掷骰次数」断言而非 RangeError
 - [ ] 胜负策略：克据点 / 两部失去战斗力 / 时限未决
 - [ ] 指挥官决策：矛盾从战局派生（援军距离/疲劳/工事），决心卡 = 给一组纵队各指派 Task
+- [ ] endTurn 改可等待：`game_controller.dart` `endTurn` 返回 `Future<void>`（视图调用方 fire-and-forget 不改），`game_controller_test.dart` 种子冒烟改 `await c.endTurn()`，删「两个 Duration.zero 让拍」的注册顺序 hack——验收：冒烟测试无任何 `Future.delayed` 让拍，`await endTurn()` 返回后 `_aiStep` 已完成的状态断言成立
+- [ ] 补红方 hasActed 回合末重置：`game_controller.dart` `_aiStep` 新回合重置循环现只清蓝方，与 `applyCombatOutcome` 对两侧行动对称置位脱节（现靠无人读红方 hasActed 维持）——验收：连跑两个 AI 回合后红方 `hasActed` 为 false 有测试；敌军行动闸门（按 hasActed 限动）落地前必须先有此重置
 - [ ] 一回合闭环集成验证
 
 **玩法事实源**：`examples/prototype/龙王店战斗.html`——决策层照此，静态地图与写死卡脚本按 v0.1.3「明确淘汰」处理。
