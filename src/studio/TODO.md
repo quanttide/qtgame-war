@@ -2,30 +2,38 @@
 
 > 工作记忆的近端待办。版本计划见主仓 `data/roadmap/qtgame-war/`，设计共识见创始人档案仓 `qtgame-war/` 分区，规约见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## 进行中：任务 3 第 7 条 — 敌军攻击走结算应用原语（方案已放行）
+## 进行中：任务 2 — 可注入胜负策略
 
-**方案约束**：抽侧别中立原语 `applyCombatOutcome`（落 takeDamage + markActed + 产 Dispatch），玩家、敌军两路都调它。禁止放宽 `applyAttack` 侧别守卫直接复用——`applyAttack` 绑定 `playerPower -= 3` 与 isCore→`fortStrength` 削减两条玩家专属语义，敌军走它等于敌人开枪、玩家倒贴战力。守卫归位与战果落盘是同一动作，一并完成，不拆两步；侧别专属资源结算留各调用方。
+ROADMAP 两条：胜负判断抽为注入策略（核心只调用，不预设规则）；帝丘店现有「占领核心」降为注入实现。
 
-**核实结论**：`Unit.reveal()` 的读点全在红方侧（getAttackTargets / _aiStep 过滤 enemy.revealed、applyAttack 入守卫），蓝方零读点——enemy→player 方向调 `reveal()` 是笔误。敌军路径动词 = takeDamage + markActed + 战报；`reveal()` 留在玩家路径原地不碰。
+**现状核实**（四个条件 + 三处落盘点）：
+- `game.dart` `checkVictory` 蓝胜两条写死在核心：红方全灭 → `config.victoryClearedText`；蓝方占 isCore 格且 `campaign.fortStrength <= 0` → `config.victoryCoreText`
+- `game_controller.dart` `_aiStep` 败北两条写死在控制器：玩家全灭（战报后立判，文案「华野部队已无力再战，帝丘店未能攻克。」，return 不进新回合）；时间耗尽（`newTurn > 12`，详情文案「时间耗尽，援军逼近，华野被迫撤出战斗。」+ 战报「💀时间耗尽，未能攻克帝丘店。」turn 写死 0）
+- 调用点：`game_controller.dart` 攻击后（L210）与回合末（L323）两处；构造点：`headquarters_screen.dart` L35 + `command_executor_test.dart`/`game_controller_test.dart` 各一处 `Game(config)`
 
-**两处修订**：
-- 修订一（假时钟）：测试不真实等待。选型 = `GameController` 构造器加 `aiDelay` 可注入时长（默认 500ms 保持现行为），测试注入 `Duration.zero`。fake_async 虽已在依赖（flutter_test 传递），不选它：zone 魔法对 `void async` 的 endTurn 可读性差，注入构造参数与 `rng` 注入同型，一次改动喂两张任务行。
-- 修订二（三档跑全）：战报-落盘核对三档（未命中⇒hp 不变、命中⇒降 1、重创⇒降 2 且扣 0 封底）在 `combat_test.dart` 单元层注入桩 rng 各实际执行一遍；控制器种子测试只作集成冒烟（验证异步链路通 + 蓝方 hp 下降），不断文本、不断数值。
+**方案**：
+- 核心新增 `lib/models/victory_policy.dart`：`VictoryResult{victory, detail, dispatches}` + `typedef VictoryPolicy = VictoryResult? Function(List<Unit> units, Campaign campaign, int turn)`，`null` = 未结束。核心只定义形状，不含任何条件
+- `Game` 构造器加 `required VictoryPolicy victoryPolicy`；`checkVictory` 改转发：调策略，结果非 null 则落 `campaign.gameOver/victory/victoryDetail` 并返回 `dispatches`（条件判断与文案归策略，状态落盘与战报返回归核心）
+- 帝丘店实现 `lib/campaigns/diqiudian_victory.dart`：四条件（红全灭胜、蓝占核心且工事 0 胜、玩家全灭败、`turn > 12` 败）。构造收 `CampaignConfig`（两条胜文案仍读 campaign.json 单一来源），两条败北详情文案 + 超时战报随迁；超时战报 turn 改透传评估回合（修正现写死 0）；`> 12` 魔数仅移文件不改值，改读 `config.maxTurns` 归任务 4
+- `_aiStep` 两处失败手写块删除，统一改调 `engine.checkVictory`：战斗后玩家全灭点调 `checkVictory(units, campaign, currentTurn)` 后按 `campaign.gameOver` 转 gameOver 分支（等价性：该时点红方必有活单位、核心占领条件上一回合末已判过，完整评估不多触发）；回合末 `newTurn > 12` 块由 `checkVictory(newTurn)` 一并判
+- 注入点：`headquarters_screen.dart` 构造处传 `diqiudianVictory(config)`；两处测试 `Game(config)` 同步补参
 
-**红阶段纪律**：新测试引用尚不存在的 `applyCombatOutcome`，红就该红在符号缺失/断言失败；禁止先写空实现占位把红变绿。
+**边界（不做）**：`hitMod/moveMod` 阈值表留 v0.1.1；控制器战报专名清理留 v0.1.2（本次随迁仅两条败北详情 + 一条超时战报，「野司/华野」等其余战报不动）；`maxTurns`/`hexSize` 双源归一留任务 4；不动 `applyMove`/`applyAttack`/`CommandExecutor`（任务 3）
+
+**红阶段纪律**：新测试引用尚不存在的 `VictoryPolicy`/`diqiudianVictory`，红就该红在符号缺失；禁止先写空实现占位。
 
 步骤（doc → test → lib）：
 
-- [x] 0. 本文件重写为本分解（执行清单；旧稿「未验证未提交」是假状态，已作废）
-- [x] 1. doc：`doc/models/combat.md` 接口节加 `applyCombatOutcome` 签名，边界节改写（`resolveCombat` 纯结算；应用原语负责 takeDamage/markActed/战报；playerPower/fortStrength/reveal 归各调用方）——验收：无「敌军调 applyAttack」表述
-- [x] 2. test：`test/models/combat_test.dart` 桩 rng 三档核对 + `applyCombatOutcome` 单元断言（hp 降、hasActed、Dispatch 消息/类型/回合透传）；`test/controllers/game_controller_test.dart` 种子冒烟（`aiDelay: Duration.zero`，断言蓝 1 号 hp 下降）——验收：`flutter test` 全红，红在原语/参数符号缺失或断言失败
-- [x] 3. lib：`lib/models/combat.dart` 加 `applyCombatOutcome`；`applyAttack` 改调原语（`playerPower -= 3`、isCore→fortStrength、`reveal` 留原地）；`_aiStep` 改 resolveCombat+原语、战报入 `logMessages`；`GameController` 构造器加 `aiDelay`（默认 500ms）——验收：`flutter test` 全绿（77 回归 + 新增）
-- [x] 4. 收尾：ROADMAP 任务 3 第 7 条动词修正（takeDamage/reveal → takeDamage/markActed/战报）并勾选；已知缺陷索引第 1 条同步；跨版本纪律落一行「红方 hasActed 现无代码读取，将来 AI 按 hasActed 做闸门须回合末重置红方」——验收：勾选行无 reveal 字样
+- [x] 0. 本文件重写为本分解（任务 3 第 7 条已全绿收尾，进行中位让给任务 2）
+- [ ] 1. doc：`doc/models/game.md` 方法表 `checkVictory` 行改签名（返回 `List<Dispatch>`），新增「胜负策略注入」节：`VictoryPolicy` 形状 + 边界（条件判断/文案归剧本策略，状态落盘/战报返回归核心，`campaign.victoryDetail` 等字段保持战役无关）——验收：无「核心预设胜负条件」表述
+- [ ] 2. test：新 `test/campaigns/diqiudian_victory_test.dart` 四条件分支 + 两条败北文案 + 超时战报 turn 透传 + 未结束返回 null；`test/models/game_test.dart` `checkVictory` 转发测试（null → campaign 不变；有结果 → 三字段落盘 + dispatches 返回），Game 构造补桩 policy；`test/controllers/game_controller_test.dart` 种子冒烟回归 + 新增（策略返回败 → phase gameOver；超时 dispatch 进 logMessages）——验收：`flutter test` 红在符号缺失/断言失败
+- [ ] 3. lib：`lib/models/victory_policy.dart` 定义；`lib/campaigns/diqiudian_victory.dart` 实现；`game.dart` 构造器加参 + `checkVictory` 改转发；`game_controller.dart` `_aiStep` 两处手写块改调 `checkVictory`；`headquarters_screen.dart` 注入帝丘店实现——验收：`flutter test` 全绿（77 回归 + 新增）；`grep -n "isCore\|victory\|12" lib/models/game.dart` 中无条件判断与魔数 12
+- [ ] 4. 收尾：ROADMAP 任务 2 两条勾选；已知缺陷索引第 5 条同步（胜负详情/超时战报已迁策略实现，余战报专名留 v0.1.2）；本文件更新（本任务移入已交付，进行中位让给任务 3）——验收：勾选行与缺陷索引一致
 
 ## v0.1.0 后续待做（顺序即依赖）
 
-- [ ] 2. 可注入胜负策略：核心只调用，不预设规则
-- [ ] 3. `applyMove` / `applyAttack` 拆为通用原语（进核心）+ 帝丘店修正（降为注入）；守卫唯一化（全部收进 CommandExecutor）；`GameController` 剩余帝丘店逻辑注入化（部署表 / 兵力表文案 / 伏击部署）
-- [ ] 4. 剧本资产收尾：`CampaignConfig.load` 拆纯函数 `fromJson` + 薄 IO 壳、真实帝丘店 JSON 测试、`initial_huaye_power` 改通用名、`hexSize` 双源归一
+- [ ] 3. `applyMove` / `applyAttack` 拆为通用原语（进核心）+ 帝丘店修正（降为注入）；守卫唯一化（全部收进 CommandExecutor）；`GameController` 剩余帝丘店逻辑注入化（部署表 / 兵力表文案 / 伏击部署）；消除 `_aiStep` 内联射程/掩体规则（改复用 `Game.getAttackTargets`）
+- [ ] 4. 剧本资产收尾：`CampaignConfig.load` 拆纯函数 `fromJson` + 薄 IO 壳、真实帝丘店 JSON 测试、`initial_huaye_power` 改通用名、`hexSize` 双源归一、`maxTurns` 双源归一（魔数 12 已在 `diqiudian_victory.dart`，改读 `config.maxTurns`）
+- [ ] 5. 控制器层确定性验证：`GameController` 同种子双跑测试（见 ROADMAP 第 5 组）
 
 完成后进入 v0.1.1 龙王店剧本注入（详见 `data/roadmap/qtgame-war/v0.1.1.md`）。
